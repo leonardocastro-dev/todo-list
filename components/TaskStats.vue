@@ -31,7 +31,9 @@ const taskStore = useTaskStore()
     <Card :class="taskStore.urgentTasks > 0 ? 'border-red-300 bg-red-50' : ''">
       <CardContent class="p-4 flex flex-col items-center">
         <p class="text-sm text-muted-foreground mb-1">Urgent Pending</p>
-        <p :class="`text-2xl font-bold ${taskStore.urgentTasks > 0 ? 'text-red-700' : ''}`">
+        <p
+          :class="`text-2xl font-bold ${taskStore.urgentTasks > 0 ? 'text-red-700' : ''}`"
+        >
           {{ taskStore.urgentTasks }}
         </p>
       </CardContent>

@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -23,17 +29,23 @@ const taskStore = useTaskStore()
 
 const title = ref(props.editTask?.title || '')
 const description = ref(props.editTask?.description || '')
-const priority = ref<Priority>(props.editTask?.priority as Priority || 'normal')
+const priority = ref<Priority>(
+  (props.editTask?.priority as Priority) || 'normal'
+)
 const titleError = ref('')
 
 // Atualizar o formulário quando editTask mudar
-watch(() => props.editTask, (newTask) => {
-  if (newTask) {
-    title.value = newTask.title
-    description.value = newTask.description || ''
-    priority.value = newTask.priority as Priority
-  }
-}, { immediate: true })
+watch(
+  () => props.editTask,
+  (newTask) => {
+    if (newTask) {
+      title.value = newTask.title
+      description.value = newTask.description || ''
+      priority.value = newTask.priority as Priority
+    }
+  },
+  { immediate: true }
+)
 
 const handleSubmit = () => {
   // Validar formulário
@@ -80,7 +92,11 @@ const handleClose = () => {
 <template>
   <Dialog
     :open="isOpen"
-    @update:open="(open) => { if (!open) handleClose() }"
+    @update:open="
+      (open) => {
+        if (!open) handleClose()
+      }
+    "
   >
     <DialogContent class="sm:max-w-[500px]">
       <DialogHeader>
@@ -88,15 +104,17 @@ const handleClose = () => {
       </DialogHeader>
       <form @submit.prevent="handleSubmit" class="space-y-4 pt-4">
         <div class="space-y-2">
-          <Label for="title" class="font-medium">
-            Title
-          </Label>
+          <Label for="title" class="font-medium"> Title </Label>
           <Input
             id="title"
             v-model="title"
             placeholder="Task title"
             :class="titleError ? 'border-red-700' : ''"
-            @update:model-value="(val) => { if (val.trim()) titleError = '' }"
+            @update:model-value="
+              (val) => {
+                if (val.trim()) titleError = ''
+              }
+            "
           />
           <p v-if="titleError" class="text-sm text-red-700">{{ titleError }}</p>
         </div>
@@ -115,10 +133,7 @@ const handleClose = () => {
 
         <div class="space-y-2">
           <Label class="font-medium">Priority</Label>
-          <RadioGroup
-            v-model="priority"
-            class="flex space-x-4"
-          >
+          <RadioGroup v-model="priority" class="flex space-x-4">
             <div class="flex items-center space-x-2">
               <RadioGroupItem value="urgent" id="urgent" />
               <Label for="urgent" class="flex items-center cursor-pointer">

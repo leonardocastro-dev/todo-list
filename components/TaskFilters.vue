@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { useTaskStore } from '@/store'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 
@@ -24,7 +30,9 @@ const taskStore = useTaskStore()
 
     <div class="flex flex-col sm:flex-row gap-4">
       <div class="flex-1">
-        <Label for="status-filter" class="mb-1 block text-sm font-medium">Status</Label>
+        <Label for="status-filter" class="mb-1 block text-sm font-medium"
+          >Status</Label
+        >
         <Tabs
           :model-value="taskStore.statusFilter"
           @update:model-value="taskStore.setStatusFilter"
@@ -39,7 +47,9 @@ const taskStore = useTaskStore()
       </div>
 
       <div class="w-full sm:w-40">
-        <Label for="priority-filter" class="mb-1 block text-sm font-medium">Priority</Label>
+        <Label for="priority-filter" class="mb-1 block text-sm font-medium"
+          >Priority</Label
+        >
         <Select
           :model-value="taskStore.priorityFilter"
           @update:model-value="taskStore.setPriorityFilter"

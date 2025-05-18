@@ -18,10 +18,6 @@ const filteredTasks = computed(() => {
   </Alert>
 
   <div v-else class="space-y-2">
-    <TaskItem
-      v-for="task in filteredTasks"
-      :key="task.id"
-      :task="task"
-    />
+    <TaskItem v-for="task in filteredTasks" :key="task.id" :task="task" />
   </div>
 </template>

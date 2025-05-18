@@ -1,14 +1,14 @@
 <script setup lang="ts">
-  import { Toaster } from '@/components/ui/sonner'
-  import { ref } from 'vue'
-  import { Plus } from 'lucide-vue-next'
-  import { Button } from '@/components/ui/button'
-  import TaskStats from '@/components/TaskStats.vue'
-  import TaskList from '@/components/TaskList.vue'
-  import TaskFilters from '@/components/TaskFilters.vue'
-  import TaskForm from '@/components/TaskForm.vue'
+import { Toaster } from '@/components/ui/sonner'
+import { ref } from 'vue'
+import { Plus } from 'lucide-vue-next'
+import { Button } from '@/components/ui/button'
+import TaskStats from '@/components/TaskStats.vue'
+import TaskList from '@/components/TaskList.vue'
+import TaskFilters from '@/components/TaskFilters.vue'
+import TaskForm from '@/components/TaskForm.vue'
 
-  const isAddingTask = ref(false)
+const isAddingTask = ref(false)
 </script>
 
 <template>

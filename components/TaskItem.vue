@@ -44,13 +44,17 @@ const formatDate = (date: Date) => {
 </script>
 
 <template>
-  <Card :class="`mb-3 ${task.status === 'completed' ? 'opacity-70' : ''} hover:shadow-md transition-shadow`">
+  <Card
+    :class="`mb-3 ${task.status === 'completed' ? 'opacity-70' : ''} hover:shadow-md transition-shadow`"
+  >
     <CardContent class="p-4">
       <div class="flex items-start gap-3">
         <div class="pt-0.5">
           <Checkbox
             :model-value="task.status === 'completed'"
-            @update:model-value="(checked) => taskStore.toggleTaskStatus(task.id, checked)"
+            @update:model-value="
+              (checked) => taskStore.toggleTaskStatus(task.id, checked)
+            "
             :id="`task-${task.id}`"
             class="mt-1"
           />
@@ -94,18 +98,26 @@ const formatDate = (date: Date) => {
             </DropdownMenu>
           </div>
 
-          <p v-if="task.description"
-            :class="`text-sm mb-2 ${task.status === 'completed' ? 'text-muted-foreground' : ''}`">
+          <p
+            v-if="task.description"
+            :class="`text-sm mb-2 ${task.status === 'completed' ? 'text-muted-foreground' : ''}`"
+          >
             {{ task.description }}
           </p>
 
           <div class="flex items-center gap-2 text-xs text-muted-foreground">
             <div class="flex items-center">
-              <component :is="getPriorityIcon()" class="h-4 w-4" :class="`priority-${task.priority}`" />
+              <component
+                :is="getPriorityIcon()"
+                class="h-4 w-4"
+                :class="`priority-${task.priority}`"
+              />
               <span class="ml-1">{{ task.priority }}</span>
             </div>
             <span>•</span>
-            <span>{{ formatDate(new Date(task.createdAt || Date.now())) }}</span>
+            <span>{{
+              formatDate(new Date(task.createdAt || Date.now()))
+            }}</span>
             <template v-if="task.status === 'completed'">
               <span>•</span>
               <span class="flex items-center text-emerald-600">

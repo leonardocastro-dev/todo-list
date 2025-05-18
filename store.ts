@@ -21,21 +21,34 @@ export const useTaskStore = defineStore('tasks', {
 
   getters: {
     totalTasks: (state) => state.tasks.length,
-    completedTasks: (state) => state.tasks.filter(task => task.status === 'completed').length,
-    pendingTasks: (state) => state.tasks.filter(task => task.status === 'pending').length,
-    urgentTasks: (state) => state.tasks.filter(task => task.priority === 'urgent' && task.status === 'pending').length,
+    completedTasks: (state) =>
+      state.tasks.filter((task) => task.status === 'completed').length,
+    pendingTasks: (state) =>
+      state.tasks.filter((task) => task.status === 'pending').length,
+    urgentTasks: (state) =>
+      state.tasks.filter(
+        (task) => task.priority === 'urgent' && task.status === 'pending'
+      ).length,
     completionPercentage: (state) => {
       const total = state.tasks.length
-      const completed = state.tasks.filter(task => task.status === 'completed').length
+      const completed = state.tasks.filter(
+        (task) => task.status === 'completed'
+      ).length
       return total > 0 ? Math.round((completed / total) * 100) : 0
     },
     filteredTasks: (state) => {
-      return state.tasks.filter(task => {
-        if (state.statusFilter !== 'all' && task.status !== state.statusFilter) {
+      return state.tasks.filter((task) => {
+        if (
+          state.statusFilter !== 'all' &&
+          task.status !== state.statusFilter
+        ) {
           return false
         }
 
-        if (state.priorityFilter !== 'all' && task.priority !== state.priorityFilter) {
+        if (
+          state.priorityFilter !== 'all' &&
+          task.priority !== state.priorityFilter
+        ) {
           return false
         }
 
@@ -43,7 +56,8 @@ export const useTaskStore = defineStore('tasks', {
           const query = state.searchQuery.toLowerCase()
           return (
             task.title.toLowerCase().includes(query) ||
-            (task.description?.toLowerCase().includes(query) || false)
+            task.description?.toLowerCase().includes(query) ||
+            false
           )
         }
 
@@ -62,7 +76,7 @@ export const useTaskStore = defineStore('tasks', {
       })
     },
     updateTask(id: string, updatedTask: Partial<Task>) {
-      const index = this.tasks.findIndex(task => task.id === id)
+      const index = this.tasks.findIndex((task) => task.id === id)
       if (index !== -1) {
         this.tasks[index] = { ...this.tasks[index], ...updatedTask }
 
@@ -73,9 +87,9 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
     deleteTask(id: string) {
-      const taskToDelete = this.tasks.find(task => task.id === id)
+      const taskToDelete = this.tasks.find((task) => task.id === id)
       if (taskToDelete) {
-        this.tasks = this.tasks.filter(task => task.id !== id)
+        this.tasks = this.tasks.filter((task) => task.id !== id)
 
         toast.message('Task deleted successfully', {
           style: { background: '#fda4af' },
@@ -84,7 +98,7 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
     toggleTaskStatus(id: string, checked: boolean) {
-      const index = this.tasks.findIndex(task => task.id === id)
+      const index = this.tasks.findIndex((task) => task.id === id)
       if (index !== -1) {
         this.tasks[index].status = checked ? 'completed' : 'pending'
 
