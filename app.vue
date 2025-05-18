@@ -6,6 +6,7 @@
   import TaskStats from '@/components/TaskStats.vue'
   import TaskList from '@/components/TaskList.vue'
   import TaskFilters from '@/components/TaskFilters.vue'
+  import TaskForm from '@/components/TaskForm.vue'
 
   const isAddingTask = ref(false)
 </script>

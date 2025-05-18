@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { toast } from 'vue-sonner'
 
 export interface Task {
   id: string
@@ -30,17 +31,14 @@ export const useTaskStore = defineStore('tasks', {
     },
     filteredTasks: (state) => {
       return state.tasks.filter(task => {
-        // Filtrar por status
         if (state.statusFilter !== 'all' && task.status !== state.statusFilter) {
           return false
         }
 
-        // Filtrar por prioridade
         if (state.priorityFilter !== 'all' && task.priority !== state.priorityFilter) {
           return false
         }
 
-        // Filtrar por busca
         if (state.searchQuery.trim() !== '') {
           const query = state.searchQuery.toLowerCase()
           return (
@@ -56,23 +54,45 @@ export const useTaskStore = defineStore('tasks', {
 
   actions: {
     addTask(task: Task) {
-      console.log('addTask', task)
       this.tasks.push(task)
+
+      toast.message('Task added successfully', {
+        style: { background: '#6ee7b7' },
+        duration: 3000
+      })
     },
     updateTask(id: string, updatedTask: Partial<Task>) {
       const index = this.tasks.findIndex(task => task.id === id)
       if (index !== -1) {
         this.tasks[index] = { ...this.tasks[index], ...updatedTask }
+
+        toast.message('Task updated successfully', {
+          style: { background: '#6ee7b7' },
+          duration: 3000
+        })
       }
     },
     deleteTask(id: string) {
-      this.tasks = this.tasks.filter(task => task.id !== id)
+      const taskToDelete = this.tasks.find(task => task.id === id)
+      if (taskToDelete) {
+        this.tasks = this.tasks.filter(task => task.id !== id)
+
+        toast.message('Task deleted successfully', {
+          style: { background: '#fda4af' },
+          duration: 3000
+        })
+      }
     },
     toggleTaskStatus(id: string, checked: boolean) {
-      console.log('toggleTaskStatus', id, checked)
       const index = this.tasks.findIndex(task => task.id === id)
       if (index !== -1) {
         this.tasks[index].status = checked ? 'completed' : 'pending'
+
+        const status = checked ? 'completed' : 'pending'
+        toast.message(`Task changed to ${status}`, {
+          style: { background: checked ? '#6ee7b7' : '#fdba74' },
+          duration: 3000
+        })
       }
     },
     setSearchQuery(query: string) {
