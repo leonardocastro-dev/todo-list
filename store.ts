@@ -17,7 +17,8 @@ export const useTaskStore = defineStore('tasks', {
     tasks: [] as Task[],
     searchQuery: '',
     statusFilter: 'all',
-    priorityFilter: 'all'
+    priorityFilter: 'all',
+    isLoading: false
   }),
 
   getters: {
@@ -73,6 +74,7 @@ export const useTaskStore = defineStore('tasks', {
       if (!userId) return
 
       try {
+        this.isLoading = true
         const userTasksRef = dbRef($database, `users/${userId}/tasks`)
         const snapshot = await get(userTasksRef)
 
@@ -88,6 +90,8 @@ export const useTaskStore = defineStore('tasks', {
           style: { background: '#fda4af' },
           duration: 3000
         })
+      } finally {
+        this.isLoading = false
       }
     },
 
