@@ -14,7 +14,11 @@ const filteredTasks = computed(() => {
 
 <template>
   <div v-if="taskStore.isLoading" class="space-y-2">
-    <Card v-for="i in 6" :key="`skeleton-${i}`" class="mb-3 hover:shadow-md transition-shadow">
+    <Card
+      v-for="i in 6"
+      :key="`skeleton-${i}`"
+      class="mb-3 hover:shadow-md transition-shadow"
+    >
       <CardContent class="px-4">
         <div class="flex items-start gap-3">
           <div class="pt-0.5">
