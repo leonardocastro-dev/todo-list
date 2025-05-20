@@ -1,4 +1,4 @@
-import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from 'firebase/auth'
+import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, deleteUser } from 'firebase/auth'
 import type { User } from 'firebase/auth'
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
@@ -43,23 +43,35 @@ export const useAuth = () => {
     try {
       loading.value = true
       error.value = null
+
       const result = await createUserWithEmailAndPassword($auth, email, password)
-      user.value = result.user
+      const createdUser = result.user
 
       const userData = {
         email: email,
         createdAt: new Date().toISOString()
       }
 
-      const userRef = dbRef($database, `users/${result.user.uid}`)
+      const userRef = dbRef($database, `users/${createdUser.uid}`)
       await set(userRef, userData)
 
+      user.value = createdUser
       navigateTo('/')
       toast.success('Registration successful!', {
         style: { background: '#6ee7b7' },
         duration: 3000
       })
+
     } catch (e: any) {
+      if (e instanceof Error && $auth.currentUser) {
+        try {
+          await deleteUser($auth.currentUser)
+          console.warn('Rolled back auth user due to DB failure.')
+        } catch (rollbackErr) {
+          console.error('Failed to rollback auth user:', rollbackErr)
+        }
+      }
+
       if (e.code === 'auth/email-already-in-use') {
         toast.error('This email is already in use', {
           style: { background: '#fda4af' },
@@ -72,10 +84,12 @@ export const useAuth = () => {
         })
         console.error('Error registering:', e)
       }
+
     } finally {
       loading.value = false
     }
   }
+
 
   const logout = async () => {
     try {
