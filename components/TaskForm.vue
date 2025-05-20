@@ -19,6 +19,7 @@ type Priority = 'normal' | 'important' | 'urgent'
 const props = defineProps<{
   isOpen: boolean
   editTask?: Task
+  userId?: string
 }>()
 
 const emit = defineEmits<{
@@ -34,7 +35,6 @@ const priority = ref<Priority>(
 )
 const titleError = ref('')
 
-// Atualizar o formulário quando editTask mudar
 watch(
   () => props.editTask,
   (newTask) => {
@@ -48,7 +48,6 @@ watch(
 )
 
 const handleSubmit = () => {
-  // Validar formulário
   if (!title.value.trim()) {
     titleError.value = 'Title is required'
     return
@@ -59,7 +58,7 @@ const handleSubmit = () => {
       title: title.value,
       description: description.value,
       priority: priority.value
-    })
+    }, props.userId)
   } else {
     taskStore.addTask({
       id: crypto.randomUUID(),
@@ -68,10 +67,9 @@ const handleSubmit = () => {
       priority: priority.value,
       status: 'pending',
       createdAt: new Date().toISOString()
-    })
+    }, props.userId)
   }
 
-  // Resetar formulário e fechar diálogo
   resetForm()
   emit('close')
 }
@@ -133,7 +131,7 @@ const handleClose = () => {
 
         <div class="space-y-2">
           <Label class="font-medium">Priority</Label>
-          <RadioGroup v-model="priority" class="flex space-x-4">
+          <RadioGroup v-model="priority" class="flex flex-col sm:flex-row space-x-4">
             <div class="flex items-center space-x-2">
               <RadioGroupItem value="urgent" id="urgent" />
               <Label for="urgent" class="flex items-center cursor-pointer">

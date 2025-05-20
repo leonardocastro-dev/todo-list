@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { toast } from 'vue-sonner'
+import { ref as dbRef, set, get, update, remove } from 'firebase/database'
 
 export interface Task {
   id: string
@@ -67,18 +68,94 @@ export const useTaskStore = defineStore('tasks', {
   },
 
   actions: {
-    addTask(task: Task) {
-      this.tasks.push(task)
+    async loadTasks(userId = null) {
+      const { $database } = useNuxtApp()
+      if (!userId) return
 
-      toast.message('Task added successfully', {
-        style: { background: '#6ee7b7' },
-        duration: 3000
-      })
+      try {
+        const userTasksRef = dbRef($database, `users/${userId}/tasks`)
+        const snapshot = await get(userTasksRef)
+
+        if (snapshot.exists()) {
+          const tasksData = snapshot.val()
+          this.tasks = Object.values(tasksData) as Task[]
+        } else {
+          this.tasks = []
+        }
+      } catch (error) {
+        console.error('Error loading tasks:', error)
+        toast.error('Failed to load tasks', {
+          style: { background: '#fda4af' },
+          duration: 3000
+        })
+      }
     },
-    updateTask(id: string, updatedTask: Partial<Task>) {
+
+    async addTask(task: Task, userId = null) {
+      const { $database } = useNuxtApp()
+
+      if (!userId) {
+        this.tasks.push(task)
+        toast.message('Task added successfully', {
+          style: { background: '#6ee7b7' },
+          duration: 3000
+        })
+        return
+      }
+
+      try {
+        const timestamp = Date.now()
+        const taskWithTimestamp = {
+          ...task,
+          id: String(timestamp)
+        }
+
+        const taskRef = dbRef(
+          $database,
+          `users/${userId}/tasks/${timestamp}`
+        )
+
+        await set(taskRef, taskWithTimestamp)
+
+        this.tasks.push(taskWithTimestamp)
+
+        toast.message('Task added successfully', {
+          style: { background: '#6ee7b7' },
+          duration: 3000
+        })
+      } catch (error) {
+        console.error('Error adding task:', error)
+        toast.error('Failed to add task', {
+          style: { background: '#fda4af' },
+          duration: 3000
+        })
+      }
+    },
+
+    async updateTask(id: string, updatedTask: Partial<Task>, userId = null) {
+      const { $database } = useNuxtApp()
+
       const index = this.tasks.findIndex((task) => task.id === id)
       if (index !== -1) {
         this.tasks[index] = { ...this.tasks[index], ...updatedTask }
+
+        if (userId) {
+          try {
+            const taskRef = dbRef(
+              $database,
+              `users/${userId}/tasks/${id}`
+            )
+
+            await update(taskRef, updatedTask)
+          } catch (error) {
+            console.error('Error updating task:', error)
+            toast.error('Failed to update task on server', {
+              style: { background: '#fda4af' },
+              duration: 3000
+            })
+            return
+          }
+        }
 
         toast.message('Task updated successfully', {
           style: { background: '#6ee7b7' },
@@ -86,10 +163,32 @@ export const useTaskStore = defineStore('tasks', {
         })
       }
     },
-    deleteTask(id: string) {
+
+    async deleteTask(id: string, userId = null) {
+      const { $database } = useNuxtApp()
+
       const taskToDelete = this.tasks.find((task) => task.id === id)
+
       if (taskToDelete) {
         this.tasks = this.tasks.filter((task) => task.id !== id)
+
+        if (userId) {
+          try {
+            const taskRef = dbRef(
+              $database,
+              `users/${userId}/tasks/${id}`
+            )
+
+            await remove(taskRef)
+          } catch (error) {
+            console.error('Error deleting task:', error)
+            toast.error('Failed to delete task on server', {
+              style: { background: '#fda4af' },
+              duration: 3000
+            })
+            return
+          }
+        }
 
         toast.message('Task deleted successfully', {
           style: { background: '#fda4af' },
@@ -97,24 +196,48 @@ export const useTaskStore = defineStore('tasks', {
         })
       }
     },
-    toggleTaskStatus(id: string, checked: boolean) {
+
+    async toggleTaskStatus(id: string, checked: boolean, userId = null) {
+      const status = checked ? 'completed' : 'pending'
+
       const index = this.tasks.findIndex((task) => task.id === id)
       if (index !== -1) {
-        this.tasks[index].status = checked ? 'completed' : 'pending'
+        this.tasks[index].status = status
 
-        const status = checked ? 'completed' : 'pending'
+        if (userId) {
+          try {
+            const { $database } = useNuxtApp()
+            const taskRef = dbRef(
+              $database,
+              `users/${userId}/tasks/${id}`
+            )
+
+            await update(taskRef, { status })
+          } catch (error) {
+            console.error('Error updating task status:', error)
+            toast.error('Failed to update task status on server', {
+              style: { background: '#fda4af' },
+              duration: 3000
+            })
+            return
+          }
+        }
+
         toast.message(`Task changed to ${status}`, {
           style: { background: checked ? '#6ee7b7' : '#fdba74' },
           duration: 3000
         })
       }
     },
+
     setSearchQuery(query: string) {
       this.searchQuery = query
     },
+
     setStatusFilter(status: string) {
       this.statusFilter = status
     },
+
     setPriorityFilter(priority: string) {
       this.priorityFilter = priority
     }

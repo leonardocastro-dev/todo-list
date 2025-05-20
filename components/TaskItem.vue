@@ -14,12 +14,14 @@ import { Check, Flag, ArrowRight, Star, StarHalf } from 'lucide-vue-next'
 import TaskForm from './TaskForm.vue'
 import { useTaskStore } from '@/store'
 import type { Task } from '@/store'
+import { useAuth } from '@/composables/useAuth'
 
 const props = defineProps<{
   task: Task
 }>()
 
 const taskStore = useTaskStore()
+const { user } = useAuth()
 const isEditing = ref(false)
 
 const getPriorityIcon = () => {
@@ -47,13 +49,13 @@ const formatDate = (date: Date) => {
   <Card
     :class="`mb-3 ${task.status === 'completed' ? 'opacity-70' : ''} hover:shadow-md transition-shadow`"
   >
-    <CardContent class="p-4">
+    <CardContent class="px-4">
       <div class="flex items-start gap-3">
         <div class="pt-0.5">
           <Checkbox
             :model-value="task.status === 'completed'"
             @update:model-value="
-              (checked) => taskStore.toggleTaskStatus(task.id, checked)
+              (checked) => taskStore.toggleTaskStatus(task.id, checked, user?.uid)
             "
             :id="`task-${task.id}`"
             class="mt-1"
@@ -90,7 +92,7 @@ const formatDate = (date: Date) => {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   class="text-destructive focus:text-destructive"
-                  @click="taskStore.deleteTask(task.id)"
+                  @click="taskStore.deleteTask(task.id, user?.uid)"
                 >
                   Delete
                 </DropdownMenuItem>
@@ -135,6 +137,7 @@ const formatDate = (date: Date) => {
     v-if="isEditing"
     :is-open="isEditing"
     :edit-task="task"
+    :user-id="user?.uid"
     @close="isEditing = false"
   />
 </template>
