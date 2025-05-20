@@ -1,4 +1,9 @@
-import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, deleteUser } from 'firebase/auth'
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  createUserWithEmailAndPassword,
+  deleteUser
+} from 'firebase/auth'
 import type { User } from 'firebase/auth'
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
@@ -28,10 +33,13 @@ export const useAuth = () => {
           duration: 3000
         })
       } else {
-        toast.error('An error occurred while logging in. Please try again later.', {
-          style: { background: '#fda4af' },
-          duration: 3000
-        })
+        toast.error(
+          'An error occurred while logging in. Please try again later.',
+          {
+            style: { background: '#fda4af' },
+            duration: 3000
+          }
+        )
         console.error('Error logging in:', e)
       }
     } finally {
@@ -44,7 +52,11 @@ export const useAuth = () => {
       loading.value = true
       error.value = null
 
-      const result = await createUserWithEmailAndPassword($auth, email, password)
+      const result = await createUserWithEmailAndPassword(
+        $auth,
+        email,
+        password
+      )
       const createdUser = result.user
 
       const userData = {
@@ -61,7 +73,6 @@ export const useAuth = () => {
         style: { background: '#6ee7b7' },
         duration: 3000
       })
-
     } catch (e: any) {
       if (e instanceof Error && $auth.currentUser) {
         try {
@@ -78,18 +89,19 @@ export const useAuth = () => {
           duration: 3000
         })
       } else {
-        toast.error('An error occurred during registration. Please try again later.', {
-          style: { background: '#fda4af' },
-          duration: 3000
-        })
+        toast.error(
+          'An error occurred during registration. Please try again later.',
+          {
+            style: { background: '#fda4af' },
+            duration: 3000
+          }
+        )
         console.error('Error registering:', e)
       }
-
     } finally {
       loading.value = false
     }
   }
-
 
   const logout = async () => {
     try {

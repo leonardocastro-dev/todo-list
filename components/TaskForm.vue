@@ -54,20 +54,27 @@ const handleSubmit = () => {
   }
 
   if (props.editTask) {
-    taskStore.updateTask(props.editTask.id, {
-      title: title.value,
-      description: description.value,
-      priority: priority.value
-    }, props.userId)
+    taskStore.updateTask(
+      props.editTask.id,
+      {
+        title: title.value,
+        description: description.value,
+        priority: priority.value
+      },
+      props.userId
+    )
   } else {
-    taskStore.addTask({
-      id: crypto.randomUUID(),
-      title: title.value,
-      description: description.value,
-      priority: priority.value,
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    }, props.userId)
+    taskStore.addTask(
+      {
+        id: crypto.randomUUID(),
+        title: title.value,
+        description: description.value,
+        priority: priority.value,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      },
+      props.userId
+    )
   }
 
   resetForm()
@@ -131,7 +138,10 @@ const handleClose = () => {
 
         <div class="space-y-2">
           <Label class="font-medium">Priority</Label>
-          <RadioGroup v-model="priority" class="flex flex-col sm:flex-row space-x-4">
+          <RadioGroup
+            v-model="priority"
+            class="flex flex-col sm:flex-row space-x-4"
+          >
             <div class="flex items-center space-x-2">
               <RadioGroupItem value="urgent" id="urgent" />
               <Label for="urgent" class="flex items-center cursor-pointer">

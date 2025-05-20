@@ -110,10 +110,7 @@ export const useTaskStore = defineStore('tasks', {
           id: String(timestamp)
         }
 
-        const taskRef = dbRef(
-          $database,
-          `users/${userId}/tasks/${timestamp}`
-        )
+        const taskRef = dbRef($database, `users/${userId}/tasks/${timestamp}`)
 
         await set(taskRef, taskWithTimestamp)
 
@@ -141,10 +138,7 @@ export const useTaskStore = defineStore('tasks', {
 
         if (userId) {
           try {
-            const taskRef = dbRef(
-              $database,
-              `users/${userId}/tasks/${id}`
-            )
+            const taskRef = dbRef($database, `users/${userId}/tasks/${id}`)
 
             await update(taskRef, updatedTask)
           } catch (error) {
@@ -174,10 +168,7 @@ export const useTaskStore = defineStore('tasks', {
 
         if (userId) {
           try {
-            const taskRef = dbRef(
-              $database,
-              `users/${userId}/tasks/${id}`
-            )
+            const taskRef = dbRef($database, `users/${userId}/tasks/${id}`)
 
             await remove(taskRef)
           } catch (error) {
@@ -207,10 +198,7 @@ export const useTaskStore = defineStore('tasks', {
         if (userId) {
           try {
             const { $database } = useNuxtApp()
-            const taskRef = dbRef(
-              $database,
-              `users/${userId}/tasks/${id}`
-            )
+            const taskRef = dbRef($database, `users/${userId}/tasks/${id}`)
 
             await update(taskRef, { status })
           } catch (error) {

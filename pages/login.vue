@@ -1,8 +1,21 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import * as z from 'zod'
@@ -10,10 +23,12 @@ import { useAuth } from '@/composables/useAuth'
 
 const { login, loading, error } = useAuth()
 
-const loginSchema = toTypedSchema(z.object({
-  email: z.string().min(1, 'Email is required').email('Invalid email'),
-  password: z.string().min(1, 'Password is required')
-}))
+const loginSchema = toTypedSchema(
+  z.object({
+    email: z.string().min(1, 'Email is required').email('Invalid email'),
+    password: z.string().min(1, 'Password is required')
+  })
+)
 
 const { isFieldDirty, handleSubmit } = useForm({
   validationSchema: loginSchema
@@ -37,7 +52,11 @@ const onSubmit = handleSubmit(async (data) => {
 
         <CardContent>
           <form @submit="onSubmit" class="space-y-4">
-            <FormField v-slot="{ componentField }" name="email" :validate-on-blur="!isFieldDirty">
+            <FormField
+              v-slot="{ componentField }"
+              name="email"
+              :validate-on-blur="!isFieldDirty"
+            >
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
@@ -52,7 +71,11 @@ const onSubmit = handleSubmit(async (data) => {
               </FormItem>
             </FormField>
 
-            <FormField v-slot="{ componentField }" name="password" :validate-on-blur="!isFieldDirty">
+            <FormField
+              v-slot="{ componentField }"
+              name="password"
+              :validate-on-blur="!isFieldDirty"
+            >
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>

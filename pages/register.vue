@@ -1,8 +1,21 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import * as z from 'zod'
@@ -10,14 +23,18 @@ import { useAuth } from '@/composables/useAuth'
 
 const { register, loading, error } = useAuth()
 
-const registerSchema = toTypedSchema(z.object({
-  email: z.string().min(1, 'Email is required').email('Invalid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string().min(1, 'Confirm your password')
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "The passwords do not match",
-  path: ["confirmPassword"],
-}))
+const registerSchema = toTypedSchema(
+  z
+    .object({
+      email: z.string().min(1, 'Email is required').email('Invalid email'),
+      password: z.string().min(6, 'Password must be at least 6 characters'),
+      confirmPassword: z.string().min(1, 'Confirm your password')
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: 'The passwords do not match',
+      path: ['confirmPassword']
+    })
+)
 
 const { isFieldDirty, handleSubmit } = useForm({
   validationSchema: registerSchema
@@ -41,7 +58,11 @@ const onSubmit = handleSubmit(async (data) => {
 
         <CardContent>
           <form @submit="onSubmit" class="space-y-4">
-            <FormField v-slot="{ componentField }" name="email" :validate-on-blur="!isFieldDirty">
+            <FormField
+              v-slot="{ componentField }"
+              name="email"
+              :validate-on-blur="!isFieldDirty"
+            >
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
@@ -56,7 +77,11 @@ const onSubmit = handleSubmit(async (data) => {
               </FormItem>
             </FormField>
 
-            <FormField v-slot="{ componentField }" name="password" :validate-on-blur="!isFieldDirty">
+            <FormField
+              v-slot="{ componentField }"
+              name="password"
+              :validate-on-blur="!isFieldDirty"
+            >
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
@@ -71,7 +96,11 @@ const onSubmit = handleSubmit(async (data) => {
               </FormItem>
             </FormField>
 
-            <FormField v-slot="{ componentField }" name="confirmPassword" :validate-on-blur="!isFieldDirty">
+            <FormField
+              v-slot="{ componentField }"
+              name="confirmPassword"
+              :validate-on-blur="!isFieldDirty"
+            >
               <FormItem>
                 <FormLabel>Confirm Password</FormLabel>
                 <FormControl>
@@ -96,7 +125,11 @@ const onSubmit = handleSubmit(async (data) => {
           <div class="text-sm text-center text-muted-foreground">
             Already have an account?
           </div>
-          <Button variant="outline" class="w-full" @click="navigateTo('/login')">
+          <Button
+            variant="outline"
+            class="w-full"
+            @click="navigateTo('/login')"
+          >
             Login
           </Button>
           <Button variant="link" @click="navigateTo('/')">

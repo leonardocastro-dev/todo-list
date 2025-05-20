@@ -55,7 +55,8 @@ const formatDate = (date: Date) => {
           <Checkbox
             :model-value="task.status === 'completed'"
             @update:model-value="
-              (checked) => taskStore.toggleTaskStatus(task.id, checked, user?.uid)
+              (checked) =>
+                taskStore.toggleTaskStatus(task.id, checked, user?.uid)
             "
             :id="`task-${task.id}`"
             class="mt-1"

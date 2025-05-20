@@ -35,7 +35,7 @@ export default defineNuxtConfig({
       firebaseMessagingSenderId: process.env.NUXT_FIREBASE_MESSAGING_SENDER_ID,
       firebaseAppId: process.env.NUXT_FIREBASE_APP_ID,
       firebaseMeasurementId: process.env.NUXT_FIREBASE_MEASUREMENT_ID,
-      firebaseDatabaseURL: process.env.NUXT_FIREBASE_DATABASE_URL,
+      firebaseDatabaseURL: process.env.NUXT_FIREBASE_DATABASE_URL
     }
   }
 })

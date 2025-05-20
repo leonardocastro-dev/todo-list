@@ -19,13 +19,16 @@ onMounted(async () => {
   }
 })
 
-watch(() => user.value, async (newUser) => {
-  if (newUser) {
-    await taskStore.loadTasks(newUser.uid)
-  } else {
-    taskStore.$reset()
+watch(
+  () => user.value,
+  async (newUser) => {
+    if (newUser) {
+      await taskStore.loadTasks(newUser.uid)
+    } else {
+      taskStore.$reset()
+    }
   }
-})
+)
 </script>
 
 <template>
@@ -82,7 +85,11 @@ watch(() => user.value, async (newUser) => {
       <TaskFilters />
       <TaskList />
 
-      <TaskForm :is-open="isAddingTask" @close="isAddingTask = false" :user-id="user?.uid" />
+      <TaskForm
+        :is-open="isAddingTask"
+        @close="isAddingTask = false"
+        :user-id="user?.uid"
+      />
     </div>
   </main>
 </template>

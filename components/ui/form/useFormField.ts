@@ -1,4 +1,10 @@
-import { FieldContextKey, useFieldError, useIsFieldDirty, useIsFieldTouched, useIsFieldValid } from 'vee-validate'
+import {
+  FieldContextKey,
+  useFieldError,
+  useIsFieldDirty,
+  useIsFieldTouched,
+  useIsFieldValid
+} from 'vee-validate'
 import { inject } from 'vue'
 import { FORM_ITEM_INJECTION_KEY } from './injectionKeys'
 
@@ -16,7 +22,7 @@ export function useFormField() {
     valid: useIsFieldValid(name),
     isDirty: useIsFieldDirty(name),
     isTouched: useIsFieldTouched(name),
-    error: useFieldError(name),
+    error: useFieldError(name)
   }
 
   return {
@@ -25,6 +31,6 @@ export function useFormField() {
     formItemId: `${id}-form-item`,
     formDescriptionId: `${id}-form-item-description`,
     formMessageId: `${id}-form-item-message`,
-    ...fieldState,
+    ...fieldState
   }
 }
