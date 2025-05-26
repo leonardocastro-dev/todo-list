@@ -14,9 +14,7 @@ const { user, logout } = useAuth()
 const taskStore = useTaskStore()
 
 onMounted(async () => {
-  if (user.value) {
-    await taskStore.loadTasks(user.value.uid)
-  }
+  await taskStore.loadTasks(user.value?.uid)
 })
 
 watch(

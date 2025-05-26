@@ -8,6 +8,7 @@ import type { User } from 'firebase/auth'
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { ref as dbRef, set } from 'firebase/database'
+import { useTaskStore } from '~/store'
 
 export const useAuth = () => {
   const { $auth, $database } = useNuxtApp()
@@ -21,6 +22,11 @@ export const useAuth = () => {
       error.value = null
       const result = await signInWithEmailAndPassword($auth, email, password)
       user.value = result.user
+
+      const tasksStore = useTaskStore()
+      tasksStore.$reset()
+      localStorage.removeItem('localTasks')
+
       navigateTo('/')
       toast.success('Login successful', {
         style: { background: '#6ee7b7' },
@@ -68,6 +74,11 @@ export const useAuth = () => {
       await set(userRef, userData)
 
       user.value = createdUser
+
+      const tasksStore = useTaskStore()
+      tasksStore.$reset()
+      localStorage.removeItem('localTasks')
+
       navigateTo('/')
       toast.success('Registration successful!', {
         style: { background: '#6ee7b7' },
@@ -107,6 +118,10 @@ export const useAuth = () => {
     try {
       loading.value = true
       error.value = null
+
+      const tasksStore = useTaskStore()
+      tasksStore.$reset()
+
       await signOut($auth)
       user.value = null
     } catch (e: any) {

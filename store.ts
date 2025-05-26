@@ -18,7 +18,7 @@ export const useTaskStore = defineStore('tasks', {
     searchQuery: '',
     statusFilter: 'all',
     priorityFilter: 'all',
-    isLoading: false
+    isLoading: true
   }),
 
   getters: {
@@ -71,18 +71,23 @@ export const useTaskStore = defineStore('tasks', {
   actions: {
     async loadTasks(userId = null) {
       const { $database } = useNuxtApp()
-      if (!userId) return
 
       try {
         this.isLoading = true
-        const userTasksRef = dbRef($database, `users/${userId}/tasks`)
-        const snapshot = await get(userTasksRef)
 
-        if (snapshot.exists()) {
-          const tasksData = snapshot.val()
-          this.tasks = Object.values(tasksData) as Task[]
+        if (userId) {
+          const userTasksRef = dbRef($database, `users/${userId}/tasks`)
+          const snapshot = await get(userTasksRef)
+
+          if (snapshot.exists()) {
+            const tasksData = snapshot.val()
+            this.tasks = Object.values(tasksData) as Task[]
+          } else {
+            this.tasks = []
+          }
         } else {
-          this.tasks = []
+          const localTasks = localStorage.getItem('localTasks')
+          this.tasks = localTasks ? JSON.parse(localTasks) : []
         }
       } catch (error) {
         console.error('Error loading tasks:', error)
@@ -100,6 +105,7 @@ export const useTaskStore = defineStore('tasks', {
 
       if (!userId) {
         this.tasks.push(task)
+        localStorage.setItem('localTasks', JSON.stringify(this.tasks))
         toast.message('Task added successfully', {
           style: { background: '#6ee7b7' },
           duration: 3000
@@ -143,7 +149,6 @@ export const useTaskStore = defineStore('tasks', {
         if (userId) {
           try {
             const taskRef = dbRef($database, `users/${userId}/tasks/${id}`)
-
             await update(taskRef, updatedTask)
           } catch (error) {
             console.error('Error updating task:', error)
@@ -153,6 +158,8 @@ export const useTaskStore = defineStore('tasks', {
             })
             return
           }
+        } else {
+          localStorage.setItem('localTasks', JSON.stringify(this.tasks))
         }
 
         toast.message('Task updated successfully', {
@@ -173,7 +180,6 @@ export const useTaskStore = defineStore('tasks', {
         if (userId) {
           try {
             const taskRef = dbRef($database, `users/${userId}/tasks/${id}`)
-
             await remove(taskRef)
           } catch (error) {
             console.error('Error deleting task:', error)
@@ -183,6 +189,8 @@ export const useTaskStore = defineStore('tasks', {
             })
             return
           }
+        } else {
+          localStorage.setItem('localTasks', JSON.stringify(this.tasks))
         }
 
         toast.message('Task deleted successfully', {
@@ -203,7 +211,6 @@ export const useTaskStore = defineStore('tasks', {
           try {
             const { $database } = useNuxtApp()
             const taskRef = dbRef($database, `users/${userId}/tasks/${id}`)
-
             await update(taskRef, { status })
           } catch (error) {
             console.error('Error updating task status:', error)
@@ -213,6 +220,8 @@ export const useTaskStore = defineStore('tasks', {
             })
             return
           }
+        } else {
+          localStorage.setItem('localTasks', JSON.stringify(this.tasks))
         }
 
         toast.message(`Task changed to ${status}`, {
