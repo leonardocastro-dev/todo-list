@@ -12,7 +12,6 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
-import { useTaskStore, type Task } from '@/store'
 
 type Priority = 'normal' | 'important' | 'urgent'
 
@@ -67,6 +66,7 @@ const handleSubmit = () => {
     taskStore.addTask(
       {
         id: crypto.randomUUID(),
+        projectId: taskStore.currentProjectId || '',
         title: title.value,
         description: description.value,
         priority: priority.value,
@@ -117,7 +117,7 @@ const handleClose = () => {
             :class="titleError ? 'border-red-700' : ''"
             @update:model-value="
               (val) => {
-                if (val.trim()) titleError = ''
+                if (String(val).trim()) titleError = ''
               }
             "
           />
@@ -137,9 +137,10 @@ const handleClose = () => {
         </div>
 
         <div class="space-y-2">
-          <Label class="font-medium">Priority</Label>
+          <Label for="priority" class="font-medium">Priority</Label>
           <RadioGroup
             v-model="priority"
+            id="priority"
             class="flex flex-col sm:flex-row space-x-4"
           >
             <div class="flex items-center space-x-2">

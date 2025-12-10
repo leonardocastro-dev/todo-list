@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useTaskStore } from '@/store'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select,
@@ -23,7 +22,7 @@ const taskStore = useTaskStore()
         type="text"
         placeholder="Search tasks..."
         :model-value="taskStore.searchQuery"
-        @update:model-value="taskStore.setSearchQuery"
+        @update:model-value="(val) => taskStore.setSearchQuery(String(val || ''))"
         class="w-full"
       />
     </div>
@@ -35,7 +34,7 @@ const taskStore = useTaskStore()
         >
         <Tabs
           :model-value="taskStore.statusFilter"
-          @update:model-value="taskStore.setStatusFilter"
+          @update:model-value="(val) => taskStore.setStatusFilter(String(val || 'all'))"
           class="w-full"
         >
           <TabsList class="grid grid-cols-3 w-full">
@@ -52,7 +51,7 @@ const taskStore = useTaskStore()
         >
         <Select
           :model-value="taskStore.priorityFilter"
-          @update:model-value="taskStore.setPriorityFilter"
+          @update:model-value="(val) => taskStore.setPriorityFilter(String(val || 'all'))"
         >
           <SelectTrigger id="priority-filter">
             <SelectValue placeholder="All Priorities" />

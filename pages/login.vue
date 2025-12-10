@@ -21,7 +21,7 @@ import { toTypedSchema } from '@vee-validate/zod'
 import * as z from 'zod'
 import { useAuth } from '@/composables/useAuth'
 
-const { login, loading, error } = useAuth()
+const { login, loading } = useAuth()
 
 const loginSchema = toTypedSchema(
   z.object({

@@ -12,8 +12,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Check, Flag, ArrowRight, Star, StarHalf } from 'lucide-vue-next'
 import TaskForm from './TaskForm.vue'
-import { useTaskStore } from '@/store'
-import type { Task } from '@/store'
 import { useAuth } from '@/composables/useAuth'
 
 const props = defineProps<{
@@ -56,7 +54,7 @@ const formatDate = (date: Date) => {
             :model-value="task.status === 'completed'"
             @update:model-value="
               (checked) =>
-                taskStore.toggleTaskStatus(task.id, checked, user?.uid)
+                taskStore.toggleTaskStatus(task.id, !!checked, user?.uid)
             "
             :id="`task-${task.id}`"
             class="mt-1"

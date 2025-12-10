@@ -8,13 +8,23 @@ import type { User } from 'firebase/auth'
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { ref as dbRef, set } from 'firebase/database'
-import { useTaskStore } from '~/store'
+
+const user = ref<User | null>(null)
+const loading = ref(true)
+const error = ref<string | null>(null)
+let authInitialized = false
 
 export const useAuth = () => {
   const { $auth, $database } = useNuxtApp()
-  const user = ref<User | null>(null)
-  const loading = ref(false)
-  const error = ref<string | null>(null)
+
+  if (!authInitialized) {
+    authInitialized = true
+
+    $auth.onAuthStateChanged((newUser) => {
+      user.value = newUser
+      loading.value = false
+    })
+  }
 
   const login = async (email: string, password: string) => {
     try {
@@ -24,15 +34,18 @@ export const useAuth = () => {
       user.value = result.user
 
       const tasksStore = useTaskStore()
+      const projectStore = useProjectStore()
       tasksStore.$reset()
-      localStorage.removeItem('localTasks')
+      projectStore.$reset()
+      localStorage.removeItem('localProjects')
 
-      navigateTo('/')
+      navigateTo('/dashboard/projects')
       toast.success('Login successful', {
         style: { background: '#6ee7b7' },
         duration: 3000
       })
     } catch (e: any) {
+      loading.value = false // ← Só em caso de erro
       if (e.code === 'auth/invalid-credential') {
         toast.error('Invalid email or password', {
           style: { background: '#fda4af' },
@@ -48,8 +61,6 @@ export const useAuth = () => {
         )
         console.error('Error logging in:', e)
       }
-    } finally {
-      loading.value = false
     }
   }
 
@@ -76,15 +87,19 @@ export const useAuth = () => {
       user.value = createdUser
 
       const tasksStore = useTaskStore()
+      const projectStore = useProjectStore()
       tasksStore.$reset()
-      localStorage.removeItem('localTasks')
+      projectStore.$reset()
+      localStorage.removeItem('localProjects')
 
-      navigateTo('/')
+      navigateTo('/dashboard/projects')
       toast.success('Registration successful!', {
         style: { background: '#6ee7b7' },
         duration: 3000
       })
     } catch (e: any) {
+      loading.value = false
+
       if (e instanceof Error && $auth.currentUser) {
         try {
           await deleteUser($auth.currentUser)
@@ -109,8 +124,6 @@ export const useAuth = () => {
         )
         console.error('Error registering:', e)
       }
-    } finally {
-      loading.value = false
     }
   }
 
@@ -120,20 +133,20 @@ export const useAuth = () => {
       error.value = null
 
       const tasksStore = useTaskStore()
+      const projectStore = useProjectStore()
       tasksStore.$reset()
+      projectStore.$reset()
 
       await signOut($auth)
       user.value = null
+
+      navigateTo('/')
     } catch (e: any) {
-      error.value = e.message
-    } finally {
       loading.value = false
+
+      error.value = e.message
     }
   }
-
-  $auth.onAuthStateChanged((newUser) => {
-    user.value = newUser
-  })
 
   return {
     user,

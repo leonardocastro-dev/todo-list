@@ -3,8 +3,10 @@ import { Toaster } from '@/components/ui/sonner'
 </script>
 
 <template>
-  <ClientOnly>
-    <Toaster />
-  </ClientOnly>
-  <NuxtPage />
+  <NuxtLayout>
+    <ClientOnly>
+      <Toaster />
+    </ClientOnly>
+    <NuxtPage />
+  </NuxtLayout>
 </template>
