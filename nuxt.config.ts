@@ -10,6 +10,9 @@ export default defineNuxtConfig({
     '/:workspace/**': { ssr: false }
   },
   compatibilityDate: '2025-05-15',
+  build: {
+    transpile: ['emoji-mart-vue-fast']
+  },
   devtools: { enabled: true },
   modules: [
     '@nuxt/eslint',
