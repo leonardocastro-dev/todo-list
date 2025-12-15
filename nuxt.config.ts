@@ -10,6 +10,9 @@ export default defineNuxtConfig({
     '/:workspace/**': { ssr: false }
   },
   compatibilityDate: '2025-05-15',
+  build: {
+    transpile: ['emoji-mart-vue-fast']
+  },
   devtools: { enabled: true },
   modules: [
     '@nuxt/eslint',
@@ -31,7 +34,10 @@ export default defineNuxtConfig({
   },
   css: ['~/assets/css/main.css'],
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    optimizeDeps: {
+      include: ['emoji-mart-vue-fast']
+    }
   },
   runtimeConfig: {
     resendApiKey: process.env.NUXT_RESEND_API_KEY,
