@@ -15,10 +15,8 @@ import { Badge } from '@/components/ui/badge'
 import { X, Smile } from 'lucide-vue-next'
 import data from 'emoji-mart-vue-fast/data/all.json'
 import 'emoji-mart-vue-fast/css/emoji-mart.css'
-// @ts-ignore
 import { Picker, EmojiIndex } from 'emoji-mart-vue-fast/src'
 
-// @ts-ignore
 const emojiIndex = new EmojiIndex(data)
 
 const props = defineProps<{
