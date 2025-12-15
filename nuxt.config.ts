@@ -3,10 +3,11 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineNuxtConfig({
   routeRules: {
-    '/dashboard': { redirect: '/dashboard/projects' },
-    '/dashboard/**': {
-      ssr: false
-    }
+    // Workspaces lista
+    '/workspaces': { ssr: false },
+
+    // Workspaces dinâmicos ex: /slug-123 , /marketing-88
+    '/:workspace/**': { ssr: false }
   },
   compatibilityDate: '2025-05-15',
   devtools: { enabled: true },
@@ -33,6 +34,7 @@ export default defineNuxtConfig({
     plugins: [tailwindcss()]
   },
   runtimeConfig: {
+    resendApiKey: process.env.NUXT_RESEND_API_KEY,
     public: {
       firebaseApiKey: process.env.NUXT_FIREBASE_API_KEY,
       firebaseAuthDomain: process.env.NUXT_FIREBASE_AUTH_DOMAIN,

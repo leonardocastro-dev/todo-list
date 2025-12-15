@@ -1,6 +1,13 @@
 import { defineStore } from 'pinia'
 import { toast } from 'vue-sonner'
-import { ref as dbRef, set, get, update, remove } from 'firebase/database'
+import {
+  collection,
+  doc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc
+} from 'firebase/firestore'
 import { useProjectStore } from './projects'
 
 export const useTaskStore = defineStore('tasks', {
@@ -61,7 +68,7 @@ export const useTaskStore = defineStore('tasks', {
   },
 
   actions: {
-    async setCurrentProject(projectId: string | null, userId: string | null = null) {
+    async setCurrentProject(projectId: string | null, userId: string | null = null, workspaceId?: string) {
       this.currentProjectId = projectId
 
       if (!projectId) {
@@ -69,23 +76,28 @@ export const useTaskStore = defineStore('tasks', {
         return
       }
 
-      await this.loadTasks(projectId, userId)
+      await this.loadTasks(projectId, userId, workspaceId)
     },
 
-    async loadTasks(projectId: string, userId: string | null = null) {
-      const { $database } = useNuxtApp()
+    async loadTasks(projectId: string, userId: string | null = null, workspaceId?: string) {
+      await this.loadTasksForProject(projectId, userId, workspaceId)
+    },
+
+    async loadTasksForProject(projectId: string, userId: string | null = null, workspaceId?: string) {
+      const { $firestore } = useNuxtApp()
 
       try {
         this.isLoading = true
 
-        if (userId) {
-          // Carrega tasks do Firebase direto do path do projeto
-          const tasksRef = dbRef($database, `users/${userId}/tasks/${projectId}`)
-          const snapshot = await get(tasksRef)
+        if (userId && workspaceId) {
+          const tasksRef = collection($firestore, 'workspaces', workspaceId, 'projects', projectId, 'tasks')
+          const snapshot = await getDocs(tasksRef)
 
-          if (snapshot.exists()) {
-            const tasksData = snapshot.val()
-            this.tasks = Object.values(tasksData) as Task[]
+          if (!snapshot.empty) {
+            this.tasks = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as Task[]
           } else {
             this.tasks = []
           }
@@ -105,66 +117,66 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
 
-    async addTask(task: Task, userId: string | null = null) {
-      const { $database } = useNuxtApp()
+    async addTask(
+      task: Omit<Task, 'id' | 'projectId' | 'createdAt'>,
+      userId: string | null = null,
+      workspaceId?: string
+    ) {
+      const { $firestore } = useNuxtApp()
 
       if (!this.currentProjectId) {
-        toast.error('No project selected', {
-          style: { background: '#fda4af' },
-          duration: 3000
-        })
+        toast.error('No project selected')
         return
       }
 
-      const timestamp = Date.now()
-      const taskWithData = {
+      if (!userId || !workspaceId) {
+        toast.error('Invalid workspace context')
+        return
+      }
+
+      const taskId = crypto.randomUUID()
+      const now = new Date().toISOString()
+
+      const taskWithData: Task = {
         ...task,
-        id: String(timestamp),
+        id: taskId,
         projectId: this.currentProjectId,
-        createdAt: task.createdAt || new Date().toISOString()
+        createdAt: now
       }
 
-      this.tasks.push(taskWithData)
-
-      if (userId) {
-        try {
-          // Salva no path: users/{userId}/tasks/{projectId}/{taskId}
-          const taskRef = dbRef(
-            $database,
-            `users/${userId}/tasks/${this.currentProjectId}/${timestamp}`
-          )
-          await set(taskRef, JSON.parse(JSON.stringify(taskWithData)))
-
-          // Atualiza o timestamp do projeto
-          const projectStore = useProjectStore()
-          await projectStore.updateProject(
-            this.currentProjectId,
-            { updatedAt: new Date().toISOString() },
-            userId
-          )
-        } catch (error) {
-          console.error('Error adding task:', error)
-          toast.error('Failed to add task', {
-            style: { background: '#fda4af' },
-            duration: 3000
-          })
-          return
-        }
-      } else {
-        localStorage.setItem(
-          `localTasks_${this.currentProjectId}`,
-          JSON.stringify(this.tasks)
+      try {
+        const taskRef = doc(
+          $firestore,
+          'workspaces',
+          workspaceId,
+          'projects',
+          this.currentProjectId,
+          'tasks',
+          taskId
         )
-      }
 
-      toast.message('Task added successfully', {
-        style: { background: '#6ee7b7' },
-        duration: 3000
-      })
+        await setDoc(taskRef, taskWithData)
+
+        this.tasks.push(taskWithData)
+
+        const projectStore = useProjectStore()
+        await projectStore.updateProject(
+          this.currentProjectId,
+          { updatedAt: now },
+          userId
+        )
+
+        toast.message('Task added successfully', {
+          style: { background: '#6ee7b7' }
+        })
+      } catch (error) {
+        console.error('Error adding task:', error)
+        toast.error('Failed to add task')
+      }
     },
 
     async updateTask(id: string, updatedTask: Partial<Task>, userId: string | null = null) {
-      const { $database } = useNuxtApp()
+      const { $firestore } = useNuxtApp()
 
       if (!this.currentProjectId) return
 
@@ -175,15 +187,17 @@ export const useTaskStore = defineStore('tasks', {
 
       if (userId) {
         try {
-          // Atualiza no Firebase
-          const taskRef = dbRef(
-            $database,
-            `users/${userId}/tasks/${this.currentProjectId}/${id}`
-          )
-          await update(taskRef, JSON.parse(JSON.stringify(updatedTask)))
+          // Find workspaceId from project
+          const projectStore = useProjectStore()
+          const project = projectStore.projects.find(p => p.id === this.currentProjectId)
+          const workspaceId = project?.workspaceId
+
+          if (!workspaceId) return
+
+          const taskRef = doc($firestore, 'workspaces', workspaceId, 'projects', this.currentProjectId, 'tasks', id)
+          await updateDoc(taskRef, JSON.parse(JSON.stringify(updatedTask)))
 
           // Atualiza timestamp do projeto
-          const projectStore = useProjectStore()
           await projectStore.updateProject(
             this.currentProjectId,
             { updatedAt: new Date().toISOString() },
@@ -206,7 +220,7 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     async deleteTask(id: string, userId: string | null = null) {
-      const { $database } = useNuxtApp()
+      const { $firestore } = useNuxtApp()
 
       if (!this.currentProjectId) return
 
@@ -214,15 +228,17 @@ export const useTaskStore = defineStore('tasks', {
 
       if (userId) {
         try {
-          // Remove do Firebase
-          const taskRef = dbRef(
-            $database,
-            `users/${userId}/tasks/${this.currentProjectId}/${id}`
-          )
-          await remove(taskRef)
+          // Find workspaceId from project
+          const projectStore = useProjectStore()
+          const project = projectStore.projects.find(p => p.id === this.currentProjectId)
+          const workspaceId = project?.workspaceId
+
+          if (!workspaceId) return
+
+          const taskRef = doc($firestore, 'workspaces', workspaceId, 'projects', this.currentProjectId, 'tasks', id)
+          await deleteDoc(taskRef)
 
           // Atualiza timestamp do projeto
-          const projectStore = useProjectStore()
           await projectStore.updateProject(
             this.currentProjectId,
             { updatedAt: new Date().toISOString() },

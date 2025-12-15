@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getDatabase } from 'firebase/database'
+import { getFirestore } from 'firebase/firestore'
 
 export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig()
@@ -12,19 +12,18 @@ export default defineNuxtPlugin(() => {
     storageBucket: config.public.firebaseStorageBucket,
     messagingSenderId: config.public.firebaseMessagingSenderId,
     appId: config.public.firebaseAppId,
-    measurementId: config.public.firebaseMeasurementId,
-    databaseURL: config.public.firebaseDatabaseURL
+    measurementId: config.public.firebaseMeasurementId
   }
 
   const app = initializeApp(firebaseConfig)
   const auth = getAuth(app)
-  const database = getDatabase(app)
+  const firestore = getFirestore(app)
 
   return {
     provide: {
       firebase: app,
       auth: auth,
-      database: database
+      firestore: firestore
     }
   }
 })

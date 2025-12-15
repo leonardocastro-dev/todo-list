@@ -24,7 +24,8 @@ const emojiIndex = new EmojiIndex(data)
 const props = defineProps<{
   isOpen: boolean
   editProject?: Project
-  userId?: string
+  userId?: string | null
+  workspaceId?: string
 }>()
 
 const emit = defineEmits<{
@@ -106,9 +107,11 @@ const handleSubmit = () => {
         emoji: emoji.value || undefined,
         createdAt: now,
         updatedAt: now,
-        members: []
+        members: [],
+        workspaceId: props.workspaceId
       },
-      props.userId
+      props.userId,
+      props.workspaceId
     )
   }
 

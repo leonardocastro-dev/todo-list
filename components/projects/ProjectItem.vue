@@ -28,6 +28,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const route = useRoute()
 const projectStore = useProjectStore()
 const { user } = useAuth()
 const isEditing = ref(false)
@@ -51,7 +52,8 @@ const handleInvite = async () => {
 }
 
 const goToProject = () => {
-  router.push(`/dashboard/projects/${props.project.id}`)
+  const workspaceId = route.params.workspace as string
+  router.push(`/${workspaceId}/projects/${props.project.id}`)
 }
 
 </script>

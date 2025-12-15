@@ -53,7 +53,7 @@ const navLinks = [
               Register
             </Button>
           </NuxtLink>
-          <NuxtLink to="/dashboard">
+          <NuxtLink to="/workspaces">
             <Button
               variant="outline"
               size="sm"
@@ -103,7 +103,7 @@ const navLinks = [
                 Register
               </Button>
             </NuxtLink>
-            <NuxtLink to="/dashboard" class="flex-1">
+            <NuxtLink to="/workspaces" class="flex-1">
               <Button
                 variant="ghost"
                 size="sm"

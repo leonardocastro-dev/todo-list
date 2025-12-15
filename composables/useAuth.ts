@@ -7,7 +7,7 @@ import {
 import type { User } from 'firebase/auth'
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
-import { ref as dbRef, set } from 'firebase/database'
+import { doc, setDoc } from 'firebase/firestore'
 
 const user = ref<User | null>(null)
 const loading = ref(true)
@@ -15,7 +15,7 @@ const error = ref<string | null>(null)
 let authInitialized = false
 
 export const useAuth = () => {
-  const { $auth, $database } = useNuxtApp()
+  const { $auth, $firestore } = useNuxtApp()
 
   if (!authInitialized) {
     authInitialized = true
@@ -35,11 +35,13 @@ export const useAuth = () => {
 
       const tasksStore = useTaskStore()
       const projectStore = useProjectStore()
+      const workspaceStore = useWorkspaceStore()
       tasksStore.$reset()
       projectStore.$reset()
+      workspaceStore.clearLocalData()
       localStorage.removeItem('localProjects')
 
-      navigateTo('/dashboard/projects')
+      navigateTo('/workspaces')
       toast.success('Login successful', {
         style: { background: '#6ee7b7' },
         duration: 3000
@@ -64,7 +66,7 @@ export const useAuth = () => {
     }
   }
 
-  const register = async (email: string, password: string) => {
+  const register = async (name: string, email: string, password: string) => {
     try {
       loading.value = true
       error.value = null
@@ -77,12 +79,13 @@ export const useAuth = () => {
       const createdUser = result.user
 
       const userData = {
+        name: name,
         email: email,
         createdAt: new Date().toISOString()
       }
 
-      const userRef = dbRef($database, `users/${createdUser.uid}`)
-      await set(userRef, userData)
+      const userRef = doc($firestore, `users/${createdUser.uid}`)
+      await setDoc(userRef, userData)
 
       user.value = createdUser
 
@@ -92,7 +95,7 @@ export const useAuth = () => {
       projectStore.$reset()
       localStorage.removeItem('localProjects')
 
-      navigateTo('/dashboard/projects')
+      navigateTo('/workspaces')
       toast.success('Registration successful!', {
         style: { background: '#6ee7b7' },
         duration: 3000

@@ -19,6 +19,7 @@ const props = defineProps<{
   isOpen: boolean
   editTask?: Task
   userId?: string
+  workspaceId?: string
 }>()
 
 const emit = defineEmits<{
@@ -65,15 +66,13 @@ const handleSubmit = () => {
   } else {
     taskStore.addTask(
       {
-        id: crypto.randomUUID(),
-        projectId: taskStore.currentProjectId || '',
         title: title.value,
         description: description.value,
         priority: priority.value,
-        status: 'pending',
-        createdAt: new Date().toISOString()
+        status: 'pending'
       },
-      props.userId
+      props.userId,
+      props.workspaceId
     )
   }
 

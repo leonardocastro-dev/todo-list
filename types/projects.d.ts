@@ -5,6 +5,7 @@ declare interface Project {
   tags: string[]
   emoji?: string
   members?: string[]
+  workspaceId?: string
   createdAt: string
   updatedAt: string
 }

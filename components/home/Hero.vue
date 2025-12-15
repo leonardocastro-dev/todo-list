@@ -69,9 +69,9 @@ import { ArrowRight } from 'lucide-vue-next'
             class="relative rounded-2xl overflow-hidden shadow-lg hover:shadow-glow transition-all duration-500"
           >
             <img
-              src=""
+              src="@/images/gato.png"
               alt="Fokuz Dashboard"
-              class="w-full h-auto"
+              class="w-40"
             />
             <div
               class="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent"

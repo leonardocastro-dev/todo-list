@@ -20,8 +20,15 @@ import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import * as z from 'zod'
 import { useAuth } from '@/composables/useAuth'
+import { watch } from 'vue'
 
-const { login, loading } = useAuth()
+const { user, login, loading } = useAuth()
+
+watch(() => user.value, (newUser) => {
+  if (newUser && !loading.value) {
+    navigateTo('/workspaces')
+  }
+}, { immediate: true })
 
 const loginSchema = toTypedSchema(
   z.object({
@@ -97,7 +104,7 @@ const onSubmit = handleSubmit(async (data) => {
         </CardContent>
 
         <CardFooter class="flex justify-center">
-          <Button variant="link" @click="navigateTo('/')">
+          <Button variant="link" @click="navigateTo('/workspaces')">
             Continue as guest
           </Button>
         </CardFooter>

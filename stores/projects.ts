@@ -1,6 +1,13 @@
 import { defineStore } from 'pinia'
 import { toast } from 'vue-sonner'
-import { ref as dbRef, set, get, update, remove } from 'firebase/database'
+import {
+  collection,
+  doc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc
+} from 'firebase/firestore'
 
 export const useProjectStore = defineStore('projects', {
   state: () => ({
@@ -19,27 +26,39 @@ export const useProjectStore = defineStore('projects', {
 
   actions: {
     async loadProjects(userId: string | null = null) {
-      const { $database } = useNuxtApp()
+      if (!userId) {
+        const localProjects = localStorage.getItem('localProjects')
+        this.projects = localProjects ? JSON.parse(localProjects) : []
+        return
+      }
+
+      // Legacy support - now projects are in workspaces subcollections
+      this.projects = []
+    },
+
+    async loadProjectsForWorkspace(workspaceId: string, userId: string | null = null) {
+      const { $firestore } = useNuxtApp()
       try {
         this.isLoading = true
 
-        if (userId) {
-          const userProjectsRef = dbRef($database, `users/${userId}/projects`)
-          const snapshot = await get(userProjectsRef)
+        if (workspaceId) {
+          const projectsRef = collection($firestore, 'workspaces', workspaceId, 'projects')
+          const snapshot = await getDocs(projectsRef)
 
-          if (snapshot.exists()) {
-            const projectsData = snapshot.val()
-            this.projects = Object.values(projectsData) as Project[]
+          if (!snapshot.empty) {
+            this.projects = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as Project[]
           } else {
             this.projects = []
           }
         } else {
-          const localProjects = localStorage.getItem('localProjects')
-          this.projects = localProjects ? JSON.parse(localProjects) : []
+          this.projects = []
         }
       } catch (error) {
-        console.error('Error loading projects:', error)
-        toast.error('Failed to load projects', {
+        console.error('Error loading workspace projects:', error)
+        toast.error('Failed to load workspace projects', {
           style: { background: '#fda4af' },
           duration: 3000
         })
@@ -48,16 +67,18 @@ export const useProjectStore = defineStore('projects', {
       }
     },
 
-    async addProject(project: Project, userId: string | null = null) {
-      const { $database } = useNuxtApp()
+    async addProject(project: Project, userId: string | null = null, workspaceId?: string) {
+      const { $firestore } = useNuxtApp()
 
       const timestamp = Date.now()
+      const projectId = String(timestamp)
       const projectWithTimestamp = {
         ...project,
-        id: String(timestamp)
+        id: projectId,
+        workspaceId: workspaceId || undefined
       }
 
-      if (!userId) {
+      if (!userId || !workspaceId) {
         this.projects.push(projectWithTimestamp)
         localStorage.setItem('localProjects', JSON.stringify(this.projects))
         toast.message('Project added successfully', {
@@ -69,8 +90,10 @@ export const useProjectStore = defineStore('projects', {
 
       try {
         const cleanProject = JSON.parse(JSON.stringify(projectWithTimestamp)) as Project
-        const projectRef = dbRef($database, `users/${userId}/projects/${timestamp}`)
-        await set(projectRef, cleanProject)
+
+        // Save to workspace subcollection
+        const projectRef = doc($firestore, 'workspaces', workspaceId, 'projects', projectId)
+        await setDoc(projectRef, cleanProject)
 
         this.projects.push(projectWithTimestamp)
 
@@ -88,7 +111,7 @@ export const useProjectStore = defineStore('projects', {
     },
 
     async updateProject(id: string, updatedProject: Partial<Project>, userId: string | null = null) {
-      const { $database } = useNuxtApp()
+      const { $firestore } = useNuxtApp()
 
       const index = this.projects.findIndex((project) => project.id === id)
       if (index !== -1) {
@@ -100,13 +123,15 @@ export const useProjectStore = defineStore('projects', {
 
         if (userId) {
           try {
-            // Remove campos undefined antes de salvar no Firebase usando JSON.parse/stringify
+            const project = this.projects[index]
+            if (!project.workspaceId) return
+
             const cleanUpdate = JSON.parse(
               JSON.stringify({ ...updatedProject, updatedAt: new Date().toISOString() })
             )
 
-            const projectRef = dbRef($database, `users/${userId}/projects/${id}`)
-            await update(projectRef, cleanUpdate)
+            const projectRef = doc($firestore, 'workspaces', project.workspaceId, 'projects', id)
+            await updateDoc(projectRef, cleanUpdate)
           } catch (error) {
             console.error('Error updating project:', error)
             toast.error('Failed to update project on server', {
@@ -122,22 +147,27 @@ export const useProjectStore = defineStore('projects', {
     },
 
     async deleteProject(id: string, userId: string | null = null) {
-      const { $database } = useNuxtApp()
+      const { $firestore } = useNuxtApp()
 
       const projectToDelete = this.projects.find((project) => project.id === id)
 
       if (projectToDelete) {
         this.projects = this.projects.filter((project) => project.id !== id)
 
-        if (userId) {
+        if (userId && projectToDelete.workspaceId) {
           try {
-            // Remove o projeto
-            const projectRef = dbRef($database, `users/${userId}/projects/${id}`)
-            await remove(projectRef)
+            // Remove todas as tasks do projeto primeiro
+            const tasksRef = collection($firestore, 'workspaces', projectToDelete.workspaceId, 'projects', id, 'tasks')
+            const tasksSnapshot = await getDocs(tasksRef)
 
-            // Remove todas as tasks do projeto
-            const tasksRef = dbRef($database, `users/${userId}/tasks/${id}`)
-            await remove(tasksRef)
+            const deletePromises = tasksSnapshot.docs.map(taskDoc =>
+              deleteDoc(doc($firestore, 'workspaces', projectToDelete.workspaceId!, 'projects', id, 'tasks', taskDoc.id))
+            )
+            await Promise.all(deletePromises)
+
+            // Remove o projeto
+            const projectRef = doc($firestore, 'workspaces', projectToDelete.workspaceId, 'projects', id)
+            await deleteDoc(projectRef)
           } catch (error) {
             console.error('Error deleting project:', error)
             toast.error('Failed to delete project on server', {

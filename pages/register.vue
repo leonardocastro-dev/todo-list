@@ -20,12 +20,21 @@ import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import * as z from 'zod'
 import { useAuth } from '@/composables/useAuth'
+import { watch } from 'vue'
 
-const { register, loading } = useAuth()
+const { user, register, loading } = useAuth()
+
+// Redirect if already logged in
+watch(() => user.value, (newUser) => {
+  if (newUser && !loading.value) {
+    navigateTo('/workspaces')
+  }
+}, { immediate: true })
 
 const registerSchema = toTypedSchema(
   z
     .object({
+      name: z.string().min(1, 'Name is required').min(2, 'Name must be at least 2 characters').max(50, 'Name must not exceed 50 characters'),
       email: z.string().min(1, 'Email is required').email('Invalid email'),
       password: z.string().min(6, 'Password must be at least 6 characters'),
       confirmPassword: z.string().min(1, 'Confirm your password')
@@ -41,7 +50,7 @@ const { isFieldDirty, handleSubmit } = useForm({
 })
 
 const onSubmit = handleSubmit(async (data) => {
-  await register(data.email, data.password)
+  await register(data.name, data.email, data.password)
 })
 </script>
 
@@ -58,6 +67,25 @@ const onSubmit = handleSubmit(async (data) => {
 
         <CardContent>
           <form @submit="onSubmit" class="space-y-4">
+            <FormField
+              v-slot="{ componentField }"
+              name="name"
+              :validate-on-blur="!isFieldDirty"
+            >
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    type="text"
+                    placeholder="John Doe"
+                    :disabled="loading"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
             <FormField
               v-slot="{ componentField }"
               name="email"
@@ -132,7 +160,7 @@ const onSubmit = handleSubmit(async (data) => {
           >
             Login
           </Button>
-          <Button variant="link" @click="navigateTo('/')">
+          <Button variant="link" @click="navigateTo('/workspaces')">
             Continue as guest
           </Button>
         </CardFooter>
