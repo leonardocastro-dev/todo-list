@@ -63,28 +63,11 @@ import { ArrowRight } from 'lucide-vue-next'
             </div>
           </div>
         </div>
-
-        <div class="relative animate-fade-in-up lg:animate-slide-in-right">
-          <div
-            class="relative rounded-2xl overflow-hidden shadow-lg hover:shadow-glow transition-all duration-500"
-          >
-            <img
-              src="@/images/gato.png"
-              alt="Fokuz Dashboard"
-              class="w-40"
-            />
-            <div
-              class="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent"
-            ></div>
-          </div>
-
-          <div
-            class="absolute -top-4 -right-4 h-24 w-24 rounded-full bg-primary/20 blur-3xl animate-glow"
-          ></div>
-          <div
-            class="absolute -bottom-4 -left-4 h-32 w-32 rounded-full bg-accent/20 blur-3xl animate-glow"
-          ></div>
-        </div>
+        <img
+          src="@/images/gato.png"
+          alt="Fokuz Dashboard"
+          class="w-40"
+        />
       </div>
     </div>
   </section>
