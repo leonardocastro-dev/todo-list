@@ -26,6 +26,19 @@ export const useAuth = () => {
     })
   }
 
+  const checkUsername = async (username: string): Promise<boolean> => {
+    try {
+      const response = await $fetch('/api/auth/check-username', {
+        method: 'POST',
+        body: { username }
+      })
+      return response.available
+    } catch (error) {
+      console.error('Error checking username:', error)
+      return false
+    }
+  }
+
   const login = async (email: string, password: string) => {
     try {
       loading.value = true
@@ -47,7 +60,7 @@ export const useAuth = () => {
         duration: 3000
       })
     } catch (e: any) {
-      loading.value = false // ← Só em caso de erro
+      loading.value = false
       if (e.code === 'auth/invalid-credential') {
         toast.error('Invalid email or password', {
           style: { background: '#fda4af' },
@@ -66,10 +79,20 @@ export const useAuth = () => {
     }
   }
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (username: string, email: string, password: string) => {
     try {
       loading.value = true
       error.value = null
+
+      const isUsernameAvailable = await checkUsername(username)
+      if (!isUsernameAvailable) {
+        toast.error('This username is already taken. Please choose a different one.', {
+          style: { background: '#fda4af' },
+          duration: 4000
+        })
+        loading.value = false
+        return
+      }
 
       const result = await createUserWithEmailAndPassword(
         $auth,
@@ -78,14 +101,20 @@ export const useAuth = () => {
       )
       const createdUser = result.user
 
-      const userData = {
-        name: name,
+      const publicData = {
+        username: username
+      }
+
+      const privateData = {
         email: email,
         createdAt: new Date().toISOString()
       }
 
-      const userRef = doc($firestore, `users/${createdUser.uid}`)
-      await setDoc(userRef, userData)
+      const publicRef = doc($firestore, `users/${createdUser.uid}`)
+      const privateRef = doc($firestore, `users_private/${createdUser.uid}`)
+
+      await setDoc(publicRef, publicData)
+      await setDoc(privateRef, privateData)
 
       user.value = createdUser
 
@@ -137,8 +166,11 @@ export const useAuth = () => {
 
       const tasksStore = useTaskStore()
       const projectStore = useProjectStore()
+      const workspaceStore = useWorkspaceStore()
+
       tasksStore.$reset()
       projectStore.$reset()
+      workspaceStore.clearLocalData()
 
       await signOut($auth)
       user.value = null
@@ -157,6 +189,7 @@ export const useAuth = () => {
     error,
     login,
     register,
-    logout
+    logout,
+    checkUsername
   }
 }

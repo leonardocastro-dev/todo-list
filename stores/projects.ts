@@ -37,10 +37,16 @@ export const useProjectStore = defineStore('projects', {
     },
 
     async loadProjectsForWorkspace(workspaceId: string, userId: string | null = null) {
-      const { $firestore } = useNuxtApp()
       try {
         this.isLoading = true
 
+        if (!userId) {
+          const localProjects = localStorage.getItem('localProjects')
+          this.projects = localProjects ? JSON.parse(localProjects) : []
+          return
+        }
+
+        const { $firestore } = useNuxtApp()
         if (workspaceId) {
           const projectsRef = collection($firestore, 'workspaces', workspaceId, 'projects')
           const snapshot = await getDocs(projectsRef)

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { LogOut } from "lucide-vue-next"
+import { LogOut, Lock } from "lucide-vue-next"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/composables/useAuth"
 
@@ -8,6 +8,7 @@ const { user, logout } = useAuth()
 const route = useRoute()
 
 const workspaceSlug = computed(() => route.params.workspace as string)
+const isGuest = computed(() => !user.value)
 </script>
 
 <template>
@@ -27,12 +28,21 @@ const workspaceSlug = computed(() => route.params.workspace as string)
         >
           Projects
         </NuxtLink>
+        <div
+          v-if="isGuest"
+          class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors text-muted-foreground/50 cursor-not-allowed opacity-60"
+          title="Members feature is only available for logged-in users"
+        >
+          <Lock class="h-4 w-4" />
+          <span>Members</span>
+        </div>
         <NuxtLink
+          v-else
           :to="`/${workspaceSlug}/members`"
-          class="flex items-center px-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
+          class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors text-muted-foreground hover:text-primary hover:bg-accent"
           active-class="!text-primary !bg-accent"
         >
-          Members
+          <span>Members</span>
         </NuxtLink>
 
         <div class="border-t my-2"></div>

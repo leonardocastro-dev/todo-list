@@ -26,7 +26,7 @@ const currentProject = computed(() => {
 })
 
 onMounted(async () => {
-  await projectStore.loadProjectsForWorkspace(workspaceId)
+  await projectStore.loadProjectsForWorkspace(workspaceId, user.value?.uid)
   taskStore.setCurrentProject(projectId, user.value?.uid, workspaceId)
 })
 </script>

@@ -34,7 +34,12 @@ watch(() => user.value, (newUser) => {
 const registerSchema = toTypedSchema(
   z
     .object({
-      name: z.string().min(1, 'Name is required').min(2, 'Name must be at least 2 characters').max(50, 'Name must not exceed 50 characters'),
+      username: z.string()
+        .min(1, 'Username is required')
+        .min(3, 'Username must be at least 3 characters')
+        .max(20, 'Username must not exceed 20 characters')
+        .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores')
+        .refine((val) => !val.includes(' '), 'Username cannot contain spaces'),
       email: z.string().min(1, 'Email is required').email('Invalid email'),
       password: z.string().min(6, 'Password must be at least 6 characters'),
       confirmPassword: z.string().min(1, 'Confirm your password')
@@ -50,7 +55,7 @@ const { isFieldDirty, handleSubmit } = useForm({
 })
 
 const onSubmit = handleSubmit(async (data) => {
-  await register(data.name, data.email, data.password)
+  await register(data.username, data.email, data.password)
 })
 </script>
 
@@ -69,16 +74,16 @@ const onSubmit = handleSubmit(async (data) => {
           <form @submit="onSubmit" class="space-y-4">
             <FormField
               v-slot="{ componentField }"
-              name="name"
+              name="username"
               :validate-on-blur="!isFieldDirty"
             >
               <FormItem>
-                <FormLabel>Name</FormLabel>
+                <FormLabel>Username</FormLabel>
                 <FormControl>
                   <Input
                     v-bind="componentField"
                     type="text"
-                    placeholder="John Doe"
+                    placeholder="johndoe123"
                     :disabled="loading"
                   />
                 </FormControl>

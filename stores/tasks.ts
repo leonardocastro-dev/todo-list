@@ -122,15 +122,8 @@ export const useTaskStore = defineStore('tasks', {
       userId: string | null = null,
       workspaceId?: string
     ) {
-      const { $firestore } = useNuxtApp()
-
       if (!this.currentProjectId) {
         toast.error('No project selected')
-        return
-      }
-
-      if (!userId || !workspaceId) {
-        toast.error('Invalid workspace context')
         return
       }
 
@@ -144,7 +137,20 @@ export const useTaskStore = defineStore('tasks', {
         createdAt: now
       }
 
+      if (!userId || !workspaceId) {
+        this.tasks.push(taskWithData)
+        localStorage.setItem(
+          `localTasks_${this.currentProjectId}`,
+          JSON.stringify(this.tasks)
+        )
+        toast.message('Task added successfully', {
+          style: { background: '#6ee7b7' }
+        })
+        return
+      }
+
       try {
+        const { $firestore } = useNuxtApp()
         const taskRef = doc(
           $firestore,
           'workspaces',

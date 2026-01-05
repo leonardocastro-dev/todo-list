@@ -7,10 +7,12 @@ import WorkspaceForm from '@/components/workspaces/WorkspaceForm.vue'
 import WorkspaceItem from '@/components/workspaces/WorkspaceItem.vue'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
+import { LogOut } from 'lucide-vue-next'
 
-const { user, loading } = useAuth()
+const { user, loading, logout } = useAuth()
 const workspaceStore = useWorkspaceStore()
 const isCreatingWorkspace = ref(false)
+const router = useRouter()
 
 watch(
   () => user.value,
@@ -35,9 +37,43 @@ onMounted(async () => {
   </div>
 
   <div v-else class="min-h-screen p-8">
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-foreground">Workspaces</h1>
-      <p class="text-muted-foreground mt-2">Manage your workspaces and organize your projects</p>
+    <div class="mb-8 flex justify-between items-start">
+      <div>
+        <h1 class="text-3xl font-bold text-primary mb-2">Workspaces</h1>
+        <p class="text-muted-foreground mt-2">Manage your workspaces and organize your projects</p>
+      </div>
+
+      <div v-if="user" class="flex items-center gap-3">
+        <div class="text-right">
+          <p class="text-sm text-muted-foreground">{{ user.email }}</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          @click="logout"
+          class="flex items-center gap-2"
+        >
+          <LogOut class="h-4 w-4" />
+          <span>Logout</span>
+        </Button>
+      </div>
+
+      <div v-else class="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          @click="router.push('/login')"
+        >
+          Login
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          @click="router.push('/register')"
+        >
+          Register
+        </Button>
+      </div>
     </div>
 
     <div v-if="workspaceStore.isLoading" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">

@@ -34,12 +34,12 @@ const deleteWorkspace = async () => {
 </script>
 
 <template>
-  <Card class="bg-card border rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer" @click="goToWorkspace">
-    <CardContent>
-      <div class="flex items-start justify-between mb-4">
+  <Card class="bg-card border rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer min-h-[250px] flex flex-col" @click="goToWorkspace">
+    <CardContent class="flex-1 flex flex-col">
+      <div class="flex items-start justify-between mb-4 flex-1">
         <div class="flex-1">
           <h3 class="text-lg font-semibold text-foreground mb-1">{{ workspace.name }}</h3>
-          <p class="text-sm text-muted-foreground">{{ workspace.description }}</p>
+          <p class="text-sm text-muted-foreground line-clamp-3">{{ workspace.description }}</p>
         </div>
 
         <DropdownMenu>
@@ -60,7 +60,7 @@ const deleteWorkspace = async () => {
         </DropdownMenu>
       </div>
 
-      <div class="flex items-center justify-between text-sm text-muted-foreground">
+      <div class="flex items-center justify-between text-sm text-muted-foreground mt-auto">
         <span>{{ workspace.members.length }} members</span>
         <span>{{ new Date(workspace.createdAt).toLocaleDateString() }}</span>
       </div>

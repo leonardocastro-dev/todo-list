@@ -105,7 +105,7 @@ export default defineEventHandler(async (event) => {
                       <tr>
                         <td>
                           <div style="display: flex; align-items: center;">
-                            <div style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #a542d7, #cf67e4); margin-right: 8px;">
+                            <div style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #a542d7, #cf67e4); margin-right: 8px;">
                               <span style="font-size: 20px; font-weight: 700; color: #ffffff; font-family: 'Inter', sans-serif;">FK</span>
                             </div>
                             <span style="font-size: 20px; font-weight: 700; color: #0f172a; font-family: 'Inter', sans-serif;">Fokuz</span>

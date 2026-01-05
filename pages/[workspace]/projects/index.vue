@@ -22,7 +22,7 @@ const workspaceId = computed(() => {
 })
 
 onMounted(async () => {
-  await projectStore.loadProjectsForWorkspace(workspaceId.value)
+  await projectStore.loadProjectsForWorkspace(workspaceId.value, user.value?.uid)
 })
 </script>
 
