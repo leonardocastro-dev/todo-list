@@ -50,7 +50,7 @@ onMounted(async () => {
         <Button
           variant="outline"
           size="sm"
-          @click="router.push('/configs')"
+          @click="router.push('/settings')"
           class="flex items-center gap-2"
         >
           <Settings class="h-4 w-4" />

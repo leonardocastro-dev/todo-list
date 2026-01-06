@@ -53,6 +53,22 @@ const isGuest = computed(() => !user.value)
         >
           Workspaces
         </NuxtLink>
+        <div
+          v-if="isGuest"
+          class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors text-muted-foreground/50 cursor-not-allowed opacity-60"
+          title="Members feature is only available for logged-in users"
+        >
+          <Lock class="h-4 w-4" />
+          <span>Settings</span>
+        </div>
+        <NuxtLink
+          v-else
+          :to="`/settings`"
+          class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors text-muted-foreground hover:text-primary hover:bg-accent"
+          active-class="!text-primary !bg-accent"
+        >
+          <span>Settings</span>
+        </NuxtLink>
       </nav>
 
       <div class="p-4 border-t">
