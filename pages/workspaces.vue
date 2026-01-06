@@ -7,7 +7,7 @@ import WorkspaceForm from '@/components/workspaces/WorkspaceForm.vue'
 import WorkspaceItem from '@/components/workspaces/WorkspaceItem.vue'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { LogOut } from 'lucide-vue-next'
+import { LogOut, Settings } from 'lucide-vue-next'
 
 const { user, loading, logout } = useAuth()
 const workspaceStore = useWorkspaceStore()
@@ -47,6 +47,15 @@ onMounted(async () => {
         <div class="text-right">
           <p class="text-sm text-muted-foreground">{{ user.email }}</p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          @click="router.push('/configs')"
+          class="flex items-center gap-2"
+        >
+          <Settings class="h-4 w-4" />
+          <span>Settings</span>
+        </Button>
         <Button
           variant="outline"
           size="sm"
