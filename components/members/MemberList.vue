@@ -26,6 +26,7 @@ const props = defineProps<{
 
 const { user } = useAuth()
 const isInviting = ref(false)
+const isSending = ref(false)
 const memberEmail = ref('')
 
 const handleInvite = async () => {
@@ -46,6 +47,7 @@ const handleInvite = async () => {
   }
 
   try {
+    isSending.value = true
     const idToken = await user.value.getIdToken()
 
     await $fetch('/api/invite/send', {
@@ -73,6 +75,8 @@ const handleInvite = async () => {
       style: { background: '#fda4af' },
       duration: 3000
     })
+  } finally {
+    isSending.value = false
   }
 }
 
@@ -127,7 +131,7 @@ const emit = defineEmits<{
 
   <!-- Invite Member Dialog -->
   <Dialog v-model:open="isInviting">
-    <DialogContent>
+    <DialogContent :can-close="!isSending" @interact-outside="(e) => { if (isSending) e.preventDefault() }">
       <DialogHeader>
         <DialogTitle>Invite Member</DialogTitle>
         <DialogDescription>
@@ -143,16 +147,17 @@ const emit = defineEmits<{
             v-model="memberEmail"
             type="email"
             placeholder="colleague@example.com"
+            :disabled="isSending"
           />
         </div>
       </div>
 
       <DialogFooter>
-        <Button variant="outline" @click="isInviting = false">
+        <Button variant="outline" @click="isInviting = false" :disabled="isSending">
           Cancel
         </Button>
-        <Button @click="handleInvite">
-          Send Invitation
+        <Button @click="handleInvite" :disabled="isSending">
+          {{ isSending ? 'Sending...' : 'Send Invitation' }}
         </Button>
       </DialogFooter>
     </DialogContent>

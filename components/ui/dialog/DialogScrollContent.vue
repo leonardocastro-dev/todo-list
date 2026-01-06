@@ -12,13 +12,15 @@ import {
 } from 'reka-ui'
 import { computed, type HTMLAttributes } from 'vue'
 
-const props = defineProps<
-  DialogContentProps & { class?: HTMLAttributes['class'] }
->()
+const props = withDefaults(defineProps<
+  DialogContentProps & { class?: HTMLAttributes['class'], canClose?: boolean }
+>(), {
+  canClose: true
+})
 const emits = defineEmits<DialogContentEmits>()
 
 const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props
+  const { class: _, canClose: __, ...delegated } = props
 
   return delegated
 })
@@ -55,7 +57,12 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
         <slot />
 
         <DialogClose
-          class="absolute top-4 right-4 p-0.5 transition-colors rounded-md hover:bg-secondary"
+          :class="
+            cn(
+              'absolute top-4 right-4 p-0.5 transition-colors rounded-md hover:bg-secondary',
+              canClose ? 'cursor-pointer' : 'opacity-30 pointer-events-none'
+            )
+          "
         >
           <X class="w-4 h-4" />
           <span class="sr-only">Close</span>

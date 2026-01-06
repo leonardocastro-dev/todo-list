@@ -12,13 +12,15 @@ import {
 import { computed, type HTMLAttributes } from 'vue'
 import DialogOverlay from './DialogOverlay.vue'
 
-const props = defineProps<
-  DialogContentProps & { class?: HTMLAttributes['class'] }
->()
+const props = withDefaults(defineProps<
+  DialogContentProps & { class?: HTMLAttributes['class'], canClose?: boolean }
+>(), {
+  canClose: true
+})
 const emits = defineEmits<DialogContentEmits>()
 
 const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props
+  const { class: _, canClose: __, ...delegated } = props
 
   return delegated
 })
@@ -42,7 +44,12 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
       <slot />
 
       <DialogClose
-        class="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        :class="
+          cn(
+            'ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=\'size-\'])]:size-4',
+            canClose ? 'cursor-pointer hover:opacity-100' : 'opacity-30 pointer-events-none'
+          )
+        "
       >
         <X />
         <span class="sr-only">Close</span>
