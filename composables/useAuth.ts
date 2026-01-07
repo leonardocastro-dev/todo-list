@@ -61,8 +61,18 @@ export const useAuth = () => {
       })
     } catch (e: any) {
       loading.value = false
-      if (e.code === 'auth/invalid-credential') {
+      if (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') {
         toast.error('Invalid email or password', {
+          style: { background: '#fda4af' },
+          duration: 3000
+        })
+      } else if (e.code === 'auth/too-many-requests') {
+        toast.error('Too many failed login attempts. Please try again later.', {
+          style: { background: '#fda4af' },
+          duration: 4000
+        })
+      } else if (e.code === 'auth/network-request-failed') {
+        toast.error('Network error. Please check your connection.', {
           style: { background: '#fda4af' },
           duration: 3000
         })

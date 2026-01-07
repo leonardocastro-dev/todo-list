@@ -26,6 +26,10 @@ const isUpdatingEmail = ref(false)
 // Sync with parent
 watch(() => props.email, (val) => { localEmail.value = val })
 
+const isEmailChanged = computed(() => {
+  return localEmail.value !== props.email
+})
+
 const updateUserEmail = async () => {
   if (!user.value || !localEmail.value || !currentPassword.value) {
     toast.error('Email and current password are required', {
@@ -59,13 +63,18 @@ const updateUserEmail = async () => {
     })
   } catch (error: any) {
     console.error('Error updating email:', error)
-    if (error.code === 'auth/wrong-password') {
+    if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
       toast.error('Incorrect password', {
         style: { background: '#fda4af' },
         duration: 3000
       })
     } else if (error.code === 'auth/email-already-in-use') {
       toast.error('Email is already in use', {
+        style: { background: '#fda4af' },
+        duration: 3000
+      })
+    } else if (error.code === 'auth/invalid-email') {
+      toast.error('Please enter a valid email address', {
         style: { background: '#fda4af' },
         duration: 3000
       })
@@ -112,7 +121,7 @@ const updateUserEmail = async () => {
 
       <Button
         @click="updateUserEmail"
-        :disabled="isUpdatingEmail || !localEmail || !currentPassword"
+        :disabled="isUpdatingEmail || !localEmail || !currentPassword || !isEmailChanged"
         class="w-full"
       >
         {{ isUpdatingEmail ? 'Updating...' : 'Update Email' }}

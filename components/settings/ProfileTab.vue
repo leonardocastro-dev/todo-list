@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { toast } from 'vue-sonner'
 import { Upload } from 'lucide-vue-next'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { Loader2 } from 'lucide-vue-next'
 
 const props = defineProps<{
