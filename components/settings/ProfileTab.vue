@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { toast } from 'vue-sonner'
 import { Upload } from 'lucide-vue-next'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import { Loader2 } from 'lucide-vue-next'
 
 const props = defineProps<{
   username: string
@@ -132,14 +133,12 @@ const handleAvatarUpload = async (event: Event) => {
               {{ localUsername.charAt(0).toUpperCase() || 'U' }}
             </AvatarFallback>
           </Avatar>
-          <Button
+          <div
             v-if="isUploadingAvatar"
-            size="sm"
-            disabled
-            class="absolute bottom-0 right-0 h-8 w-8 rounded-full p-0"
+            class="absolute flex items-center justify-center bg-muted bottom-0 right-0 h-8 w-8 rounded-full"
           >
-            <LoadingSpinner class="h-4 w-4" />
-          </Button>
+            <Loader2 class="animate-spin text-primary" />
+          </div>
         </div>
         <div class="flex-1">
           <input
