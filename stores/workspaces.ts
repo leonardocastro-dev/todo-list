@@ -6,11 +6,7 @@ import {
   collection,
   query,
   where,
-  getDocs,
-  doc,
-  setDoc,
-  updateDoc,
-  deleteDoc
+  getDocs
 } from 'firebase/firestore'
 
 export const useWorkspaceStore = defineStore('workspace', () => {
@@ -20,6 +16,12 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const loaded = ref(false)
 
   const { user } = useAuth()
+
+  // Helper to get auth token
+  const getAuthToken = async (): Promise<string | null> => {
+    if (!user.value) return null
+    return await user.value.getIdToken()
+  }
 
   // Computed
   const userWorkspaces = computed(() => workspaces.value)
@@ -59,34 +61,40 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   const createWorkspace = async (name: string, description?: string) => {
-    const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-    const workspaceId = `${slug}-${Date.now()}`
-    const workspace: Workspace = {
-      id: workspaceId,
-      slug,
-      name,
-      description,
-      ownerId: user.value?.uid || 'local',
-      members: user.value?.uid ? [user.value.uid] : ['local'],
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    }
-
     if (!user.value?.uid) {
       // Modo offline - salvar no localStorage
+      const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      const workspaceId = `${slug}-${Date.now()}`
+      const workspace: Workspace = {
+        id: workspaceId,
+        slug,
+        name,
+        description,
+        ownerId: 'local',
+        members: ['local'],
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      }
       workspaces.value.push(workspace)
       localStorage.setItem('localWorkspaces', JSON.stringify(workspaces.value))
       return workspace
     }
 
     try {
-      const { $firestore } = useNuxtApp()
+      const token = await getAuthToken()
+      if (!token) throw new Error('Not authenticated')
 
-      const workspaceRef = doc($firestore, 'workspaces', workspaceId)
-      await setDoc(workspaceRef, workspace)
+      const response = await $fetch<{ success: boolean; workspace: Workspace }>('/api/workspaces', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: { name, description }
+      })
 
-      workspaces.value.push(workspace)
-      return workspace
+      if (response.success && response.workspace) {
+        workspaces.value.push(response.workspace)
+        return response.workspace
+      }
+      return null
     } catch (error) {
       console.error('Error creating workspace:', error)
       return null
@@ -97,32 +105,38 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     const workspaceIndex = workspaces.value.findIndex(ws => ws.id === workspaceId)
     if (workspaceIndex === -1) return null
 
-    const updatedWorkspace = {
-      ...workspaces.value[workspaceIndex],
-      name,
-      description,
-      updatedAt: Date.now()
-    }
-
     if (!user.value?.uid) {
       // Modo offline
+      const updatedWorkspace = {
+        ...workspaces.value[workspaceIndex],
+        name,
+        description,
+        updatedAt: Date.now()
+      }
       workspaces.value[workspaceIndex] = updatedWorkspace
       localStorage.setItem('localWorkspaces', JSON.stringify(workspaces.value))
       return updatedWorkspace
     }
 
     try {
-      const { $firestore } = useNuxtApp()
+      const token = await getAuthToken()
+      if (!token) throw new Error('Not authenticated')
 
-      const workspaceRef = doc($firestore, 'workspaces', workspaceId)
-      await updateDoc(workspaceRef, {
-        name,
-        description,
-        updatedAt: Date.now()
+      const response = await $fetch<{ success: boolean; workspace: Partial<Workspace> }>(`/api/workspaces/${workspaceId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+        body: { name, description }
       })
 
-      workspaces.value[workspaceIndex] = updatedWorkspace
-      return updatedWorkspace
+      if (response.success) {
+        const updatedWorkspace = {
+          ...workspaces.value[workspaceIndex],
+          ...response.workspace
+        }
+        workspaces.value[workspaceIndex] = updatedWorkspace
+        return updatedWorkspace
+      }
+      return null
     } catch (error) {
       console.error('Error updating workspace:', error)
       return null
@@ -145,17 +159,24 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   const deleteWorkspace = async (workspaceId: string, userId: string | null = null) => {
-    workspaces.value = workspaces.value.filter(ws => ws.id !== workspaceId)
-
     if (!userId) {
+      workspaces.value = workspaces.value.filter(ws => ws.id !== workspaceId)
       localStorage.setItem('localWorkspaces', JSON.stringify(workspaces.value))
       return
     }
 
     try {
-      const { $firestore } = useNuxtApp()
-      const workspaceRef = doc($firestore, 'workspaces', workspaceId)
-      await deleteDoc(workspaceRef)
+      const token = await getAuthToken()
+      if (!token) throw new Error('Not authenticated')
+
+      const response = await $fetch<{ success: boolean }>(`/api/workspaces/${workspaceId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (response.success) {
+        workspaces.value = workspaces.value.filter(ws => ws.id !== workspaceId)
+      }
     } catch (error) {
       console.error('Error deleting workspace:', error)
     }

@@ -128,7 +128,7 @@ const handleAvatarUpload = async (event: Event) => {
         <div class="relative">
           <Avatar class="h-24 w-24">
             <AvatarImage :src="avatarUrl" alt="Profile picture" />
-            <AvatarFallback class="text-2xl">
+            <AvatarFallback class="text-2xl text-muted-foreground">
               {{ localUsername.charAt(0).toUpperCase() || 'U' }}
             </AvatarFallback>
           </Avatar>

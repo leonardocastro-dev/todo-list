@@ -3,10 +3,8 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineNuxtConfig({
   routeRules: {
-    // Workspaces lista
     '/workspaces': { ssr: false },
 
-    // Workspaces dinâmicos ex: /slug-123 , /marketing-88
     '/:workspace/**': { ssr: false }
   },
   compatibilityDate: '2025-05-15',

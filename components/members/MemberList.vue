@@ -18,9 +18,18 @@ import { toast } from 'vue-sonner'
 import { Skeleton } from '@/components/ui/skeleton'
 import MemberItem from './MemberItem.vue'
 
+interface Member {
+  uid: string
+  email: string
+  username: string
+  photoURL: string | null
+  permissions: Record<string, boolean> | null
+  joinedAt: any
+}
+
 const props = defineProps<{
   workspace: any
-  memberNames: Record<string, string>
+  members: Member[]
   isLoadingMembers: boolean
 }>()
 
@@ -28,6 +37,23 @@ const { user } = useAuth()
 const isInviting = ref(false)
 const isSending = ref(false)
 const memberEmail = ref('')
+
+// Get current user's permissions from the members list
+const currentUserPermissions = computed(() => {
+  if (!user.value) return null
+  const currentMember = props.members.find(m => m.uid === user.value?.uid)
+  return currentMember?.permissions || null
+})
+
+// Check if current user can invite members
+const canInviteMembers = computed(() => {
+  if (!user.value) return false
+  // Check permissions (owner, admin, or specific permission)
+  return currentUserPermissions.value?.['owner'] === true ||
+    currentUserPermissions.value?.['admin'] === true ||
+    currentUserPermissions.value?.['manage-members'] === true ||
+    currentUserPermissions.value?.['add-members'] === true
+})
 
 const handleInvite = async () => {
   if (!memberEmail.value) {
@@ -82,7 +108,17 @@ const handleInvite = async () => {
 
 const emit = defineEmits<{
   inviteMember: [email: string]
+  'member-removed': [memberId: string]
+  'permissions-updated': []
 }>()
+
+const handleMemberRemoved = (memberId: string) => {
+  emit('member-removed', memberId)
+}
+
+const handlePermissionsUpdated = () => {
+  emit('permissions-updated')
+}
 </script>
 
 <template>
@@ -90,17 +126,21 @@ const emit = defineEmits<{
     <div>
       <h2 class="text-xl font-semibold">Workspace Members</h2>
       <p class="text-sm text-muted-foreground mt-1">
-        {{ workspace?.members.length || 0 }} {{ workspace?.members.length === 1 ? 'member' : 'members' }}
+        {{ members.length || 0 }} {{ members.length === 1 ? 'member' : 'members' }}
       </p>
     </div>
-    <Button @click="isInviting = true" class="flex items-center gap-1">
+    <Button
+      v-if="canInviteMembers"
+      @click="isInviting = true"
+      class="flex items-center gap-1"
+    >
       <UserPlus class="h-5 w-5" />
       <span>Invite Member</span>
     </Button>
   </div>
 
   <Card>
-    <CardContent class="pt-6">
+    <CardContent>
       <!-- Loading Skeletons -->
       <div v-if="isLoadingMembers" class="space-y-4">
         <div v-for="i in 3" :key="i" class="flex items-center justify-between p-4 border rounded-lg">
@@ -118,12 +158,13 @@ const emit = defineEmits<{
       <!-- Members List -->
       <div v-else class="space-y-4">
         <MemberItem
-          v-for="memberId in workspace.members"
-          :key="memberId"
-          :member-id="memberId"
-          :member-name="memberNames[memberId]"
-          :workspace-owner-id="workspace.ownerId"
+          v-for="member in members"
+          :key="member.uid"
+          :member="member"
           :workspace-id="workspace.id"
+          :current-user-permissions="currentUserPermissions"
+          @member-removed="handleMemberRemoved"
+          @permissions-updated="handlePermissionsUpdated"
         />
       </div>
     </CardContent>

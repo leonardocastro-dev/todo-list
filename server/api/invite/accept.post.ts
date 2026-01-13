@@ -1,4 +1,4 @@
-import { FieldValue } from 'firebase-admin/firestore'
+import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { auth, db } from '@/server/utils/firebase-admin'
 
 export default defineEventHandler(async (event) => {
@@ -45,6 +45,7 @@ export default defineEventHandler(async (event) => {
   await db.runTransaction(async (tx) => {
     const inviteRef = db.collection('invites').doc(inviteDoc.id)
     const workspaceRef = db.collection('workspaces').doc(invite.workspaceId)
+    const memberRef = db.collection('workspaces').doc(invite.workspaceId).collection('members').doc(decoded.uid)
 
     const currentInvite = await tx.get(inviteRef)
 
@@ -67,8 +68,23 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // Get user data to store in member document
+    const userRef = db.collection('users').doc(decoded.uid)
+    const userSnap = await tx.get(userRef)
+    const userData = userSnap.exists ? userSnap.data() : null
+
     tx.update(workspaceRef, {
       members: FieldValue.arrayUnion(decoded.uid)
+    })
+
+    // Create member document with uid as ID
+    tx.set(memberRef, {
+      uid: decoded.uid,
+      email: decoded.email || userData?.email || '',
+      username: userData?.username || userData?.name || decoded.email?.split('@')[0] || '',
+      photoURL: userData?.photoURL || null,
+      permissions: null,
+      joinedAt: Timestamp.now()
     })
 
     tx.update(inviteRef, {

@@ -1,20 +1,13 @@
 import { Resend } from 'resend'
-import { auth } from '@/server/utils/firebase-admin'
 import { Timestamp } from 'firebase-admin/firestore'
 import { db } from '@/server/utils/firebase-admin'
+import { verifyAuth, requirePermission } from '@/server/utils/permissions'
 import crypto from 'node:crypto'
 
 const resend = new Resend(process.env.NUXT_RESEND_API_KEY)
 
 export default defineEventHandler(async (event) => {
-  const authHeader = getHeader(event, 'authorization')
-
-  if (!authHeader?.startsWith('Bearer ')) {
-    throw createError({ statusCode: 401, message: 'Unauthorized' })
-  }
-
-  const idToken = authHeader.replace('Bearer ', '')
-  const decoded = await auth.verifyIdToken(idToken)
+  const { uid } = await verifyAuth(event)
 
   const { to, workspaceId } = await readBody(event)
 
@@ -25,6 +18,8 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  await requirePermission(workspaceId, uid, ['manage-members', 'add-members'])
+
   const email = to.toLowerCase().trim()
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -34,19 +29,7 @@ export default defineEventHandler(async (event) => {
 
   const workspaceRef = db.doc(`workspaces/${workspaceId}`)
   const workspaceSnap = await workspaceRef.get()
-
-  if (!workspaceSnap.exists) {
-    throw createError({ statusCode: 404, message: 'Workspace not found' })
-  }
-
   const workspace = workspaceSnap.data()!
-
-  if (!workspace.members?.includes(decoded.uid)) {
-    throw createError({
-      statusCode: 403,
-      message: 'You do not have permission to invite members to this workspace'
-    })
-  }
 
   const usersSnapshot = await db
     .collection('users')
@@ -64,7 +47,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const inviterSnap = await db.doc(`users/${decoded.uid}`).get()
+  const inviterSnap = await db.doc(`users/${uid}`).get()
   const inviter = inviterSnap.data()
 
   const inviteToken = crypto.randomUUID()
@@ -74,7 +57,7 @@ export default defineEventHandler(async (event) => {
     workspaceId,
     workspaceName: workspace.name,
     invitedEmail: email,
-    inviterId: decoded.uid,
+    inviterId: uid,
     inviterName: inviter?.name || inviter?.email || 'Someone',
     status: 'pending',
     createdAt: Timestamp.now(),

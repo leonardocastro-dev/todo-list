@@ -40,7 +40,11 @@ onMounted(async () => {
           {{ projectStore.totalProjects }} {{ projectStore.totalProjects === 1 ? 'project' : 'projects' }}
         </p>
       </div>
-      <Button @click="isAddingProject = true" class="flex items-center gap-1">
+      <Button
+        v-if="projectStore.canCreateProjects"
+        @click="isAddingProject = true"
+        class="flex items-center gap-1"
+      >
         <Plus class="h-5 w-5" />
         <span>New Project</span>
       </Button>

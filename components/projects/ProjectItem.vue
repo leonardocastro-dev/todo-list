@@ -9,17 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { MoreHorizontal, Tag, Users, Calendar } from 'lucide-vue-next'
+import { MoreHorizontal, Tag, Users, Calendar, Lock, Trash2, PenLine } from 'lucide-vue-next'
 import ProjectForm from './ProjectForm.vue'
 import { useAuth } from '@/composables/useAuth'
 
@@ -32,8 +22,11 @@ const route = useRoute()
 const projectStore = useProjectStore()
 const { user } = useAuth()
 const isEditing = ref(false)
-const isInviting = ref(false)
-const memberEmail = ref('')
+
+// Check permissions
+const canEdit = computed(() => projectStore.canEditProjects)
+const canDelete = computed(() => projectStore.canDeleteProjects)
+const hasAnyAction = computed(() => canEdit.value || canDelete.value)
 
 const formatDate = (date: string) => {
   const d = new Date(date)
@@ -41,14 +34,6 @@ const formatDate = (date: string) => {
   const month = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `Date: ${year}.${month}.${day}`
-}
-
-const handleInvite = async () => {
-  if (memberEmail.value) {
-    await projectStore.inviteMember(props.project.id, memberEmail.value, user.value?.uid)
-    memberEmail.value = ''
-    isInviting.value = false
-  }
 }
 
 const goToProject = () => {
@@ -63,8 +48,9 @@ const goToProject = () => {
     <CardContent class="flex items-start justify-between h-full">
       <div class="flex h-full flex-col justify-between">
         <div class="flex flex-col gap-2">
-          <div class="w-11 h-11 rounded-full flex items-center justify-center bg-gray-100">
+          <div class="w-11 h-11 rounded-full flex items-center justify-center bg-muted">
             <span v-if="project.emoji" class="text-xl">{{ project.emoji }}</span>
+            <span v-else class="text-lg font-semibold text-muted-foreground">{{ project.title?.charAt(0).toUpperCase() }}</span>
           </div>
             <h3 class="text-lg font-semibold line-clamp-2">{{ project.title }}</h3>
           <p v-if="project.description" class="text-sm text-muted-foreground mb-2 line-clamp-2">
@@ -103,7 +89,7 @@ const goToProject = () => {
         </div>
       </div>
 
-      <DropdownMenu>
+      <DropdownMenu v-if="hasAnyAction">
         <DropdownMenuTrigger as-child>
           <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click.stop>
             <span class="sr-only">Open menu</span>
@@ -111,16 +97,37 @@ const goToProject = () => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem @click.stop="isEditing = true">
+          <DropdownMenuItem
+            v-if="canEdit"
+            @click.stop="isEditing = true"
+            class="flex items-center gap-2"
+          >
+            <PenLine class="h-3 w-3" />
             Edit Project
           </DropdownMenuItem>
-          <DropdownMenuItem @click.stop="isInviting = true">
-            Invite Member
-          </DropdownMenuItem>
           <DropdownMenuItem
-            class="text-destructive focus:text-destructive"
+            v-else
+            disabled
+            class="flex items-center gap-2 opacity-50 cursor-not-allowed"
+          >
+            <Lock class="h-3 w-3" />
+            Edit Project
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            v-if="canDelete"
+            class="flex items-center gap-2 text-destructive focus:text-destructive"
             @click.stop="projectStore.deleteProject(project.id, user?.uid)"
           >
+            <Trash2 class="h-3 w-3 text-destructive/50" />
+            Delete Project
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            v-else
+            disabled
+            class="flex items-center gap-2 opacity-50 cursor-not-allowed text-destructive/50"
+          >
+            <Lock class="h-3 w-3 text-destructive/50" />
             Delete Project
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -135,35 +142,4 @@ const goToProject = () => {
     :user-id="user?.uid"
     @close="isEditing = false"
   />
-
-  <!-- Invite Member Dialog -->
-  <Dialog v-model:open="isInviting">
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>Invite Member to {{ project.title }}</DialogTitle>
-        <DialogDescription>
-          Enter the email address of the person you want to invite.
-        </DialogDescription>
-      </DialogHeader>
-      <div class="space-y-4">
-        <div>
-          <Label for="member-email">Email</Label>
-          <Input
-            id="member-email"
-            v-model="memberEmail"
-            type="email"
-            placeholder="colleague@example.com"
-          />
-        </div>
-        <DialogFooter>
-          <Button variant="outline" @click="isInviting = false">
-            Cancel
-          </Button>
-          <Button @click="handleInvite">
-            Send Invite
-          </Button>
-        </DialogFooter>
-      </div>
-    </DialogContent>
-  </Dialog>
 </template>

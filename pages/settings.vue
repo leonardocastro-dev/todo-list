@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { doc, getDoc } from 'firebase/firestore'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,23 @@ import PasswordTab from '@/components/settings/PasswordTab.vue'
 
 const { user } = useAuth()
 const router = useRouter()
+const route = useRoute()
+
+const fromWorkspace = ref<string | null>(null)
+
+const backPath = computed(() => {
+  if (fromWorkspace.value) {
+    return `/${fromWorkspace.value}/projects`
+  }
+  return '/workspaces'
+})
+
+const backLabel = computed(() => {
+  if (fromWorkspace.value) {
+    return 'Back to Projects'
+  }
+  return 'Back to Workspaces'
+})
 
 // User data
 const username = ref('')
@@ -62,6 +79,11 @@ onMounted(() => {
   if (!user.value) {
     router.push('/login')
   } else {
+    // Check if user came from a workspace
+    const from = route.query.from as string | undefined
+    if (from) {
+      fromWorkspace.value = from
+    }
     loadUserData()
   }
 })
@@ -76,11 +98,11 @@ onMounted(() => {
           <Button
             variant="ghost"
             size="sm"
-            @click="router.push('/workspaces')"
+            @click="router.push(backPath)"
             class="flex items-center gap-1"
           >
             <ArrowLeft class="h-4 w-4" />
-            <span>Back to Workspaces</span>
+            <span>{{ backLabel }}</span>
           </Button>
         </div>
 

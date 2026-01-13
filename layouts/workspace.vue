@@ -63,7 +63,7 @@ const isGuest = computed(() => !user.value)
         </div>
         <NuxtLink
           v-else
-          :to="`/settings`"
+          :to="`/settings?from=${workspaceSlug}`"
           class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors text-muted-foreground hover:text-primary hover:bg-accent"
           active-class="!text-primary !bg-accent"
         >
