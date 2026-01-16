@@ -22,8 +22,10 @@ const taskStore = useTaskStore()
         type="text"
         placeholder="Search tasks..."
         :model-value="taskStore.searchQuery"
-        @update:model-value="(val) => taskStore.setSearchQuery(String(val || ''))"
         class="w-full"
+        @update:model-value="
+          (val) => taskStore.setSearchQuery(String(val || ''))
+        "
       />
     </div>
 
@@ -34,8 +36,10 @@ const taskStore = useTaskStore()
         >
         <Tabs
           :model-value="taskStore.statusFilter"
-          @update:model-value="(val) => taskStore.setStatusFilter(String(val || 'all'))"
           class="w-full"
+          @update:model-value="
+            (val) => taskStore.setStatusFilter(String(val || 'all'))
+          "
         >
           <TabsList class="grid grid-cols-3 w-full">
             <TabsTrigger value="all">All</TabsTrigger>
@@ -51,7 +55,9 @@ const taskStore = useTaskStore()
         >
         <Select
           :model-value="taskStore.priorityFilter"
-          @update:model-value="(val) => taskStore.setPriorityFilter(String(val || 'all'))"
+          @update:model-value="
+            (val) => taskStore.setPriorityFilter(String(val || 'all'))
+          "
         >
           <SelectTrigger id="priority-filter">
             <SelectValue placeholder="All Priorities" />

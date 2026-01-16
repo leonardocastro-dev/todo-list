@@ -40,7 +40,7 @@ const getAllDescendantIds = (item: NestedItem): string[] => {
 // Check if all children of an item are checked
 const areAllChildrenChecked = (item: NestedItem): boolean => {
   if (!item.children || item.children.length === 0) return false
-  return item.children.every(child => {
+  return item.children.every((child) => {
     const isChecked = props.modelValue[child.id]
     if (child.children && child.children.length > 0) {
       return isChecked && areAllChildrenChecked(child)
@@ -53,7 +53,7 @@ const areAllChildrenChecked = (item: NestedItem): boolean => {
 const areSomeChildrenChecked = (item: NestedItem): boolean => {
   if (!item.children || item.children.length === 0) return false
   const allIds = getAllDescendantIds(item)
-  const checkedCount = allIds.filter(id => props.modelValue[id]).length
+  const checkedCount = allIds.filter((id) => props.modelValue[id]).length
   return checkedCount > 0 && checkedCount < allIds.length
 }
 
@@ -103,10 +103,7 @@ const handleChildUpdate = (newValue: Record<string, boolean>) => {
 
 <template>
   <div :class="['space-y-2', level > 0 ? 'pl-6' : '']">
-    <template
-      v-for="(item, index) in items"
-      :key="item.id"
-    >
+    <template v-for="(item, index) in items" :key="item.id">
       <!-- Separator between root items -->
       <hr v-if="level === 0 && index > 0" class="my-4" />
 
@@ -116,11 +113,17 @@ const handleChildUpdate = (newValue: Record<string, boolean>) => {
           <Checkbox
             :id="`nested-${item.id}`"
             :model-value="getItemState(item)"
-            @update:model-value="(val) => handleChange(item, val)"
             :disabled="disabled"
+            @update:model-value="(val) => handleChange(item, val)"
           />
-          <Label :for="`nested-${item.id}`" class="flex items-center gap-2 cursor-pointer">
-            <FolderOpen v-if="level === 0 && item.children && item.children.length > 0" class="h-4 w-4 text-muted-foreground" />
+          <Label
+            :for="`nested-${item.id}`"
+            class="flex items-center gap-2 cursor-pointer"
+          >
+            <FolderOpen
+              v-if="level === 0 && item.children && item.children.length > 0"
+              class="h-4 w-4 text-muted-foreground"
+            />
             {{ item.name }}
           </Label>
         </div>

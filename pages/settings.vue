@@ -98,8 +98,8 @@ onMounted(() => {
           <Button
             variant="ghost"
             size="sm"
-            @click="router.push(backPath)"
             class="flex items-center gap-1"
+            @click="router.push(backPath)"
           >
             <ArrowLeft class="h-4 w-4" />
             <span>{{ backLabel }}</span>
@@ -108,7 +108,9 @@ onMounted(() => {
 
         <div>
           <h1 class="text-3xl font-bold text-primary mb-2">Account Settings</h1>
-          <p class="text-muted-foreground">Manage your account information and preferences</p>
+          <p class="text-muted-foreground">
+            Manage your account information and preferences
+          </p>
         </div>
       </header>
 
@@ -137,10 +139,7 @@ onMounted(() => {
 
         <!-- Email Tab -->
         <TabsContent value="email">
-          <EmailTab
-            :email="email"
-            @update:email="email = $event"
-          />
+          <EmailTab :email="email" @update:email="email = $event" />
         </TabsContent>
 
         <!-- Password Tab -->

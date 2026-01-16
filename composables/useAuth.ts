@@ -61,7 +61,11 @@ export const useAuth = () => {
       })
     } catch (e: any) {
       loading.value = false
-      if (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') {
+      if (
+        e.code === 'auth/invalid-credential' ||
+        e.code === 'auth/wrong-password' ||
+        e.code === 'auth/user-not-found'
+      ) {
         toast.error('Invalid email or password', {
           style: { background: '#fda4af' },
           duration: 3000
@@ -89,17 +93,24 @@ export const useAuth = () => {
     }
   }
 
-  const register = async (username: string, email: string, password: string) => {
+  const register = async (
+    username: string,
+    email: string,
+    password: string
+  ) => {
     try {
       loading.value = true
       error.value = null
 
       const isUsernameAvailable = await checkUsername(username)
       if (!isUsernameAvailable) {
-        toast.error('This username is already taken. Please choose a different one.', {
-          style: { background: '#fda4af' },
-          duration: 4000
-        })
+        toast.error(
+          'This username is already taken. Please choose a different one.',
+          {
+            style: { background: '#fda4af' },
+            duration: 4000
+          }
+        )
         loading.value = false
         return
       }

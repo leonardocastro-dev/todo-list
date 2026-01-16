@@ -2,7 +2,13 @@
 import { ref, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useWorkspaceStore } from '@/stores/workspaces'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { toast } from 'vue-sonner'
@@ -49,15 +55,18 @@ const acceptInvite = async () => {
   try {
     const idToken = await user.value.getIdToken()
 
-    const response = await $fetch<{ workspaceId: string }>('/api/invite/accept', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${idToken}`
-      },
-      body: {
-        token: inviteToken
+    const response = await $fetch<{ workspaceId: string }>(
+      '/api/invite/accept',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${idToken}`
+        },
+        body: {
+          token: inviteToken
+        }
       }
-    })
+    )
 
     await workspaceStore.loadWorkspaces(user.value.uid)
 
@@ -91,7 +100,9 @@ const declineInvite = () => {
 
       <div v-else-if="error">
         <CardHeader>
-          <CardTitle class="text-center text-destructive">Invalid Invitation</CardTitle>
+          <CardTitle class="text-center text-destructive"
+            >Invalid Invitation</CardTitle
+          >
           <CardDescription class="text-center">
             {{ error }}
           </CardDescription>
@@ -117,7 +128,8 @@ const declineInvite = () => {
               {{ invite.workspaceName }}
             </div>
             <p class="text-sm text-muted-foreground">
-              Invited by <span class="font-medium">{{ invite.inviterName }}</span>
+              Invited by
+              <span class="font-medium">{{ invite.inviterName }}</span>
             </p>
           </div>
 
@@ -126,20 +138,38 @@ const declineInvite = () => {
               You need to be logged in to accept this invitation
             </p>
             <div class="flex flex-col gap-2">
-              <Button @click="router.push(`/login?redirect=/invite/${inviteToken}`)" class="w-full">
+              <Button
+                class="w-full"
+                @click="router.push(`/login?redirect=/invite/${inviteToken}`)"
+              >
                 Login
               </Button>
-              <Button @click="router.push(`/register?redirect=/invite/${inviteToken}`)" variant="outline" class="w-full">
+              <Button
+                variant="outline"
+                class="w-full"
+                @click="
+                  router.push(`/register?redirect=/invite/${inviteToken}`)
+                "
+              >
                 Register
               </Button>
             </div>
           </div>
 
           <div v-else class="flex flex-col gap-2">
-            <Button @click="acceptInvite" :disabled="isAccepting" class="w-full">
+            <Button
+              :disabled="isAccepting"
+              class="w-full"
+              @click="acceptInvite"
+            >
               {{ isAccepting ? 'Accepting...' : 'Accept Invitation' }}
             </Button>
-            <Button @click="declineInvite" variant="outline" class="w-full" :disabled="isAccepting">
+            <Button
+              variant="outline"
+              class="w-full"
+              :disabled="isAccepting"
+              @click="declineInvite"
+            >
               Decline
             </Button>
           </div>

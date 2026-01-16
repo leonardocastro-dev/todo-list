@@ -51,13 +51,13 @@ const formatDate = (date: Date) => {
       <div class="flex items-start gap-3">
         <div class="pt-0.5">
           <Checkbox
+            :id="`task-${task.id}`"
             :model-value="task.status === 'completed'"
+            class="mt-1"
             @update:model-value="
               (checked) =>
                 taskStore.toggleTaskStatus(task.id, !!checked, user?.uid)
             "
-            :id="`task-${task.id}`"
-            class="mt-1"
           />
         </div>
 

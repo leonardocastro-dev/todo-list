@@ -41,7 +41,7 @@ const memberEmail = ref('')
 // Get current user's permissions from the members list
 const currentUserPermissions = computed(() => {
   if (!user.value) return null
-  const currentMember = props.members.find(m => m.uid === user.value?.uid)
+  const currentMember = props.members.find((m) => m.uid === user.value?.uid)
   return currentMember?.permissions || null
 })
 
@@ -49,10 +49,12 @@ const currentUserPermissions = computed(() => {
 const canInviteMembers = computed(() => {
   if (!user.value) return false
   // Check permissions (owner, admin, or specific permission)
-  return currentUserPermissions.value?.['owner'] === true ||
+  return (
+    currentUserPermissions.value?.['owner'] === true ||
     currentUserPermissions.value?.['admin'] === true ||
     currentUserPermissions.value?.['manage-members'] === true ||
     currentUserPermissions.value?.['add-members'] === true
+  )
 })
 
 const handleInvite = async () => {
@@ -126,13 +128,14 @@ const handlePermissionsUpdated = () => {
     <div>
       <h2 class="text-xl font-semibold">Workspace Members</h2>
       <p class="text-sm text-muted-foreground mt-1">
-        {{ members.length || 0 }} {{ members.length === 1 ? 'member' : 'members' }}
+        {{ members.length || 0 }}
+        {{ members.length === 1 ? 'member' : 'members' }}
       </p>
     </div>
     <Button
       v-if="canInviteMembers"
-      @click="isInviting = true"
       class="flex items-center gap-1"
+      @click="isInviting = true"
     >
       <UserPlus class="h-5 w-5" />
       <span>Invite Member</span>
@@ -143,7 +146,11 @@ const handlePermissionsUpdated = () => {
     <CardContent>
       <!-- Loading Skeletons -->
       <div v-if="isLoadingMembers" class="space-y-4">
-        <div v-for="i in 3" :key="i" class="flex items-center justify-between p-4 border rounded-lg">
+        <div
+          v-for="i in 3"
+          :key="i"
+          class="flex items-center justify-between p-4 border rounded-lg"
+        >
           <div class="flex items-center gap-3">
             <Skeleton class="h-10 w-10 rounded-full" />
             <div class="space-y-2">
@@ -172,7 +179,14 @@ const handlePermissionsUpdated = () => {
 
   <!-- Invite Member Dialog -->
   <Dialog v-model:open="isInviting">
-    <DialogContent :can-close="!isSending" @interact-outside="(e) => { if (isSending) e.preventDefault() }">
+    <DialogContent
+      :can-close="!isSending"
+      @interact-outside="
+        (e) => {
+          if (isSending) e.preventDefault()
+        }
+      "
+    >
       <DialogHeader>
         <DialogTitle>Invite Member</DialogTitle>
         <DialogDescription>
@@ -194,10 +208,14 @@ const handlePermissionsUpdated = () => {
       </div>
 
       <DialogFooter>
-        <Button variant="outline" @click="isInviting = false" :disabled="isSending">
+        <Button
+          variant="outline"
+          :disabled="isSending"
+          @click="isInviting = false"
+        >
           Cancel
         </Button>
-        <Button @click="handleInvite" :disabled="isSending">
+        <Button :disabled="isSending" @click="handleInvite">
           {{ isSending ? 'Sending...' : 'Send Invitation' }}
         </Button>
       </DialogFooter>

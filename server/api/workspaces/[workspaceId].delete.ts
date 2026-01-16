@@ -13,15 +13,21 @@ export default defineEventHandler(async (event) => {
 
   const batch = db.batch()
 
-  const membersSnap = await db.collection(`workspaces/${workspaceId}/members`).get()
-  membersSnap.docs.forEach(doc => {
+  const membersSnap = await db
+    .collection(`workspaces/${workspaceId}/members`)
+    .get()
+  membersSnap.docs.forEach((doc) => {
     batch.delete(doc.ref)
   })
 
-  const projectsSnap = await db.collection(`workspaces/${workspaceId}/projects`).get()
+  const projectsSnap = await db
+    .collection(`workspaces/${workspaceId}/projects`)
+    .get()
   for (const projectDoc of projectsSnap.docs) {
-    const tasksSnap = await db.collection(`workspaces/${workspaceId}/projects/${projectDoc.id}/tasks`).get()
-    tasksSnap.docs.forEach(taskDoc => {
+    const tasksSnap = await db
+      .collection(`workspaces/${workspaceId}/projects/${projectDoc.id}/tasks`)
+      .get()
+    tasksSnap.docs.forEach((taskDoc) => {
       batch.delete(taskDoc.ref)
     })
     batch.delete(projectDoc.ref)

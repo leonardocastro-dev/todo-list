@@ -14,20 +14,31 @@ export default defineEventHandler(async (event) => {
   const { workspaceId, title, description, emoji, tags } = await readBody(event)
 
   if (!workspaceId || !projectId) {
-    throw createError({ statusCode: 400, message: 'Workspace ID and Project ID are required' })
+    throw createError({
+      statusCode: 400,
+      message: 'Workspace ID and Project ID are required'
+    })
   }
 
   const permissions = await getMemberPermissions(workspaceId, uid)
 
   if (!permissions) {
-    throw createError({ statusCode: 403, message: 'You are not a member of this workspace' })
+    throw createError({
+      statusCode: 403,
+      message: 'You are not a member of this workspace'
+    })
   }
 
-  const canEdit = isOwnerOrAdmin(permissions) ||
-    (hasAnyPermission(permissions, ['manage-projects', 'edit-projects']) && canAccessProject(permissions, projectId))
+  const canEdit =
+    isOwnerOrAdmin(permissions) ||
+    (hasAnyPermission(permissions, ['manage-projects', 'edit-projects']) &&
+      canAccessProject(permissions, projectId))
 
   if (!canEdit) {
-    throw createError({ statusCode: 403, message: 'You do not have permission to edit this project' })
+    throw createError({
+      statusCode: 403,
+      message: 'You do not have permission to edit this project'
+    })
   }
 
   const projectRef = db.doc(`workspaces/${workspaceId}/projects/${projectId}`)
@@ -42,7 +53,8 @@ export default defineEventHandler(async (event) => {
   }
 
   if (title !== undefined) updateData.title = title.trim()
-  if (description !== undefined) updateData.description = description?.trim() || null
+  if (description !== undefined)
+    updateData.description = description?.trim() || null
   if (emoji !== undefined) updateData.emoji = emoji || null
   if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : []
 

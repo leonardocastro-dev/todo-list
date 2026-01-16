@@ -15,35 +15,57 @@ export default defineEventHandler(async (event) => {
   const { workspaceId } = await readBody(event)
 
   if (!workspaceId || !memberId) {
-    throw createError({ statusCode: 400, message: 'Workspace ID and Member ID are required' })
+    throw createError({
+      statusCode: 400,
+      message: 'Workspace ID and Member ID are required'
+    })
   }
 
   const currentUserPermissions = await getMemberPermissions(workspaceId, uid)
 
   if (!currentUserPermissions) {
-    throw createError({ statusCode: 403, message: 'You are not a member of this workspace' })
+    throw createError({
+      statusCode: 403,
+      message: 'You are not a member of this workspace'
+    })
   }
 
-  const targetMemberPermissions = await getMemberPermissions(workspaceId, memberId)
+  const targetMemberPermissions = await getMemberPermissions(
+    workspaceId,
+    memberId
+  )
 
   if (!targetMemberPermissions) {
     throw createError({ statusCode: 404, message: 'Member not found' })
   }
 
   if (isOwner(targetMemberPermissions)) {
-    throw createError({ statusCode: 403, message: 'Cannot remove the workspace owner' })
+    throw createError({
+      statusCode: 403,
+      message: 'Cannot remove the workspace owner'
+    })
   }
 
   if (memberId === uid) {
-    throw createError({ statusCode: 403, message: 'You cannot remove yourself' })
+    throw createError({
+      statusCode: 403,
+      message: 'You cannot remove yourself'
+    })
   }
 
-  const canRemove = isOwner(currentUserPermissions) ||
+  const canRemove =
+    isOwner(currentUserPermissions) ||
     (isAdmin(currentUserPermissions) && memberId !== uid) ||
-    hasAnyPermission(currentUserPermissions, ['manage-members', 'remove-members'])
+    hasAnyPermission(currentUserPermissions, [
+      'manage-members',
+      'remove-members'
+    ])
 
   if (!canRemove) {
-    throw createError({ statusCode: 403, message: 'You do not have permission to remove members' })
+    throw createError({
+      statusCode: 403,
+      message: 'You do not have permission to remove members'
+    })
   }
 
   const batch = db.batch()

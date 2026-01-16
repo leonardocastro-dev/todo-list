@@ -106,7 +106,7 @@ const handleClose = () => {
       <DialogHeader>
         <DialogTitle>{{ editTask ? 'Edit Task' : 'Add New Task' }}</DialogTitle>
       </DialogHeader>
-      <form @submit.prevent="handleSubmit" class="space-y-4 pt-4">
+      <form class="space-y-4 pt-4" @submit.prevent="handleSubmit">
         <div class="space-y-2">
           <Label for="title" class="font-medium"> Title </Label>
           <Input
@@ -138,30 +138,30 @@ const handleClose = () => {
         <div class="space-y-2">
           <Label for="priority" class="font-medium">Priority</Label>
           <RadioGroup
-            v-model="priority"
             id="priority"
+            v-model="priority"
             class="flex flex-col sm:flex-row space-x-4"
           >
             <div class="flex items-center space-x-2">
-              <RadioGroupItem value="urgent" id="urgent" />
+              <RadioGroupItem id="urgent" value="urgent" />
               <Label for="urgent" class="flex items-center cursor-pointer">
-                <span class="h-3 w-3 rounded-full bg-red-700 mr-2"></span>
+                <span class="h-3 w-3 rounded-full bg-red-700 mr-2" />
                 <span>Urgent</span>
               </Label>
             </div>
 
             <div class="flex items-center space-x-2">
-              <RadioGroupItem value="important" id="important" />
+              <RadioGroupItem id="important" value="important" />
               <Label for="important" class="flex items-center cursor-pointer">
-                <span class="h-3 w-3 rounded-full bg-yellow-600 mr-2"></span>
+                <span class="h-3 w-3 rounded-full bg-yellow-600 mr-2" />
                 <span>Important</span>
               </Label>
             </div>
 
             <div class="flex items-center space-x-2">
-              <RadioGroupItem value="normal" id="normal" />
+              <RadioGroupItem id="normal" value="normal" />
               <Label for="normal" class="flex items-center cursor-pointer">
-                <span class="h-3 w-3 rounded-full bg-emerald-600 mr-2"></span>
+                <span class="h-3 w-3 rounded-full bg-emerald-600 mr-2" />
                 <span>Normal</span>
               </Label>
             </div>

@@ -45,7 +45,11 @@ export default defineEventHandler(async (event) => {
   await db.runTransaction(async (tx) => {
     const inviteRef = db.collection('invites').doc(inviteDoc.id)
     const workspaceRef = db.collection('workspaces').doc(invite.workspaceId)
-    const memberRef = db.collection('workspaces').doc(invite.workspaceId).collection('members').doc(decoded.uid)
+    const memberRef = db
+      .collection('workspaces')
+      .doc(invite.workspaceId)
+      .collection('members')
+      .doc(decoded.uid)
 
     const currentInvite = await tx.get(inviteRef)
 
@@ -81,7 +85,11 @@ export default defineEventHandler(async (event) => {
     tx.set(memberRef, {
       uid: decoded.uid,
       email: decoded.email || userData?.email || '',
-      username: userData?.username || userData?.name || decoded.email?.split('@')[0] || '',
+      username:
+        userData?.username ||
+        userData?.name ||
+        decoded.email?.split('@')[0] ||
+        '',
       photoURL: userData?.photoURL || null,
       permissions: null,
       joinedAt: Timestamp.now()

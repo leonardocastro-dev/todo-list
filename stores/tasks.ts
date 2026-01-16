@@ -1,9 +1,6 @@
 import { defineStore } from 'pinia'
 import { toast } from 'vue-sonner'
-import {
-  collection,
-  getDocs
-} from 'firebase/firestore'
+import { collection, getDocs } from 'firebase/firestore'
 import { useProjectStore } from './projects'
 import { useAuth } from '@/composables/useAuth'
 
@@ -71,7 +68,21 @@ export const useTaskStore = defineStore('tasks', {
       if (!user.value) return null
       return await user.value.getIdToken()
     },
-    async setCurrentProject(projectId: string | null, userId: string | null = null, workspaceId?: string) {
+
+    // Helper to get workspaceId from current project
+    getWorkspaceId(): string | undefined {
+      const projectStore = useProjectStore()
+      const project = projectStore.projects.find(
+        (p) => p.id === this.currentProjectId
+      )
+      return project?.workspaceId
+    },
+
+    async setCurrentProject(
+      projectId: string | null,
+      userId: string | null = null,
+      workspaceId?: string
+    ) {
       this.currentProjectId = projectId
 
       if (!projectId) {
@@ -79,25 +90,32 @@ export const useTaskStore = defineStore('tasks', {
         return
       }
 
-      await this.loadTasks(projectId, userId, workspaceId)
-    },
-
-    async loadTasks(projectId: string, userId: string | null = null, workspaceId?: string) {
       await this.loadTasksForProject(projectId, userId, workspaceId)
     },
 
-    async loadTasksForProject(projectId: string, userId: string | null = null, workspaceId?: string) {
+    async loadTasksForProject(
+      projectId: string,
+      userId: string | null = null,
+      workspaceId?: string
+    ) {
       const { $firestore } = useNuxtApp()
 
       try {
         this.isLoading = true
 
         if (userId && workspaceId) {
-          const tasksRef = collection($firestore, 'workspaces', workspaceId, 'projects', projectId, 'tasks')
+          const tasksRef = collection(
+            $firestore,
+            'workspaces',
+            workspaceId,
+            'projects',
+            projectId,
+            'tasks'
+          )
           const snapshot = await getDocs(tasksRef)
 
           if (!snapshot.empty) {
-            this.tasks = snapshot.docs.map(doc => ({
+            this.tasks = snapshot.docs.map((doc) => ({
               id: doc.id,
               ...doc.data()
             })) as Task[]
@@ -154,19 +172,22 @@ export const useTaskStore = defineStore('tasks', {
         const token = await this.getAuthToken()
         if (!token) throw new Error('Not authenticated')
 
-        const response = await $fetch<{ success: boolean; task: Task }>('/api/tasks', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: {
-            workspaceId,
-            projectId: this.currentProjectId,
-            title: task.title,
-            description: task.description,
-            status: task.status,
-            priority: task.priority,
-            dueDate: task.dueDate
+        const response = await $fetch<{ success: boolean; task: Task }>(
+          '/api/tasks',
+          {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: {
+              workspaceId,
+              projectId: this.currentProjectId,
+              title: task.title,
+              description: task.description,
+              status: task.status,
+              priority: task.priority,
+              dueDate: task.dueDate
+            }
           }
-        })
+        )
 
         if (response.success && response.task) {
           this.tasks.push(response.task)
@@ -181,7 +202,11 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
 
-    async updateTask(id: string, updatedTask: Partial<Task>, userId: string | null = null) {
+    async updateTask(
+      id: string,
+      updatedTask: Partial<Task>,
+      userId: string | null = null
+    ) {
       if (!this.currentProjectId) return
 
       const taskIndex = this.tasks.findIndex((task) => task.id === id)
@@ -197,24 +222,24 @@ export const useTaskStore = defineStore('tasks', {
       }
 
       try {
-        const projectStore = useProjectStore()
-        const project = projectStore.projects.find(p => p.id === this.currentProjectId)
-        const workspaceId = project?.workspaceId
-
+        const workspaceId = this.getWorkspaceId()
         if (!workspaceId) return
 
         const token = await this.getAuthToken()
         if (!token) throw new Error('Not authenticated')
 
-        const response = await $fetch<{ success: boolean }>(`/api/tasks/${id}`, {
-          method: 'PATCH',
-          headers: { Authorization: `Bearer ${token}` },
-          body: {
-            workspaceId,
-            projectId: this.currentProjectId,
-            ...updatedTask
+        const response = await $fetch<{ success: boolean }>(
+          `/api/tasks/${id}`,
+          {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${token}` },
+            body: {
+              workspaceId,
+              projectId: this.currentProjectId,
+              ...updatedTask
+            }
           }
-        })
+        )
 
         if (response.success) {
           this.tasks[taskIndex] = { ...this.tasks[taskIndex], ...updatedTask }
@@ -245,23 +270,23 @@ export const useTaskStore = defineStore('tasks', {
       }
 
       try {
-        const projectStore = useProjectStore()
-        const project = projectStore.projects.find(p => p.id === this.currentProjectId)
-        const workspaceId = project?.workspaceId
-
+        const workspaceId = this.getWorkspaceId()
         if (!workspaceId) return
 
         const token = await this.getAuthToken()
         if (!token) throw new Error('Not authenticated')
 
-        const response = await $fetch<{ success: boolean }>(`/api/tasks/${id}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-          body: {
-            workspaceId,
-            projectId: this.currentProjectId
+        const response = await $fetch<{ success: boolean }>(
+          `/api/tasks/${id}`,
+          {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` },
+            body: {
+              workspaceId,
+              projectId: this.currentProjectId
+            }
           }
-        })
+        )
 
         if (response.success) {
           this.tasks = this.tasks.filter((task) => task.id !== id)
@@ -279,7 +304,11 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
 
-    async toggleTaskStatus(id: string, checked: boolean, userId: string | null = null) {
+    async toggleTaskStatus(
+      id: string,
+      checked: boolean,
+      userId: string | null = null
+    ) {
       const status = checked ? 'completed' : 'pending'
 
       const taskIndex = this.tasks.findIndex((task) => task.id === id)
@@ -296,7 +325,7 @@ export const useTaskStore = defineStore('tasks', {
       if (userId) {
         try {
           await this.updateTask(id, { status }, userId)
-        } catch (error) {
+        } catch {
           this.tasks[taskIndex].status = previousStatus
           toast.error('Failed to update task status', {
             style: { background: '#fda4af' },

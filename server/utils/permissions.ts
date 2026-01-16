@@ -1,4 +1,5 @@
-import { H3Event, createError, getHeader } from 'h3'
+import type { H3Event } from 'h3'
+import { createError, getHeader } from 'h3'
 import { auth, db } from './firebase-admin'
 
 export interface MemberPermissions {
@@ -67,7 +68,11 @@ export function hasPermission(
   permission: string
 ): boolean {
   if (!permissions) return false
-  return isOwner(permissions) || isAdmin(permissions) || permissions[permission] === true
+  return (
+    isOwner(permissions) ||
+    isAdmin(permissions) ||
+    permissions[permission] === true
+  )
 }
 
 export function hasAnyPermission(
@@ -76,7 +81,7 @@ export function hasAnyPermission(
 ): boolean {
   if (!permissions) return false
   if (isOwnerOrAdmin(permissions)) return true
-  return permissionList.some(p => permissions[p] === true)
+  return permissionList.some((p) => permissions[p] === true)
 }
 
 export function canAccessProject(
@@ -84,9 +89,11 @@ export function canAccessProject(
   projectId: string
 ): boolean {
   if (!permissions) return false
-  return isOwnerOrAdmin(permissions) ||
+  return (
+    isOwnerOrAdmin(permissions) ||
     permissions['all-projects'] === true ||
     permissions[projectId] === true
+  )
 }
 
 export async function requireWorkspaceMember(
@@ -102,7 +109,10 @@ export async function requireWorkspaceMember(
 
   const members = workspaceSnap.data()?.members || []
   if (!members.includes(userId)) {
-    throw createError({ statusCode: 403, message: 'You are not a member of this workspace' })
+    throw createError({
+      statusCode: 403,
+      message: 'You are not a member of this workspace'
+    })
   }
 }
 
@@ -116,7 +126,10 @@ export async function requirePermission(
   const permissions = await getMemberPermissions(workspaceId, userId)
 
   if (!hasAnyPermission(permissions, requiredPermissions)) {
-    throw createError({ statusCode: 403, message: 'You do not have permission to perform this action' })
+    throw createError({
+      statusCode: 403,
+      message: 'You do not have permission to perform this action'
+    })
   }
 
   return permissions!
@@ -131,7 +144,10 @@ export async function requireOwner(
   const permissions = await getMemberPermissions(workspaceId, userId)
 
   if (!isOwner(permissions)) {
-    throw createError({ statusCode: 403, message: 'Only the workspace owner can perform this action' })
+    throw createError({
+      statusCode: 403,
+      message: 'Only the workspace owner can perform this action'
+    })
   }
 
   return permissions!
@@ -146,7 +162,10 @@ export async function requireOwnerOrAdmin(
   const permissions = await getMemberPermissions(workspaceId, userId)
 
   if (!isOwnerOrAdmin(permissions)) {
-    throw createError({ statusCode: 403, message: 'Only owners and admins can perform this action' })
+    throw createError({
+      statusCode: 403,
+      message: 'Only owners and admins can perform this action'
+    })
   }
 
   return permissions!

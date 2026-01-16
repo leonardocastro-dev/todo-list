@@ -25,20 +25,28 @@ import { watch } from 'vue'
 const { user, register, loading } = useAuth()
 
 // Redirect if already logged in
-watch(() => user.value, (newUser) => {
-  if (newUser && !loading.value) {
-    navigateTo('/workspaces')
-  }
-}, { immediate: true })
+watch(
+  () => user.value,
+  (newUser) => {
+    if (newUser && !loading.value) {
+      navigateTo('/workspaces')
+    }
+  },
+  { immediate: true }
+)
 
 const registerSchema = toTypedSchema(
   z
     .object({
-      username: z.string()
+      username: z
+        .string()
         .min(1, 'Username is required')
         .min(3, 'Username must be at least 3 characters')
         .max(20, 'Username must not exceed 20 characters')
-        .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores')
+        .regex(
+          /^[a-zA-Z0-9_]+$/,
+          'Username can only contain letters, numbers, and underscores'
+        )
         .refine((val) => !val.includes(' '), 'Username cannot contain spaces'),
       email: z.string().min(1, 'Email is required').email('Invalid email'),
       password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -71,7 +79,7 @@ const onSubmit = handleSubmit(async (data) => {
         </CardHeader>
 
         <CardContent>
-          <form @submit="onSubmit" class="space-y-4">
+          <form class="space-y-4" @submit="onSubmit">
             <FormField
               v-slot="{ componentField }"
               name="username"

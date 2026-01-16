@@ -150,8 +150,8 @@ const handleClose = () => {
             <Button
               type="button"
               variant="outline"
-              @click="showEmojiPicker = !showEmojiPicker"
               class="w-11 h-11 text-3xl rounded-full"
+              @click="showEmojiPicker = !showEmojiPicker"
             >
               <Smile v-if="!emoji" :size="20" />
               <span v-else class="text-xl">{{ emoji }}</span>
@@ -162,11 +162,7 @@ const handleClose = () => {
               v-if="showEmojiPicker"
               class="absolute z-50 mt-2 bg-white rounded-lg shadow-xl"
             >
-              <Picker
-                :data="emojiIndex"
-                set="twitter"
-                @select="onSelectEmoji"
-              >
+              <Picker :data="emojiIndex" set="twitter" @select="onSelectEmoji">
                 <!-- Slot CUSTOMIZADO -->
                 <template #searchTemplate="{ searchValue, onSearch }">
                   <div class="flex items-center gap-2 p-2 border-b">
@@ -175,14 +171,17 @@ const handleClose = () => {
                       type="text"
                       :value="searchValue"
                       placeholder="Search emoji..."
-                      @input="(e) => onSearch((e.target as HTMLInputElement)?.value ?? '')"
+                      @input="
+                        (e) =>
+                          onSearch((e.target as HTMLInputElement)?.value ?? '')
+                      "
                     />
 
                     <!-- Botão CLEAR embutido no Picker -->
                     <button
                       v-if="emoji"
-                      @click="clearEmoji"
                       class="px-2 py-1 h-full text-sm bg-red-100 text-red-600 rounded-md"
+                      @click="clearEmoji"
                     >
                       Clear
                     </button>
@@ -198,7 +197,7 @@ const handleClose = () => {
         </div>
       </DialogHeader>
 
-      <form @submit.prevent="handleSubmit" class="space-y-6">
+      <form class="space-y-6" @submit.prevent="handleSubmit">
         <div class="space-y-2">
           <Label for="title">Title *</Label>
           <Input
@@ -206,7 +205,11 @@ const handleClose = () => {
             v-model="title"
             placeholder="Project title"
             :class="titleError ? 'border-red-700' : ''"
-            @input="() => { if (title.trim()) titleError = '' }"
+            @input="
+              () => {
+                if (title.trim()) titleError = ''
+              }
+            "
           />
           <p v-if="titleError" class="text-xs text-red-700">
             {{ titleError }}
@@ -246,8 +249,8 @@ const handleClose = () => {
               {{ tag }}
               <button
                 type="button"
-                @click="removeTag(tag)"
                 class="ml-1 hover:text-destructive"
+                @click="removeTag(tag)"
               >
                 <X class="h-3 w-3" />
               </button>

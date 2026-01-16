@@ -37,13 +37,16 @@ const socialLinks = [
         <!-- Brand -->
         <div class="lg:col-span-2 space-y-4">
           <NuxtLink to="/" class="flex items-center space-x-2">
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary">
+            <div
+              class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary"
+            >
               <span class="text-xl font-bold text-primary-foreground">FK</span>
             </div>
             <span class="text-xl font-bold text-foreground">Fokuz</span>
           </NuxtLink>
           <p class="text-sm text-muted-foreground max-w-sm">
-            The simplest and most intuitive way to manage your tasks and boost your productivity.
+            The simplest and most intuitive way to manage your tasks and boost
+            your productivity.
           </p>
           <!-- Social Links -->
           <div class="flex space-x-4">
@@ -104,15 +107,23 @@ const socialLinks = [
       </div>
 
       <!-- Bottom Bar -->
-      <div class="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
+      <div
+        class="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4"
+      >
         <p class="text-sm text-muted-foreground">
           © {{ currentYear }} Fokuz. All rights reserved.
         </p>
         <div class="flex gap-6">
-          <a href="#privacy" class="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <a
+            href="#privacy"
+            class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
             Privacy Policy
           </a>
-          <a href="#terms" class="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <a
+            href="#terms"
+            class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
             Terms of Service
           </a>
         </div>

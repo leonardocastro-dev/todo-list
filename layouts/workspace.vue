@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { LogOut, Lock } from "lucide-vue-next"
-import { Button } from "@/components/ui/button"
-import { useAuth } from "@/composables/useAuth"
+import { LogOut, Lock } from 'lucide-vue-next'
+import { Button } from '@/components/ui/button'
+import { useAuth } from '@/composables/useAuth'
 
 const { user, logout } = useAuth()
 const route = useRoute()
@@ -45,7 +45,7 @@ const isGuest = computed(() => !user.value)
           <span>Members</span>
         </NuxtLink>
 
-        <div class="border-t my-2"></div>
+        <div class="border-t my-2" />
 
         <NuxtLink
           to="/workspaces"
@@ -82,8 +82,8 @@ const isGuest = computed(() => !user.value)
           <Button
             variant="outline"
             size="sm"
-            @click="logout"
             class="w-full flex items-center justify-center gap-2"
+            @click="logout"
           >
             <LogOut class="h-4 w-4" />
             <span>Logout</span>
@@ -94,16 +94,16 @@ const isGuest = computed(() => !user.value)
           <Button
             variant="default"
             size="sm"
-            @click="$router.push('/login')"
             class="w-full"
+            @click="$router.push('/login')"
           >
             Login
           </Button>
           <Button
             variant="outline"
             size="sm"
-            @click="$router.push('/register')"
             class="w-full"
+            @click="$router.push('/register')"
           >
             Register
           </Button>

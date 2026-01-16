@@ -1,8 +1,18 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useAuth } from '@/composables/useAuth'
-import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider
+} from 'firebase/auth'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -44,7 +54,10 @@ const updateUserPassword = async () => {
     isUpdatingPassword.value = true
 
     // Reauthenticate user
-    const credential = EmailAuthProvider.credential(user.value.email!, currentPassword.value)
+    const credential = EmailAuthProvider.credential(
+      user.value.email!,
+      currentPassword.value
+    )
     await reauthenticateWithCredential(user.value, credential)
 
     // Update password
@@ -81,7 +94,9 @@ const updateUserPassword = async () => {
   <Card>
     <CardHeader>
       <CardTitle>Change Password</CardTitle>
-      <CardDescription>Update your password to keep your account secure</CardDescription>
+      <CardDescription
+        >Update your password to keep your account secure</CardDescription
+      >
     </CardHeader>
     <CardContent class="space-y-4">
       <div class="space-y-2">
@@ -118,9 +133,14 @@ const updateUserPassword = async () => {
       </div>
 
       <Button
-        @click="updateUserPassword"
-        :disabled="isUpdatingPassword || !currentPassword || !newPassword || !confirmPassword"
+        :disabled="
+          isUpdatingPassword ||
+          !currentPassword ||
+          !newPassword ||
+          !confirmPassword
+        "
         class="w-full"
+        @click="updateUserPassword"
       >
         {{ isUpdatingPassword ? 'Updating...' : 'Update Password' }}
       </Button>

@@ -16,15 +16,13 @@ import { ArrowRight } from 'lucide-vue-next'
               class="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
             >
               Organize your tasks with
-              <span
-                class="bg-gradient-primary bg-clip-text text-transparent"
-              >
+              <span class="bg-gradient-primary bg-clip-text text-transparent">
                 efficiency
               </span>
             </h1>
             <p class="text-lg text-muted-foreground md:text-xl max-w-2xl">
-              Manage your day without complications. Fokuz is the simplest
-              and most intuitive way to organize your tasks and boost your
+              Manage your day without complications. Fokuz is the simplest and
+              most intuitive way to organize your tasks and boost your
               productivity.
             </p>
           </div>
@@ -63,11 +61,7 @@ import { ArrowRight } from 'lucide-vue-next'
             </div>
           </div>
         </div>
-        <img
-          src="@/images/gato.png"
-          alt="Fokuz Dashboard"
-          class="w-40"
-        />
+        <img src="@/images/gato.png" alt="Fokuz Dashboard" class="w-40" />
       </div>
     </div>
   </section>

@@ -1,13 +1,8 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import type { Workspace } from '@/types/Workspace'
 import { useAuth } from '@/composables/useAuth'
-import {
-  collection,
-  query,
-  where,
-  getDocs
-} from 'firebase/firestore'
+import { collection, query, where, getDocs } from 'firebase/firestore'
 
 export const useWorkspaceStore = defineStore('workspace', () => {
   const workspaces = ref<Workspace[]>([])
@@ -23,8 +18,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     return await user.value.getIdToken()
   }
 
-  // Computed
-  const userWorkspaces = computed(() => workspaces.value)
+  // Helper to save workspaces to localStorage
+  const saveToLocalStorage = () => {
+    localStorage.setItem('localWorkspaces', JSON.stringify(workspaces.value))
+  }
 
   // Actions
   const loadWorkspaces = async (userId: string | null = null) => {
@@ -41,14 +38,11 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
       // Query workspaces where user is owner or member
       const workspacesRef = collection($firestore, 'workspaces')
-      const q = query(
-        workspacesRef,
-        where('members', 'array-contains', userId)
-      )
+      const q = query(workspacesRef, where('members', 'array-contains', userId))
 
       const snapshot = await getDocs(q)
 
-      workspaces.value = snapshot.docs.map(doc => ({
+      workspaces.value = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data()
       })) as Workspace[]
@@ -63,7 +57,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const createWorkspace = async (name: string, description?: string) => {
     if (!user.value?.uid) {
       // Modo offline - salvar no localStorage
-      const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      const slug = name
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
       const workspaceId = `${slug}-${Date.now()}`
       const workspace: Workspace = {
         id: workspaceId,
@@ -76,7 +73,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         updatedAt: Date.now()
       }
       workspaces.value.push(workspace)
-      localStorage.setItem('localWorkspaces', JSON.stringify(workspaces.value))
+      saveToLocalStorage()
       return workspace
     }
 
@@ -84,11 +81,14 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       const token = await getAuthToken()
       if (!token) throw new Error('Not authenticated')
 
-      const response = await $fetch<{ success: boolean; workspace: Workspace }>('/api/workspaces', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: { name, description }
-      })
+      const response = await $fetch<{ success: boolean; workspace: Workspace }>(
+        '/api/workspaces',
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: { name, description }
+        }
+      )
 
       if (response.success && response.workspace) {
         workspaces.value.push(response.workspace)
@@ -101,8 +101,14 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
   }
 
-  const updateWorkspace = async (workspaceId: string, name: string, description?: string) => {
-    const workspaceIndex = workspaces.value.findIndex(ws => ws.id === workspaceId)
+  const updateWorkspace = async (
+    workspaceId: string,
+    name: string,
+    description?: string
+  ) => {
+    const workspaceIndex = workspaces.value.findIndex(
+      (ws) => ws.id === workspaceId
+    )
     if (workspaceIndex === -1) return null
 
     if (!user.value?.uid) {
@@ -114,7 +120,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         updatedAt: Date.now()
       }
       workspaces.value[workspaceIndex] = updatedWorkspace
-      localStorage.setItem('localWorkspaces', JSON.stringify(workspaces.value))
+      saveToLocalStorage()
       return updatedWorkspace
     }
 
@@ -122,7 +128,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       const token = await getAuthToken()
       if (!token) throw new Error('Not authenticated')
 
-      const response = await $fetch<{ success: boolean; workspace: Partial<Workspace> }>(`/api/workspaces/${workspaceId}`, {
+      const response = await $fetch<{
+        success: boolean
+        workspace: Partial<Workspace>
+      }>(`/api/workspaces/${workspaceId}`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },
         body: { name, description }
@@ -148,7 +157,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   const getWorkspaceBySlug = (slug: string) => {
-    return workspaces.value.find(ws => ws.slug === slug) || null
+    return workspaces.value.find((ws) => ws.slug === slug) || null
   }
 
   const clearLocalData = () => {
@@ -158,10 +167,13 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     localStorage.removeItem('localWorkspaces')
   }
 
-  const deleteWorkspace = async (workspaceId: string, userId: string | null = null) => {
+  const deleteWorkspace = async (
+    workspaceId: string,
+    userId: string | null = null
+  ) => {
     if (!userId) {
-      workspaces.value = workspaces.value.filter(ws => ws.id !== workspaceId)
-      localStorage.setItem('localWorkspaces', JSON.stringify(workspaces.value))
+      workspaces.value = workspaces.value.filter((ws) => ws.id !== workspaceId)
+      saveToLocalStorage()
       return
     }
 
@@ -169,13 +181,18 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       const token = await getAuthToken()
       if (!token) throw new Error('Not authenticated')
 
-      const response = await $fetch<{ success: boolean }>(`/api/workspaces/${workspaceId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const response = await $fetch<{ success: boolean }>(
+        `/api/workspaces/${workspaceId}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      )
 
       if (response.success) {
-        workspaces.value = workspaces.value.filter(ws => ws.id !== workspaceId)
+        workspaces.value = workspaces.value.filter(
+          (ws) => ws.id !== workspaceId
+        )
       }
     } catch (error) {
       console.error('Error deleting workspace:', error)
@@ -188,9 +205,6 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     currentWorkspace,
     isLoading,
     loaded,
-
-    // Computed
-    userWorkspaces,
 
     // Actions
     loadWorkspaces,

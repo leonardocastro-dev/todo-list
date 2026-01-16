@@ -24,11 +24,15 @@ import { watch } from 'vue'
 
 const { user, login, loading } = useAuth()
 
-watch(() => user.value, (newUser) => {
-  if (newUser && !loading.value) {
-    navigateTo('/workspaces')
-  }
-}, { immediate: true })
+watch(
+  () => user.value,
+  (newUser) => {
+    if (newUser && !loading.value) {
+      navigateTo('/workspaces')
+    }
+  },
+  { immediate: true }
+)
 
 const loginSchema = toTypedSchema(
   z.object({
@@ -58,7 +62,7 @@ const onSubmit = handleSubmit(async (data) => {
         </CardHeader>
 
         <CardContent>
-          <form @submit="onSubmit" class="space-y-4">
+          <form class="space-y-4" @submit="onSubmit">
             <FormField
               v-slot="{ componentField }"
               name="email"

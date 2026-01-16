@@ -22,7 +22,7 @@ const projectId = route.params.id as string
 const workspaceId = route.params.workspace as string
 
 const currentProject = computed(() => {
-  return projectStore.projects.find(p => p.id === projectId)
+  return projectStore.projects.find((p) => p.id === projectId)
 })
 
 onMounted(async () => {
@@ -38,15 +38,18 @@ onMounted(async () => {
         <Button
           variant="ghost"
           size="sm"
-          @click="router.push(`/${workspaceId}/projects`)"
           class="flex items-center gap-1"
+          @click="router.push(`/${workspaceId}/projects`)"
         >
           <ArrowLeft class="h-4 w-4" />
           <span>Back to Projects</span>
         </Button>
       </div>
 
-      <div v-if="projectStore.isLoading" class="flex justify-between items-start">
+      <div
+        v-if="projectStore.isLoading"
+        class="flex justify-between items-start"
+      >
         <div class="flex-1">
           <Skeleton class="h-9 w-64 mb-2" />
           <Skeleton class="h-6 w-96 mb-3" />
@@ -65,7 +68,10 @@ onMounted(async () => {
         <p v-if="currentProject.description" class="text-muted-foreground mb-3">
           {{ currentProject.description }}
         </p>
-        <div v-if="currentProject.tags && currentProject.tags.length > 0" class="flex flex-wrap gap-2">
+        <div
+          v-if="currentProject.tags && currentProject.tags.length > 0"
+          class="flex flex-wrap gap-2"
+        >
           <Badge
             v-for="tag in currentProject.tags"
             :key="tag"
@@ -78,7 +84,7 @@ onMounted(async () => {
 
       <div v-else class="text-center py-8">
         <p class="text-muted-foreground">Project not found</p>
-        <Button @click="router.push(`/${workspaceId}/projects`)" class="mt-4">
+        <Button class="mt-4" @click="router.push(`/${workspaceId}/projects`)">
           Go to Projects
         </Button>
       </div>
@@ -87,7 +93,11 @@ onMounted(async () => {
     <div v-if="currentProject || projectStore.isLoading">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-semibold">Project Tasks</h2>
-        <Button @click="isAddingTask = true" class="flex items-center gap-1" :disabled="projectStore.isLoading">
+        <Button
+          class="flex items-center gap-1"
+          :disabled="projectStore.isLoading"
+          @click="isAddingTask = true"
+        >
           <Plus class="h-5 w-5" />
           <span>Add Task</span>
         </Button>
@@ -99,9 +109,9 @@ onMounted(async () => {
 
       <TaskForm
         :is-open="isAddingTask"
-        @close="isAddingTask = false"
         :user-id="user?.uid"
         :workspace-id="workspaceId"
+        @close="isAddingTask = false"
       />
     </div>
   </div>

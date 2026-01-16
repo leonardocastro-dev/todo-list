@@ -9,7 +9,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Mail, Crown, Shield, Lock, Trash2 } from 'lucide-vue-next'
+import {
+  MoreHorizontal,
+  Mail,
+  Crown,
+  Shield,
+  Lock,
+  Trash2
+} from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { toast } from 'vue-sonner'
 import MemberPermissionsModal from './MemberPermissionsModal.vue'
@@ -40,8 +47,12 @@ const isPermissionsOpen = ref(false)
 
 const isOwner = computed(() => props.member.permissions?.['owner'] === true)
 const isAdmin = computed(() => props.member.permissions?.['admin'] === true)
-const isCurrentUserOwner = computed(() => props.currentUserPermissions?.['owner'] === true)
-const isCurrentUserAdmin = computed(() => props.currentUserPermissions?.['admin'] === true)
+const isCurrentUserOwner = computed(
+  () => props.currentUserPermissions?.['owner'] === true
+)
+const isCurrentUserAdmin = computed(
+  () => props.currentUserPermissions?.['admin'] === true
+)
 const isCurrentUser = computed(() => props.member.uid === user.value?.uid)
 
 const canManagePermissions = computed(() => {
@@ -54,12 +65,16 @@ const canRemoveMember = computed(() => {
   if (isOwner.value) return false
   if (isCurrentUser.value) return false
   if (isCurrentUserOwner.value) return true
-  return isCurrentUserAdmin.value ||
+  return (
+    isCurrentUserAdmin.value ||
     props.currentUserPermissions?.['manage-members'] === true ||
     props.currentUserPermissions?.['remove-members'] === true
+  )
 })
 
-const showDropdown = computed(() => canManagePermissions.value || canRemoveMember.value)
+const showDropdown = computed(
+  () => canManagePermissions.value || canRemoveMember.value
+)
 
 const getAuthToken = async (): Promise<string | null> => {
   if (!user.value) return null
@@ -75,11 +90,14 @@ const removeMember = async () => {
     const token = await getAuthToken()
     if (!token) throw new Error('Not authenticated')
 
-    const response = await $fetch<{ success: boolean }>(`/api/members/${props.member.uid}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-      body: { workspaceId: props.workspaceId }
-    })
+    const response = await $fetch<{ success: boolean }>(
+      `/api/members/${props.member.uid}`,
+      {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+        body: { workspaceId: props.workspaceId }
+      }
+    )
 
     if (response.success) {
       emit('member-removed', props.member.uid)
@@ -105,9 +123,13 @@ const handlePermissionsUpdated = () => {
 </script>
 
 <template>
-  <div class="flex items-center justify-between p-4 border rounded-lg transition-colors">
+  <div
+    class="flex items-center justify-between p-4 border rounded-lg transition-colors"
+  >
     <div class="flex items-center gap-3">
-      <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+      <div
+        class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden"
+      >
         <img
           v-if="member.photoURL"
           :src="member.photoURL"

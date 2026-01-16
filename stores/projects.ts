@@ -1,11 +1,6 @@
 import { defineStore } from 'pinia'
 import { toast } from 'vue-sonner'
-import {
-  collection,
-  doc,
-  getDocs,
-  getDoc
-} from 'firebase/firestore'
+import { collection, doc, getDocs, getDoc } from 'firebase/firestore'
 import { useAuth } from '@/composables/useAuth'
 
 export const useProjectStore = defineStore('projects', {
@@ -18,29 +13,49 @@ export const useProjectStore = defineStore('projects', {
   getters: {
     totalProjects: (state) => state.projects.length,
     sortedProjects: (state) => {
-      return [...state.projects].sort((a, b) =>
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      return [...state.projects].sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       )
     },
     // Check if user has access to all projects
     hasAllProjectsAccess: (state) => {
       if (!state.memberPermissions) return false
-      return state.memberPermissions['owner'] || state.memberPermissions['admin'] || state.memberPermissions['all-projects']
+      return (
+        state.memberPermissions['owner'] ||
+        state.memberPermissions['admin'] ||
+        state.memberPermissions['all-projects']
+      )
     },
     // Check if user can create projects
     canCreateProjects: (state) => {
       if (!state.memberPermissions) return false
-      return state.memberPermissions['owner'] || state.memberPermissions['admin'] || state.memberPermissions['manage-projects'] || state.memberPermissions['create-projects']
+      return (
+        state.memberPermissions['owner'] ||
+        state.memberPermissions['admin'] ||
+        state.memberPermissions['manage-projects'] ||
+        state.memberPermissions['create-projects']
+      )
     },
     // Check if user can delete projects
     canDeleteProjects: (state) => {
       if (!state.memberPermissions) return false
-      return state.memberPermissions['owner'] || state.memberPermissions['admin'] || state.memberPermissions['manage-projects'] || state.memberPermissions['delete-projects']
+      return (
+        state.memberPermissions['owner'] ||
+        state.memberPermissions['admin'] ||
+        state.memberPermissions['manage-projects'] ||
+        state.memberPermissions['delete-projects']
+      )
     },
     // Check if user can edit projects
     canEditProjects: (state) => {
       if (!state.memberPermissions) return false
-      return state.memberPermissions['owner'] || state.memberPermissions['admin'] || state.memberPermissions['manage-projects'] || state.memberPermissions['edit-projects']
+      return (
+        state.memberPermissions['owner'] ||
+        state.memberPermissions['admin'] ||
+        state.memberPermissions['manage-projects'] ||
+        state.memberPermissions['edit-projects']
+      )
     }
   },
 
@@ -54,7 +69,12 @@ export const useProjectStore = defineStore('projects', {
     // Check if user has access to a specific project
     hasProjectAccess(projectId: string): boolean {
       if (!this.memberPermissions) return false
-      return this.memberPermissions['owner'] || this.memberPermissions['admin'] || this.memberPermissions['all-projects'] || this.memberPermissions[projectId]
+      return (
+        this.memberPermissions['owner'] ||
+        this.memberPermissions['admin'] ||
+        this.memberPermissions['all-projects'] ||
+        this.memberPermissions[projectId]
+      )
     },
 
     async loadProjects(userId: string | null = null) {
@@ -68,7 +88,10 @@ export const useProjectStore = defineStore('projects', {
       this.projects = []
     },
 
-    async loadProjectsForWorkspace(workspaceId: string, userId: string | null = null) {
+    async loadProjectsForWorkspace(
+      workspaceId: string,
+      userId: string | null = null
+    ) {
       try {
         this.isLoading = true
 
@@ -81,7 +104,13 @@ export const useProjectStore = defineStore('projects', {
         const { $firestore } = useNuxtApp()
 
         // First, get the member's permissions
-        const memberRef = doc($firestore, 'workspaces', workspaceId, 'members', userId)
+        const memberRef = doc(
+          $firestore,
+          'workspaces',
+          workspaceId,
+          'members',
+          userId
+        )
         const memberSnap = await getDoc(memberRef)
 
         if (memberSnap.exists()) {
@@ -91,11 +120,16 @@ export const useProjectStore = defineStore('projects', {
         }
 
         if (workspaceId) {
-          const projectsRef = collection($firestore, 'workspaces', workspaceId, 'projects')
+          const projectsRef = collection(
+            $firestore,
+            'workspaces',
+            workspaceId,
+            'projects'
+          )
           const snapshot = await getDocs(projectsRef)
 
           if (!snapshot.empty) {
-            const allProjects = snapshot.docs.map(doc => ({
+            const allProjects = snapshot.docs.map((doc) => ({
               id: doc.id,
               ...doc.data()
             })) as Project[]
@@ -106,8 +140,8 @@ export const useProjectStore = defineStore('projects', {
               this.projects = allProjects
             } else if (this.memberPermissions) {
               // User has access to specific projects only
-              this.projects = allProjects.filter(project =>
-                this.memberPermissions![project.id] === true
+              this.projects = allProjects.filter(
+                (project) => this.memberPermissions![project.id] === true
               )
             } else {
               // No permissions - no access
@@ -130,7 +164,11 @@ export const useProjectStore = defineStore('projects', {
       }
     },
 
-    async addProject(project: Project, userId: string | null = null, workspaceId?: string) {
+    async addProject(
+      project: Project,
+      userId: string | null = null,
+      workspaceId?: string
+    ) {
       const timestamp = Date.now()
       const projectId = String(timestamp)
       const projectWithTimestamp = {
@@ -153,15 +191,18 @@ export const useProjectStore = defineStore('projects', {
         const token = await this.getAuthToken()
         if (!token) throw new Error('Not authenticated')
 
-        const response = await $fetch<{ success: boolean; project: Project }>('/api/projects', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: {
-            workspaceId,
-            title: project.title,
-            description: project.description
+        const response = await $fetch<{ success: boolean; project: Project }>(
+          '/api/projects',
+          {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: {
+              workspaceId,
+              title: project.title,
+              description: project.description
+            }
           }
-        })
+        )
 
         if (response.success && response.project) {
           this.projects.push({ ...response.project, workspaceId })
@@ -180,7 +221,11 @@ export const useProjectStore = defineStore('projects', {
       }
     },
 
-    async updateProject(id: string, updatedProject: Partial<Project>, userId: string | null = null) {
+    async updateProject(
+      id: string,
+      updatedProject: Partial<Project>,
+      userId: string | null = null
+    ) {
       const index = this.projects.findIndex((project) => project.id === id)
       if (index === -1) return
 
@@ -201,7 +246,10 @@ export const useProjectStore = defineStore('projects', {
         const token = await this.getAuthToken()
         if (!token) throw new Error('Not authenticated')
 
-        const response = await $fetch<{ success: boolean; project: Partial<Project> }>(`/api/projects/${id}`, {
+        const response = await $fetch<{
+          success: boolean
+          project: Partial<Project>
+        }>(`/api/projects/${id}`, {
           method: 'PATCH',
           headers: { Authorization: `Bearer ${token}` },
           body: {
@@ -245,11 +293,14 @@ export const useProjectStore = defineStore('projects', {
         const token = await this.getAuthToken()
         if (!token) throw new Error('Not authenticated')
 
-        const response = await $fetch<{ success: boolean }>(`/api/projects/${id}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-          body: { workspaceId: projectToDelete.workspaceId }
-        })
+        const response = await $fetch<{ success: boolean }>(
+          `/api/projects/${id}`,
+          {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` },
+            body: { workspaceId: projectToDelete.workspaceId }
+          }
+        )
 
         if (response.success) {
           this.projects = this.projects.filter((project) => project.id !== id)
@@ -267,8 +318,12 @@ export const useProjectStore = defineStore('projects', {
       }
     },
 
-    async inviteMember(projectId: string, memberEmail: string, userId: string | null = null) {
-      const project = this.projects.find(p => p.id === projectId)
+    async inviteMember(
+      projectId: string,
+      memberEmail: string,
+      userId: string | null = null
+    ) {
+      const project = this.projects.find((p) => p.id === projectId)
       if (!project) return
 
       if (!project.members) {

@@ -1,28 +1,27 @@
 <script setup lang="ts">
 import { Card, CardContent } from '@/components/ui/card'
-import {
-  Zap,
-  Target,
-  Smile
-} from 'lucide-vue-next'
+import { Zap, Target, Smile } from 'lucide-vue-next'
 
 const benefits = [
   {
     icon: Zap,
     title: 'Maximum Productivity',
-    description: 'Organize your tasks efficiently and increase your productivity by up to 3x. Less time planning, more time executing.',
+    description:
+      'Organize your tasks efficiently and increase your productivity by up to 3x. Less time planning, more time executing.',
     gradient: 'from-accent to-primary'
   },
   {
     icon: Target,
     title: 'Complete Organization',
-    description: 'Keep all your tasks in one place. Visualize, prioritize, and manage everything without complications.',
+    description:
+      'Keep all your tasks in one place. Visualize, prioritize, and manage everything without complications.',
     gradient: 'from-primary to-primary-glow'
   },
   {
     icon: Smile,
     title: 'Simplicity',
-    description: 'Intuitive and easy-to-use interface. Start using it in seconds with no learning curve. Simplicity that works.',
+    description:
+      'Intuitive and easy-to-use interface. Start using it in seconds with no learning curve. Simplicity that works.',
     gradient: 'from-primary-glow to-accent'
   }
 ]
@@ -41,7 +40,8 @@ const benefits = [
           ?
         </h2>
         <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
-          The perfect solution for those seeking productivity, organization, and simplicity
+          The perfect solution for those seeking productivity, organization, and
+          simplicity
         </p>
       </div>
 
@@ -53,11 +53,18 @@ const benefits = [
           class="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg group animate-scale-in"
           :style="{ animationDelay: `${index * 0.15}s` }"
         >
-          <div :class="`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${benefit.gradient}`"></div>
+          <div
+            :class="`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${benefit.gradient}`"
+          />
 
           <CardContent class="p-8 space-y-4">
-            <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-primary group-hover:scale-110 transition-transform">
-              <component :is="benefit.icon" class="h-8 w-8 text-primary-foreground" />
+            <div
+              class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-primary group-hover:scale-110 transition-transform"
+            >
+              <component
+                :is="benefit.icon"
+                class="h-8 w-8 text-primary-foreground"
+              />
             </div>
 
             <div class="space-y-3">
@@ -74,7 +81,9 @@ const benefits = [
 
       <!-- Additional Info -->
       <div class="mt-16 text-center animate-fade-in-up">
-        <div class="inline-flex items-center justify-center rounded-full bg-primary/10 px-6 py-3">
+        <div
+          class="inline-flex items-center justify-center rounded-full bg-primary/10 px-6 py-3"
+        >
           <span class="text-sm font-medium text-primary">
             ✨ Thousands of users already trust Fokuz
           </span>

@@ -13,32 +13,38 @@ const features = [
   {
     icon: Plus,
     title: 'Create Tasks',
-    description: 'Add new tasks quickly with just a few clicks. Simple and intuitive interface.'
+    description:
+      'Add new tasks quickly with just a few clicks. Simple and intuitive interface.'
   },
   {
     icon: Edit3,
     title: 'Edit Tasks',
-    description: 'Modify your tasks easily. Update titles, descriptions, and deadlines whenever needed.'
+    description:
+      'Modify your tasks easily. Update titles, descriptions, and deadlines whenever needed.'
   },
   {
     icon: CheckCircle2,
     title: 'Task Status',
-    description: 'Mark tasks as pending or completed. Track your progress visually.'
+    description:
+      'Mark tasks as pending or completed. Track your progress visually.'
   },
   {
     icon: Trash2,
     title: 'Delete Tasks',
-    description: 'Remove completed or unnecessary tasks to keep your workspace organized.'
+    description:
+      'Remove completed or unnecessary tasks to keep your workspace organized.'
   },
   {
     icon: Filter,
     title: 'Smart Filters',
-    description: 'Filter tasks by status: all, pending, or completed. Find what you need quickly.'
+    description:
+      'Filter tasks by status: all, pending, or completed. Find what you need quickly.'
   },
   {
     icon: Sparkles,
     title: 'Intuitive Interface',
-    description: 'Clean and modern design that makes managing your daily tasks easy.'
+    description:
+      'Clean and modern design that makes managing your daily tasks easy.'
   }
 ]
 </script>
@@ -65,8 +71,13 @@ const features = [
           :style="{ animationDelay: `${index * 0.1}s` }"
         >
           <CardContent class="p-6 space-y-4">
-            <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-primary group-hover:scale-110 transition-transform">
-              <component :is="feature.icon" class="h-7 w-7 text-primary-foreground" />
+            <div
+              class="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-primary group-hover:scale-110 transition-transform"
+            >
+              <component
+                :is="feature.icon"
+                class="h-7 w-7 text-primary-foreground"
+              />
             </div>
             <div class="space-y-2">
               <h3 class="text-xl font-semibold text-foreground">

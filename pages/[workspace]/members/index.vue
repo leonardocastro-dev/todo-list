@@ -26,7 +26,7 @@ const members = ref<Member[]>([])
 const isLoadingMembers = ref(false)
 const workspaceId = computed(() => route.params.workspace as string)
 const workspace = computed(() =>
-  workspaceStore.workspaces.find(ws => ws.id === workspaceId.value)
+  workspaceStore.workspaces.find((ws) => ws.id === workspaceId.value)
 )
 
 const loadMembers = async () => {
@@ -36,10 +36,15 @@ const loadMembers = async () => {
   const { $firestore } = useNuxtApp()
 
   try {
-    const membersRef = collection($firestore, 'workspaces', workspaceId.value, 'members')
+    const membersRef = collection(
+      $firestore,
+      'workspaces',
+      workspaceId.value,
+      'members'
+    )
     const snapshot = await getDocs(membersRef)
 
-    members.value = snapshot.docs.map(doc => ({
+    members.value = snapshot.docs.map((doc) => ({
       uid: doc.id,
       ...doc.data()
     })) as Member[]
@@ -59,7 +64,7 @@ onMounted(async () => {
 
 const handleMemberRemoved = (memberId: string) => {
   // Remove from local members
-  members.value = members.value.filter(m => m.uid !== memberId)
+  members.value = members.value.filter((m) => m.uid !== memberId)
 
   // Update workspace members in store
   if (workspace.value) {
@@ -79,7 +84,9 @@ const handlePermissionsUpdated = async () => {
   <div class="max-w-6xl mx-auto">
     <header class="mb-8">
       <h1 class="text-3xl font-bold text-primary mb-2">Members</h1>
-      <p class="text-muted-foreground">Manage workspace members and invitations</p>
+      <p class="text-muted-foreground">
+        Manage workspace members and invitations
+      </p>
     </header>
 
     <MemberList

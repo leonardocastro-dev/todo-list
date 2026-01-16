@@ -12,11 +12,14 @@ import {
 } from 'reka-ui'
 import { computed, type HTMLAttributes } from 'vue'
 
-const props = withDefaults(defineProps<
-  DialogContentProps & { class?: HTMLAttributes['class'], canClose?: boolean }
->(), {
-  canClose: true
-})
+const props = withDefaults(
+  defineProps<
+    DialogContentProps & { class?: HTMLAttributes['class']; canClose?: boolean }
+  >(),
+  {
+    canClose: true
+  }
+)
 const emits = defineEmits<DialogContentEmits>()
 
 const delegatedProps = computed(() => {

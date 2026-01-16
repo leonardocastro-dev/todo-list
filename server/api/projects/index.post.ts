@@ -14,7 +14,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Project title is required' })
   }
 
-  await requirePermission(workspaceId, uid, ['manage-projects', 'create-projects'])
+  await requirePermission(workspaceId, uid, [
+    'manage-projects',
+    'create-projects'
+  ])
 
   const projectId = String(Date.now())
 

@@ -2,15 +2,24 @@
 import { ref } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { doc, updateDoc } from 'firebase/firestore'
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL
+} from 'firebase/storage'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { toast } from 'vue-sonner'
-import { Upload } from 'lucide-vue-next'
-import { Loader2 } from 'lucide-vue-next'
+import { Upload, Loader2 } from 'lucide-vue-next'
 
 const props = defineProps<{
   username: string
@@ -30,7 +39,12 @@ const isUploadingAvatar = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 // Sync with parent
-watch(() => props.username, (val) => { localUsername.value = val })
+watch(
+  () => props.username,
+  (val) => {
+    localUsername.value = val
+  }
+)
 
 const updateUsername = async () => {
   if (!user.value || !localUsername.value) {
@@ -91,7 +105,10 @@ const handleAvatarUpload = async (event: Event) => {
     isUploadingAvatar.value = true
     const { $storage, $firestore } = useNuxtApp()
 
-    const avatarRef = storageRef($storage, `avatars/${user.value.uid}/${Date.now()}_${file.name}`)
+    const avatarRef = storageRef(
+      $storage,
+      `avatars/${user.value.uid}/${Date.now()}_${file.name}`
+    )
     await uploadBytes(avatarRef, file)
     const downloadUrl = await getDownloadURL(avatarRef)
 
@@ -120,7 +137,9 @@ const handleAvatarUpload = async (event: Event) => {
   <Card>
     <CardHeader>
       <CardTitle>Profile Information</CardTitle>
-      <CardDescription>Update your username and profile picture</CardDescription>
+      <CardDescription
+        >Update your username and profile picture</CardDescription
+      >
     </CardHeader>
     <CardContent class="space-y-6">
       <!-- Avatar Upload -->
@@ -149,9 +168,9 @@ const handleAvatarUpload = async (event: Event) => {
           />
           <Button
             variant="outline"
-            @click="fileInput?.click()"
             :disabled="isUploadingAvatar"
             class="flex items-center gap-2"
+            @click="fileInput?.click()"
           >
             <Upload class="h-4 w-4" />
             {{ isUploadingAvatar ? 'Uploading...' : 'Upload New Photo' }}
@@ -173,8 +192,8 @@ const handleAvatarUpload = async (event: Event) => {
             :disabled="isUpdatingProfile"
           />
           <Button
-            @click="updateUsername"
             :disabled="isUpdatingProfile || !localUsername"
+            @click="updateUsername"
           >
             {{ isUpdatingProfile ? 'Saving...' : 'Save' }}
           </Button>

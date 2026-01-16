@@ -14,20 +14,31 @@ export default defineEventHandler(async (event) => {
   const { workspaceId } = await readBody(event)
 
   if (!workspaceId || !projectId) {
-    throw createError({ statusCode: 400, message: 'Workspace ID and Project ID are required' })
+    throw createError({
+      statusCode: 400,
+      message: 'Workspace ID and Project ID are required'
+    })
   }
 
   const permissions = await getMemberPermissions(workspaceId, uid)
 
   if (!permissions) {
-    throw createError({ statusCode: 403, message: 'You are not a member of this workspace' })
+    throw createError({
+      statusCode: 403,
+      message: 'You are not a member of this workspace'
+    })
   }
 
-  const canDelete = isOwnerOrAdmin(permissions) ||
-    (hasAnyPermission(permissions, ['manage-projects', 'delete-projects']) && canAccessProject(permissions, projectId))
+  const canDelete =
+    isOwnerOrAdmin(permissions) ||
+    (hasAnyPermission(permissions, ['manage-projects', 'delete-projects']) &&
+      canAccessProject(permissions, projectId))
 
   if (!canDelete) {
-    throw createError({ statusCode: 403, message: 'You do not have permission to delete this project' })
+    throw createError({
+      statusCode: 403,
+      message: 'You do not have permission to delete this project'
+    })
   }
 
   const projectRef = db.doc(`workspaces/${workspaceId}/projects/${projectId}`)
@@ -39,8 +50,10 @@ export default defineEventHandler(async (event) => {
 
   const batch = db.batch()
 
-  const tasksSnap = await db.collection(`workspaces/${workspaceId}/projects/${projectId}/tasks`).get()
-  tasksSnap.docs.forEach(taskDoc => {
+  const tasksSnap = await db
+    .collection(`workspaces/${workspaceId}/projects/${projectId}/tasks`)
+    .get()
+  tasksSnap.docs.forEach((taskDoc) => {
     batch.delete(taskDoc.ref)
   })
 

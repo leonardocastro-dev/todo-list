@@ -25,7 +25,9 @@ onMounted(async () => {
   if (!loading.value) {
     await workspaceStore.loadWorkspaces(user.value?.uid || null)
 
-    const workspace = workspaceStore.workspaces.find(w => w.id === workspaceSlug)
+    const workspace = workspaceStore.workspaces.find(
+      (w) => w.id === workspaceSlug
+    )
     if (!workspace) {
       workspaceExists.value = false
       throw createError({

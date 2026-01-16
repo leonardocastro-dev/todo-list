@@ -29,26 +29,34 @@ The project is built on a modern JavaScript/TypeScript stack:
 ## Core Files and Their Functionality
 
 ### Backend Integration (`plugins/firebase.ts`)
+
 This file configures Firebase services including Authentication and Realtime Database. It initializes the Firebase SDK with environment-specific configuration and makes these services available throughout the Nuxt application via dependency injection.
 
 ### State Management (`store.ts`)
+
 The Pinia store manages the entire application state, including tasks array, filtering options, and loading states. Key functionalities include:
+
 - **Task CRUD Operations**: Create, read, update, and delete tasks with both local storage and Firebase synchronization
 - **Filtering System**: Multi-dimensional filtering by status (pending/completed), priority (normal/important/urgent), and text search
 - **Statistics Calculation**: Real-time computation of task completion percentages, urgent task counts, and progress metrics
 - **Dual Storage Strategy**: Seamlessly handles both authenticated users (Firebase) and guest users (localStorage)
 
 ### Authentication Composable (`composables/useAuth.ts`)
+
 This composable encapsulates all authentication logic using Firebase Auth. It provides reactive user state, login/logout functionality, user registration with automatic database user profile creation, and comprehensive error handling with user-friendly toast notifications.
 
 ### Type Definitions (`types/Task.ts`)
+
 Defines the core Task interface with properties including id, title, description, status (pending/completed), priority levels, and creation timestamps. This ensures type safety across all task-related operations.
 
 ### Main Application Layout (`app.vue`)
+
 The root component that sets up the application shell, including the toast notification system for user feedback and the main routing outlet for page components.
 
 ### Primary Interface (`pages/index.vue`)
+
 The main application interface that orchestrates all major components:
+
 - **Header Section**: Displays application branding and authentication controls
 - **Task Statistics**: Shows completion percentages and task counts
 - **Filtering Controls**: Provides search and filter options
@@ -68,6 +76,7 @@ The main application interface that orchestrates all major components:
 **TaskStats Component** (`components/TaskStats.vue`): Displays visual statistics including completion percentages, task counts by status and priority, and progress indicators.
 
 ### UI Component Library (`components/ui/`)
+
 A comprehensive collection of reusable UI components based on Radix UI and styled with TailwindCSS, including buttons, cards, dialogs, forms, inputs, and more. These components ensure consistency across the application and provide accessibility features out of the box.
 
 ## Design Decisions and Implementation Choices

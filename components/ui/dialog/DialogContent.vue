@@ -12,11 +12,14 @@ import {
 import { computed, type HTMLAttributes } from 'vue'
 import DialogOverlay from './DialogOverlay.vue'
 
-const props = withDefaults(defineProps<
-  DialogContentProps & { class?: HTMLAttributes['class'], canClose?: boolean }
->(), {
-  canClose: true
-})
+const props = withDefaults(
+  defineProps<
+    DialogContentProps & { class?: HTMLAttributes['class']; canClose?: boolean }
+  >(),
+  {
+    canClose: true
+  }
+)
 const emits = defineEmits<DialogContentEmits>()
 
 const delegatedProps = computed(() => {
@@ -47,7 +50,9 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
         :class="
           cn(
             'ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=\'size-\'])]:size-4',
-            canClose ? 'cursor-pointer hover:opacity-100' : 'opacity-30 pointer-events-none'
+            canClose
+              ? 'cursor-pointer hover:opacity-100'
+              : 'opacity-30 pointer-events-none'
           )
         "
       >

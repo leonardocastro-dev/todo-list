@@ -9,7 +9,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Tag, Users, Calendar, Lock, Trash2, PenLine } from 'lucide-vue-next'
+import {
+  MoreHorizontal,
+  Tag,
+  Users,
+  Calendar,
+  Lock,
+  Trash2,
+  PenLine
+} from 'lucide-vue-next'
 import ProjectForm from './ProjectForm.vue'
 import { useAuth } from '@/composables/useAuth'
 
@@ -40,27 +48,43 @@ const goToProject = () => {
   const workspaceId = route.params.workspace as string
   router.push(`/${workspaceId}/projects/${props.project.id}`)
 }
-
 </script>
 
 <template>
-  <Card class="aspect-[1.55] hover:shadow-lg transition-shadow cursor-pointer" @click="goToProject">
+  <Card
+    class="aspect-[1.55] hover:shadow-lg transition-shadow cursor-pointer"
+    @click="goToProject"
+  >
     <CardContent class="flex items-start justify-between h-full">
       <div class="flex h-full flex-col justify-between">
         <div class="flex flex-col gap-2">
-          <div class="w-11 h-11 rounded-full flex items-center justify-center bg-muted">
-            <span v-if="project.emoji" class="text-xl">{{ project.emoji }}</span>
-            <span v-else class="text-lg font-semibold text-muted-foreground">{{ project.title?.charAt(0).toUpperCase() }}</span>
+          <div
+            class="w-11 h-11 rounded-full flex items-center justify-center bg-muted"
+          >
+            <span v-if="project.emoji" class="text-xl">{{
+              project.emoji
+            }}</span>
+            <span v-else class="text-lg font-semibold text-muted-foreground">{{
+              project.title?.charAt(0).toUpperCase()
+            }}</span>
           </div>
-            <h3 class="text-lg font-semibold line-clamp-2">{{ project.title }}</h3>
-          <p v-if="project.description" class="text-sm text-muted-foreground mb-2 line-clamp-2">
+          <h3 class="text-lg font-semibold line-clamp-2">
+            {{ project.title }}
+          </h3>
+          <p
+            v-if="project.description"
+            class="text-sm text-muted-foreground mb-2 line-clamp-2"
+          >
             {{ project.description }}
           </p>
         </div>
 
         <div>
           <!-- Tags -->
-          <div v-if="project.tags && project.tags.length > 0" class="flex flex-wrap gap-1 mb-3">
+          <div
+            v-if="project.tags && project.tags.length > 0"
+            class="flex flex-wrap gap-1 mb-3"
+          >
             <Badge
               v-for="tag in project.tags.slice(0, 3)"
               :key="tag"
@@ -70,20 +94,32 @@ const goToProject = () => {
               <Tag class="h-3 w-3" />
               {{ tag }}
             </Badge>
-            <Badge v-if="project.tags.length > 3" variant="secondary" class="text-xs">
+            <Badge
+              v-if="project.tags.length > 3"
+              variant="secondary"
+              class="text-xs"
+            >
               +{{ project.tags.length - 3 }}
             </Badge>
           </div>
 
           <!-- Footer info -->
-          <div class="mt-auto flex items-center gap-4 text-xs text-muted-foreground">
+          <div
+            class="mt-auto flex items-center gap-4 text-xs text-muted-foreground"
+          >
             <div class="flex items-center gap-1">
               <Calendar class="h-3 w-3" />
               <span>{{ formatDate(project.updatedAt) }}</span>
             </div>
-            <div v-if="project.members && project.members.length > 0" class="flex items-center gap-1">
+            <div
+              v-if="project.members && project.members.length > 0"
+              class="flex items-center gap-1"
+            >
               <Users class="h-3 w-3" />
-              <span>{{ project.members.length }} {{ project.members.length === 1 ? 'member' : 'members' }}</span>
+              <span
+                >{{ project.members.length }}
+                {{ project.members.length === 1 ? 'member' : 'members' }}</span
+              >
             </div>
           </div>
         </div>
@@ -99,8 +135,8 @@ const goToProject = () => {
         <DropdownMenuContent align="end">
           <DropdownMenuItem
             v-if="canEdit"
-            @click.stop="isEditing = true"
             class="flex items-center gap-2"
+            @click.stop="isEditing = true"
           >
             <PenLine class="h-3 w-3" />
             Edit Project

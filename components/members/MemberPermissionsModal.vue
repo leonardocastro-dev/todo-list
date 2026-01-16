@@ -11,7 +11,10 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
-import { NestedCheckboxes, type NestedItem } from '@/components/ui/nested-checkboxes'
+import {
+  NestedCheckboxes,
+  type NestedItem
+} from '@/components/ui/nested-checkboxes'
 import { toast } from 'vue-sonner'
 import { useAuth } from '@/composables/useAuth'
 
@@ -64,10 +67,15 @@ const loadProjects = async () => {
   const { $firestore } = useNuxtApp()
 
   try {
-    const projectsRef = collection($firestore, 'workspaces', props.workspaceId, 'projects')
+    const projectsRef = collection(
+      $firestore,
+      'workspaces',
+      props.workspaceId,
+      'projects'
+    )
     const snapshot = await getDocs(projectsRef)
 
-    projects.value = snapshot.docs.map(doc => ({
+    projects.value = snapshot.docs.map((doc) => ({
       id: doc.id,
       title: doc.data().title
     }))
@@ -115,7 +123,7 @@ const nestedItems = computed<NestedItem[]>(() => {
     {
       id: 'all-projects',
       name: 'View projects',
-      children: projects.value.map(project => ({
+      children: projects.value.map((project) => ({
         id: project.id,
         name: project.title
       }))
@@ -179,16 +187,19 @@ const selectedPermissions = computed(() => {
     if (!item.children || item.children.length === 0) return
 
     const childIds = getAllChildIds(item)
-    const allChildrenSelected = childIds.length > 0 && childIds.every(id => optimizedIds.includes(id))
+    const allChildrenSelected =
+      childIds.length > 0 && childIds.every((id) => optimizedIds.includes(id))
 
     if (allChildrenSelected && !optimizedIds.includes(item.id)) {
       // Remove all child IDs and add parent ID
-      optimizedIds = optimizedIds.filter(id => !childIds.includes(id)).concat(item.id)
+      optimizedIds = optimizedIds
+        .filter((id) => !childIds.includes(id))
+        .concat(item.id)
     }
 
     // If parent is selected, remove individual child IDs
     if (optimizedIds.includes(item.id)) {
-      optimizedIds = optimizedIds.filter(id => !childIds.includes(id))
+      optimizedIds = optimizedIds.filter((id) => !childIds.includes(id))
     }
 
     // Recursively check children
@@ -220,14 +231,17 @@ const savePermissions = async () => {
       permissionsData[id] = true
     }
 
-    const response = await $fetch<{ success: boolean }>(`/api/members/${props.member.uid}`, {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${token}` },
-      body: {
-        workspaceId: props.workspaceId,
-        permissions: permissionsData
+    const response = await $fetch<{ success: boolean }>(
+      `/api/members/${props.member.uid}`,
+      {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+        body: {
+          workspaceId: props.workspaceId,
+          permissions: permissionsData
+        }
       }
-    })
+    )
 
     if (response.success) {
       toast.success('Permissions updated successfully', {
@@ -251,7 +265,15 @@ const savePermissions = async () => {
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="p-0 w-[380px]" :can-close="!isSaving" @interact-outside="(e) => { if (isSaving) e.preventDefault() }">
+    <DialogContent
+      class="p-0 w-[380px]"
+      :can-close="!isSaving"
+      @interact-outside="
+        (e) => {
+          if (isSaving) e.preventDefault()
+        }
+      "
+    >
       <DialogHeader class="pt-6 px-6">
         <DialogTitle>Permissions</DialogTitle>
         <DialogDescription>
@@ -259,7 +281,7 @@ const savePermissions = async () => {
         </DialogDescription>
       </DialogHeader>
 
-      <hr>
+      <hr />
 
       <div class="space-y-4">
         <div class="space-y-2">
@@ -276,27 +298,30 @@ const savePermissions = async () => {
             </div>
           </div>
 
-          <div v-else-if="projects.length === 0" class="text-sm text-muted-foreground text-center py-4">
+          <div
+            v-else-if="projects.length === 0"
+            class="text-sm text-muted-foreground text-center py-4"
+          >
             No projects in this workspace
           </div>
 
           <NestedCheckboxes
             v-else
-            class="px-6"
             v-model="permissionsState"
+            class="px-6"
             :items="nestedItems"
             :disabled="isSaving"
           />
         </div>
       </div>
 
-      <hr>
+      <hr />
 
       <DialogFooter class="pb-6 px-6">
-        <Button variant="outline" @click="open = false" :disabled="isSaving">
+        <Button variant="outline" :disabled="isSaving" @click="open = false">
           Cancel
         </Button>
-        <Button @click="savePermissions" :disabled="isSaving">
+        <Button :disabled="isSaving" @click="savePermissions">
           {{ isSaving ? 'Saving...' : 'Save' }}
         </Button>
       </DialogFooter>

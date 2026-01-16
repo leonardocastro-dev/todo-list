@@ -31,7 +31,13 @@ const taskStore = useTaskStore()
       </CardContent>
     </Card>
 
-    <Card :class="!taskStore.isLoading && taskStore.urgentTasks > 0 ? 'border-red-300 bg-red-50' : ''">
+    <Card
+      :class="
+        !taskStore.isLoading && taskStore.urgentTasks > 0
+          ? 'border-red-300 bg-red-50'
+          : ''
+      "
+    >
       <CardContent class="p-4 flex flex-col items-center">
         <p class="text-sm text-muted-foreground mb-1">Urgent Pending</p>
         <Skeleton v-if="taskStore.isLoading" class="h-8 w-12" />

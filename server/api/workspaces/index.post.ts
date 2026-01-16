@@ -14,7 +14,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+  const slug = name
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
   const workspaceId = `${slug}-${Date.now()}`
 
   const userSnap = await db.doc(`users/${uid}`).get()
@@ -40,7 +43,8 @@ export default defineEventHandler(async (event) => {
   batch.set(memberRef, {
     uid,
     email: email || userData?.email || '',
-    username: userData?.username || userData?.name || email?.split('@')[0] || '',
+    username:
+      userData?.username || userData?.name || email?.split('@')[0] || '',
     photoURL: userData?.photoURL || null,
     permissions: {
       owner: true

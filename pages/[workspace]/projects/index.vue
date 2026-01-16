@@ -22,7 +22,10 @@ const workspaceId = computed(() => {
 })
 
 onMounted(async () => {
-  await projectStore.loadProjectsForWorkspace(workspaceId.value, user.value?.uid)
+  await projectStore.loadProjectsForWorkspace(
+    workspaceId.value,
+    user.value?.uid
+  )
 })
 </script>
 
@@ -37,13 +40,14 @@ onMounted(async () => {
       <div>
         <h2 class="text-xl font-semibold">Your Projects</h2>
         <p class="text-sm text-muted-foreground mt-1">
-          {{ projectStore.totalProjects }} {{ projectStore.totalProjects === 1 ? 'project' : 'projects' }}
+          {{ projectStore.totalProjects }}
+          {{ projectStore.totalProjects === 1 ? 'project' : 'projects' }}
         </p>
       </div>
       <Button
         v-if="projectStore.canCreateProjects"
-        @click="isAddingProject = true"
         class="flex items-center gap-1"
+        @click="isAddingProject = true"
       >
         <Plus class="h-5 w-5" />
         <span>New Project</span>
@@ -54,9 +58,9 @@ onMounted(async () => {
 
     <ProjectForm
       :is-open="isAddingProject"
-      @close="isAddingProject = false"
       :workspace-id="workspaceId"
       :user-id="user?.uid"
+      @close="isAddingProject = false"
     />
   </div>
 </template>
