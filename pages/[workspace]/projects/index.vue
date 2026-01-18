@@ -1,31 +1,32 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Plus } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import ProjectList from '@/components/projects/ProjectList.vue'
 import ProjectForm from '@/components/projects/ProjectForm.vue'
-import { useWorkspaceStore } from '@/stores/workspaces'
 import { useAuth } from '@/composables/useAuth'
+import { useWorkspace } from '@/composables/useWorkspace'
 
-const route = useRoute()
 const { user } = useAuth()
+const { workspaceId } = useWorkspace()
+const projectStore = useProjectStore()
 
 const isAddingProject = ref(false)
-const projectStore = useProjectStore()
-const workspaceStore = useWorkspaceStore()
+const editingProject = ref<Project | undefined>()
 
-const workspaceId = computed(() => {
-  if (workspaceStore.currentWorkspace) {
-    return workspaceStore.currentWorkspace.id
-  }
-  return route.params['workspace'] as string
-})
+const handleEdit = (project: Project) => {
+  editingProject.value = project
+}
+
+const closeForm = () => {
+  isAddingProject.value = false
+  editingProject.value = undefined
+}
 
 onMounted(async () => {
-  await projectStore.loadProjectsForWorkspace(
-    workspaceId.value,
-    user.value?.uid
-  )
+  if (workspaceId.value) {
+    await projectStore.loadProjectsForWorkspace(workspaceId.value, user.value?.uid)
+  }
 })
 </script>
 
@@ -54,13 +55,14 @@ onMounted(async () => {
       </Button>
     </div>
 
-    <ProjectList />
+    <ProjectList @edit="handleEdit" />
 
     <ProjectForm
-      :is-open="isAddingProject"
-      :workspace-id="workspaceId"
+      :is-open="isAddingProject || !!editingProject"
+      :edit-project="editingProject"
+      :workspace-id="workspaceId || undefined"
       :user-id="user?.uid"
-      @close="isAddingProject = false"
+      @close="closeForm"
     />
   </div>
 </template>

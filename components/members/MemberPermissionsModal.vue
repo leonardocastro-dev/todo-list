@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { collection, getDocs } from 'firebase/firestore'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -10,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { Skeleton } from '@/components/ui/skeleton'
 import {
   NestedCheckboxes,
   type NestedItem
@@ -27,11 +25,6 @@ interface Member {
   joinedAt: any
 }
 
-interface Project {
-  id: string
-  title: string
-}
-
 const props = defineProps<{
   member: Member
   workspaceId: string
@@ -44,8 +37,6 @@ const emit = defineEmits<{
 }>()
 
 const { user } = useAuth()
-const projects = ref<Project[]>([])
-const isLoadingProjects = ref(false)
 const isSaving = ref(false)
 
 const permissionsState = ref<Record<string, boolean>>({})
@@ -57,34 +48,9 @@ const getAuthToken = async (): Promise<string | null> => {
 
 watch(open, async (isOpen) => {
   if (isOpen) {
-    await loadProjects()
     initializePermissions()
   }
 })
-
-const loadProjects = async () => {
-  isLoadingProjects.value = true
-  const { $firestore } = useNuxtApp()
-
-  try {
-    const projectsRef = collection(
-      $firestore,
-      'workspaces',
-      props.workspaceId,
-      'projects'
-    )
-    const snapshot = await getDocs(projectsRef)
-
-    projects.value = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      title: doc.data().title
-    }))
-  } catch (error) {
-    console.error('Error loading projects:', error)
-  } finally {
-    isLoadingProjects.value = false
-  }
-}
 
 const initializePermissions = () => {
   const memberPermissions = props.member.permissions || {}
@@ -121,12 +87,8 @@ const nestedItems = computed<NestedItem[]>(() => {
       name: 'Admin'
     },
     {
-      id: 'all-projects',
-      name: 'View projects',
-      children: projects.value.map((project) => ({
-        id: project.id,
-        name: project.title
-      }))
+      id: 'access-projects',
+      name: 'Access projects'
     },
     {
       id: 'manage-projects',
@@ -284,35 +246,12 @@ const savePermissions = async () => {
       <hr />
 
       <div class="space-y-4">
-        <div class="space-y-2">
-          <div v-if="isLoadingProjects" class="space-y-2 px-6">
-            <div class="flex items-center space-x-2">
-              <Skeleton class="h-4 w-4" />
-              <Skeleton class="h-4 w-32" />
-            </div>
-            <div class="pl-6 space-y-2">
-              <div v-for="i in 3" :key="i" class="flex items-center space-x-2">
-                <Skeleton class="h-4 w-4" />
-                <Skeleton class="h-4 w-28" />
-              </div>
-            </div>
-          </div>
-
-          <div
-            v-else-if="projects.length === 0"
-            class="text-sm text-muted-foreground text-center py-4"
-          >
-            No projects in this workspace
-          </div>
-
-          <NestedCheckboxes
-            v-else
-            v-model="permissionsState"
-            class="px-6"
-            :items="nestedItems"
-            :disabled="isSaving"
-          />
-        </div>
+        <NestedCheckboxes
+          v-model="permissionsState"
+          class="px-6"
+          :items="nestedItems"
+          :disabled="isSaving"
+        />
       </div>
 
       <hr />

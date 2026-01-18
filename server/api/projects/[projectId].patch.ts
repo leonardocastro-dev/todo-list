@@ -4,14 +4,17 @@ import {
   getMemberPermissions,
   isOwnerOrAdmin,
   hasAnyPermission,
-  canAccessProject
+  canAccessProject,
+  updateProjectMemberAccess
 } from '@/server/utils/permissions'
+import { PERMISSIONS } from '@/constants/permissions'
 
 export default defineEventHandler(async (event) => {
   const { uid } = await verifyAuth(event)
   const projectId = getRouterParam(event, 'projectId')
 
-  const { workspaceId, title, description, emoji, tags } = await readBody(event)
+  const { workspaceId, title, description, emoji, tags, memberIds } =
+    await readBody(event)
 
   if (!workspaceId || !projectId) {
     throw createError({
@@ -31,7 +34,7 @@ export default defineEventHandler(async (event) => {
 
   const canEdit =
     isOwnerOrAdmin(permissions) ||
-    (hasAnyPermission(permissions, ['manage-projects', 'edit-projects']) &&
+    (hasAnyPermission(permissions, [PERMISSIONS.MANAGE_PROJECTS, PERMISSIONS.EDIT_PROJECTS]) &&
       canAccessProject(permissions, projectId))
 
   if (!canEdit) {
@@ -59,6 +62,11 @@ export default defineEventHandler(async (event) => {
   if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : []
 
   await projectRef.update(updateData)
+
+  // Update member access if provided
+  if (memberIds !== undefined && Array.isArray(memberIds)) {
+    await updateProjectMemberAccess(workspaceId, projectId, memberIds)
+  }
 
   const updatedSnap = await projectRef.get()
   const project = { id: updatedSnap.id, ...updatedSnap.data() }

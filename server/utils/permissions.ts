@@ -1,11 +1,14 @@
 import type { H3Event } from 'h3'
 import { createError, getHeader } from 'h3'
+import { FieldValue } from 'firebase-admin/firestore'
 import { auth, db } from './firebase-admin'
+import { PERMISSIONS } from '@/constants/permissions'
 
 export interface MemberPermissions {
   owner?: boolean
   admin?: boolean
-  'all-projects'?: boolean
+  'access-projects'?: boolean
+  'all-projects'?: boolean // Backward compatibility
   'manage-projects'?: boolean
   'create-projects'?: boolean
   'edit-projects'?: boolean
@@ -91,7 +94,8 @@ export function canAccessProject(
   if (!permissions) return false
   return (
     isOwnerOrAdmin(permissions) ||
-    permissions['all-projects'] === true ||
+    permissions[PERMISSIONS.ACCESS_PROJECTS] === true ||
+    permissions[PERMISSIONS.ALL_PROJECTS] === true || // Backward compatibility
     permissions[projectId] === true
   )
 }
@@ -169,4 +173,48 @@ export async function requireOwnerOrAdmin(
   }
 
   return permissions!
+}
+
+export async function updateProjectMemberAccess(
+  workspaceId: string,
+  projectId: string,
+  memberIds: string[]
+): Promise<void> {
+  // Get all workspace members
+  const membersRef = db.collection(`workspaces/${workspaceId}/members`)
+  const membersSnap = await membersRef.get()
+
+  const batch = db.batch()
+
+  membersSnap.docs.forEach((memberDoc) => {
+    const memberId = memberDoc.id
+    const permissions = memberDoc.data().permissions || {}
+
+    // Skip owners/admins and universal access holders
+    if (
+      permissions.owner ||
+      permissions.admin ||
+      permissions['access-projects'] ||
+      permissions['all-projects']
+    ) {
+      return
+    }
+
+    const shouldHaveAccess = memberIds.includes(memberId)
+    const hasAccess = permissions[projectId] === true
+
+    if (shouldHaveAccess && !hasAccess) {
+      // Add access
+      batch.update(memberDoc.ref, {
+        [`permissions.${projectId}`]: true
+      })
+    } else if (!shouldHaveAccess && hasAccess) {
+      // Remove access
+      batch.update(memberDoc.ref, {
+        [`permissions.${projectId}`]: FieldValue.delete()
+      })
+    }
+  })
+
+  await batch.commit()
 }

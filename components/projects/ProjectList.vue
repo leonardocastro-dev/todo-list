@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import ProjectItem from './ProjectItem.vue'
-import { useAuth } from '@/composables/useAuth'
 import { Skeleton } from '@/components/ui/skeleton'
 
-const projectStore = useProjectStore()
-const { user } = useAuth()
+const emit = defineEmits<{
+  edit: [project: Project]
+}>()
 
-onMounted(async () => {
-  await projectStore.loadProjects(user.value?.uid)
-})
+const projectStore = useProjectStore()
+
+// REMOVIDO: onMounted (página já carrega os projetos)
+// REMOVIDO: useAuth import
 </script>
 
 <template>
@@ -44,6 +44,7 @@ onMounted(async () => {
         v-for="project in projectStore.sortedProjects"
         :key="project.id"
         :project="project"
+        @edit="emit('edit', $event)"
       />
     </div>
   </div>

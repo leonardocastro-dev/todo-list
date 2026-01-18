@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -18,20 +18,20 @@ import {
   Trash2,
   PenLine
 } from 'lucide-vue-next'
-import ProjectForm from './ProjectForm.vue'
 import { useAuth } from '@/composables/useAuth'
 
 const props = defineProps<{
   project: Project
 }>()
 
+const emit = defineEmits<{
+  edit: [project: Project]
+}>()
+
 const router = useRouter()
 const route = useRoute()
 const projectStore = useProjectStore()
 const { user } = useAuth()
-const isEditing = ref(false)
-
-// Check permissions
 const canEdit = computed(() => projectStore.canEditProjects)
 const canDelete = computed(() => projectStore.canDeleteProjects)
 const hasAnyAction = computed(() => canEdit.value || canDelete.value)
@@ -47,6 +47,10 @@ const formatDate = (date: string) => {
 const goToProject = () => {
   const workspaceId = route.params.workspace as string
   router.push(`/${workspaceId}/projects/${props.project.id}`)
+}
+
+const handleEdit = () => {
+  emit('edit', props.project)
 }
 </script>
 
@@ -80,7 +84,6 @@ const goToProject = () => {
         </div>
 
         <div>
-          <!-- Tags -->
           <div
             v-if="project.tags && project.tags.length > 0"
             class="flex flex-wrap gap-1 mb-3"
@@ -103,7 +106,6 @@ const goToProject = () => {
             </Badge>
           </div>
 
-          <!-- Footer info -->
           <div
             class="mt-auto flex items-center gap-4 text-xs text-muted-foreground"
           >
@@ -136,7 +138,7 @@ const goToProject = () => {
           <DropdownMenuItem
             v-if="canEdit"
             class="flex items-center gap-2"
-            @click.stop="isEditing = true"
+            @click.stop="handleEdit"
           >
             <PenLine class="h-3 w-3" />
             Edit Project
@@ -170,12 +172,4 @@ const goToProject = () => {
       </DropdownMenu>
     </CardContent>
   </Card>
-
-  <ProjectForm
-    v-if="isEditing"
-    :is-open="isEditing"
-    :edit-project="project"
-    :user-id="user?.uid"
-    @close="isEditing = false"
-  />
 </template>

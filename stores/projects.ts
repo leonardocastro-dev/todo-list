@@ -1,12 +1,14 @@
 import { defineStore } from 'pinia'
-import { toast } from 'vue-sonner'
 import { collection, doc, getDocs, getDoc } from 'firebase/firestore'
 import { useAuth } from '@/composables/useAuth'
+import { showSuccessToast, showErrorToast } from '@/utils/toast'
+import { PERMISSIONS, hasAnyPermission } from '@/constants/permissions'
 
 export const useProjectStore = defineStore('projects', {
   state: () => ({
     projects: [] as Project[],
     isLoading: false,
+    error: null as string | null,
     memberPermissions: null as Record<string, boolean> | null
   }),
 
@@ -21,41 +23,42 @@ export const useProjectStore = defineStore('projects', {
     // Check if user has access to all projects
     hasAllProjectsAccess: (state) => {
       if (!state.memberPermissions) return false
-      return (
-        state.memberPermissions['owner'] ||
-        state.memberPermissions['admin'] ||
-        state.memberPermissions['all-projects']
-      )
+      return hasAnyPermission(state.memberPermissions, [
+        PERMISSIONS.OWNER,
+        PERMISSIONS.ADMIN,
+        PERMISSIONS.ACCESS_PROJECTS,
+        PERMISSIONS.ALL_PROJECTS
+      ])
     },
     // Check if user can create projects
     canCreateProjects: (state) => {
       if (!state.memberPermissions) return false
-      return (
-        state.memberPermissions['owner'] ||
-        state.memberPermissions['admin'] ||
-        state.memberPermissions['manage-projects'] ||
-        state.memberPermissions['create-projects']
-      )
+      return hasAnyPermission(state.memberPermissions, [
+        PERMISSIONS.OWNER,
+        PERMISSIONS.ADMIN,
+        PERMISSIONS.MANAGE_PROJECTS,
+        PERMISSIONS.CREATE_PROJECTS
+      ])
     },
     // Check if user can delete projects
     canDeleteProjects: (state) => {
       if (!state.memberPermissions) return false
-      return (
-        state.memberPermissions['owner'] ||
-        state.memberPermissions['admin'] ||
-        state.memberPermissions['manage-projects'] ||
-        state.memberPermissions['delete-projects']
-      )
+      return hasAnyPermission(state.memberPermissions, [
+        PERMISSIONS.OWNER,
+        PERMISSIONS.ADMIN,
+        PERMISSIONS.MANAGE_PROJECTS,
+        PERMISSIONS.DELETE_PROJECTS
+      ])
     },
     // Check if user can edit projects
     canEditProjects: (state) => {
       if (!state.memberPermissions) return false
-      return (
-        state.memberPermissions['owner'] ||
-        state.memberPermissions['admin'] ||
-        state.memberPermissions['manage-projects'] ||
-        state.memberPermissions['edit-projects']
-      )
+      return hasAnyPermission(state.memberPermissions, [
+        PERMISSIONS.OWNER,
+        PERMISSIONS.ADMIN,
+        PERMISSIONS.MANAGE_PROJECTS,
+        PERMISSIONS.EDIT_PROJECTS
+      ])
     }
   },
 
@@ -69,12 +72,12 @@ export const useProjectStore = defineStore('projects', {
     // Check if user has access to a specific project
     hasProjectAccess(projectId: string): boolean {
       if (!this.memberPermissions) return false
-      return (
-        this.memberPermissions['owner'] ||
-        this.memberPermissions['admin'] ||
-        this.memberPermissions['all-projects'] ||
-        this.memberPermissions[projectId]
-      )
+      return hasAnyPermission(this.memberPermissions, [
+        PERMISSIONS.OWNER,
+        PERMISSIONS.ADMIN,
+        PERMISSIONS.ACCESS_PROJECTS,
+        PERMISSIONS.ALL_PROJECTS
+      ]) || this.memberPermissions[projectId] === true
     },
 
     async loadProjects(userId: string | null = null) {
@@ -94,6 +97,7 @@ export const useProjectStore = defineStore('projects', {
     ) {
       try {
         this.isLoading = true
+        this.error = null
 
         if (!userId) {
           const localProjects = localStorage.getItem('localProjects')
@@ -155,10 +159,9 @@ export const useProjectStore = defineStore('projects', {
         }
       } catch (error) {
         console.error('Error loading workspace projects:', error)
-        toast.error('Failed to load workspace projects', {
-          style: { background: '#fda4af' },
-          duration: 3000
-        })
+        this.error = 'Failed to load projects'
+        showErrorToast('Failed to load workspace projects')
+        throw error
       } finally {
         this.isLoading = false
       }
@@ -167,23 +170,20 @@ export const useProjectStore = defineStore('projects', {
     async addProject(
       project: Project,
       userId: string | null = null,
-      workspaceId?: string
+      workspaceId?: string,
+      memberIds?: string[]
     ) {
-      const timestamp = Date.now()
-      const projectId = String(timestamp)
       const projectWithTimestamp = {
         ...project,
-        id: projectId,
         workspaceId: workspaceId || undefined
       }
 
+      // Optimistic: Add immediately
+      this.projects.push(projectWithTimestamp)
+
       if (!userId || !workspaceId) {
-        this.projects.push(projectWithTimestamp)
         localStorage.setItem('localProjects', JSON.stringify(this.projects))
-        toast.message('Project added successfully', {
-          style: { background: '#6ee7b7' },
-          duration: 3000
-        })
+        showSuccessToast('Project added successfully')
         return
       }
 
@@ -199,42 +199,52 @@ export const useProjectStore = defineStore('projects', {
             body: {
               workspaceId,
               title: project.title,
-              description: project.description
+              description: project.description,
+              emoji: project.emoji,
+              tags: project.tags,
+              memberIds
             }
           }
         )
 
         if (response.success && response.project) {
-          this.projects.push({ ...response.project, workspaceId })
+          // Update with server response
+          const index = this.projects.findIndex(p => p.id === project.id)
+          if (index !== -1) {
+            this.projects[index] = { ...response.project, workspaceId }
+          }
         }
 
-        toast.message('Project added successfully', {
-          style: { background: '#6ee7b7' },
-          duration: 3000
-        })
+        showSuccessToast('Project added successfully')
       } catch (error) {
+        // Rollback: Remove from state
+        this.projects = this.projects.filter(p => p.id !== project.id)
         console.error('Error adding project:', error)
-        toast.error('Failed to add project', {
-          style: { background: '#fda4af' },
-          duration: 3000
-        })
+        showErrorToast('Failed to add project')
+        throw error
       }
     },
 
     async updateProject(
       id: string,
       updatedProject: Partial<Project>,
-      userId: string | null = null
+      userId: string | null = null,
+      memberIds?: string[]
     ) {
       const index = this.projects.findIndex((project) => project.id === id)
       if (index === -1) return
 
+      // Backup for rollback
+      const backup = { ...this.projects[index] }
+
+      // Optimistic: Update immediately
+      this.projects[index] = {
+        ...this.projects[index],
+        ...updatedProject,
+        updatedAt: new Date().toISOString()
+      }
+
       if (!userId) {
-        this.projects[index] = {
-          ...this.projects[index],
-          ...updatedProject,
-          updatedAt: new Date().toISOString()
-        }
         localStorage.setItem('localProjects', JSON.stringify(this.projects))
         return
       }
@@ -254,7 +264,8 @@ export const useProjectStore = defineStore('projects', {
           headers: { Authorization: `Bearer ${token}` },
           body: {
             workspaceId: project.workspaceId,
-            ...updatedProject
+            ...updatedProject,
+            memberIds
           }
         })
 
@@ -265,27 +276,28 @@ export const useProjectStore = defineStore('projects', {
           }
         }
       } catch (error) {
+        // Rollback: Restore backup
+        this.projects[index] = backup
         console.error('Error updating project:', error)
-        toast.error('Failed to update project on server', {
-          style: { background: '#fda4af' },
-          duration: 3000
-        })
+        showErrorToast('Failed to update project')
+        throw error
       }
     },
 
     async deleteProject(id: string, userId: string | null = null) {
       const projectToDelete = this.projects.find((project) => project.id === id)
-
       if (!projectToDelete) return
 
+      // Backup for rollback
+      const backup = [...this.projects]
+
+      // Optimistic: Remove immediately
+      this.projects = this.projects.filter((project) => project.id !== id)
+
       if (!userId || !projectToDelete.workspaceId) {
-        this.projects = this.projects.filter((project) => project.id !== id)
         localStorage.setItem('localProjects', JSON.stringify(this.projects))
         localStorage.removeItem(`localTasks_${id}`)
-        toast.message('Project deleted successfully', {
-          style: { background: '#fda4af' },
-          duration: 3000
-        })
+        showSuccessToast('Project deleted successfully')
         return
       }
 
@@ -303,18 +315,14 @@ export const useProjectStore = defineStore('projects', {
         )
 
         if (response.success) {
-          this.projects = this.projects.filter((project) => project.id !== id)
-          toast.message('Project deleted successfully', {
-            style: { background: '#fda4af' },
-            duration: 3000
-          })
+          showSuccessToast('Project deleted successfully')
         }
       } catch (error) {
+        // Rollback: Restore projects
+        this.projects = backup
         console.error('Error deleting project:', error)
-        toast.error('Failed to delete project on server', {
-          style: { background: '#fda4af' },
-          duration: 3000
-        })
+        showErrorToast('Failed to delete project')
+        throw error
       }
     },
 
@@ -331,20 +339,14 @@ export const useProjectStore = defineStore('projects', {
       }
 
       if (project.members.includes(memberEmail)) {
-        toast.message('Member already in project', {
-          style: { background: '#fdba74' },
-          duration: 3000
-        })
+        showErrorToast('Member already in project')
         return
       }
 
       project.members.push(memberEmail)
       await this.updateProject(projectId, { members: project.members }, userId)
 
-      toast.message(`Invited ${memberEmail} to project`, {
-        style: { background: '#6ee7b7' },
-        duration: 3000
-      })
+      showSuccessToast(`Invited ${memberEmail} to project`)
     }
   }
 })
