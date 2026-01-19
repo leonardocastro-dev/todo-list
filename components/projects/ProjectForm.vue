@@ -327,13 +327,18 @@ const handleClose = () => {
           <!-- Members List -->
           <div class="max-h-[200px] overflow-y-auto rounded-md border p-4">
             <div class="space-y-3">
-              <div v-if="isLoadingMembers" v-for="i in 3" :key="i" class="flex items-center space-x-2">
+              <div
+                v-for="i in 3"
+                v-if="isLoadingMembers"
+                :key="i"
+                class="flex items-center space-x-2"
+              >
                 <Skeleton class="h-4 w-4" />
                 <Skeleton class="h-4 w-32" />
               </div>
               <div
-                v-else
                 v-for="member in members"
+                v-else
                 :key="member.uid"
                 class="flex items-center space-x-2"
               >
@@ -370,11 +375,17 @@ const handleClose = () => {
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" @click="handleClose" :disabled="isSaving">
+          <Button
+            type="button"
+            variant="outline"
+            :disabled="isSaving"
+            @click="handleClose"
+          >
             Cancel
           </Button>
           <Button type="submit" :disabled="isSaving">
-            {{ isSaving ? 'Saving...' : (editProject ? 'Update' : 'Create') }} Project
+            {{ isSaving ? 'Saving...' : editProject ? 'Update' : 'Create' }}
+            Project
           </Button>
         </DialogFooter>
       </form>
