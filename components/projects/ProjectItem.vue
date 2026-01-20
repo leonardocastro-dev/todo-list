@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import type { WorkspaceMember } from '@/composables/useMembers'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,8 +12,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import {
   MoreHorizontal,
-  Tag,
-  Users,
   Calendar,
   Lock,
   Trash2,
@@ -22,6 +21,7 @@ import { useAuth } from '@/composables/useAuth'
 
 const props = defineProps<{
   project: Project
+  workspaceMembers: WorkspaceMember[]
 }>()
 
 const emit = defineEmits<{
@@ -35,6 +35,19 @@ const { user } = useAuth()
 const canEdit = computed(() => projectStore.canEditProjects)
 const canDelete = computed(() => projectStore.canDeleteProjects)
 const hasAnyAction = computed(() => canEdit.value || canDelete.value)
+
+const projectMembersWithData = computed(() => {
+  if (!props.project.members || props.project.members.length === 0) {
+    return []
+  }
+  return props.project.members
+    .map(memberEmail => props.workspaceMembers.find(m => m.email === memberEmail))
+    .filter((m): m is WorkspaceMember => m !== undefined)
+})
+
+console.log('projectMembersWithData', projectMembersWithData.value);
+const displayedMembers = computed(() => projectMembersWithData.value.slice(0, 3))
+const extraMembersCount = computed(() => Math.max(0, projectMembersWithData.value.length - 3))
 
 const formatDate = (date: string) => {
   const d = new Date(date)
@@ -83,46 +96,32 @@ const handleEdit = () => {
           </p>
         </div>
 
-        <div>
-          <div
-            v-if="project.tags && project.tags.length > 0"
-            class="flex flex-wrap gap-1 mb-3"
-          >
-            <Badge
-              v-for="tag in project.tags.slice(0, 3)"
-              :key="tag"
-              variant="secondary"
-              class="flex items-center gap-1 text-xs"
-            >
-              <Tag class="h-3 w-3" />
-              {{ tag }}
-            </Badge>
-            <Badge
-              v-if="project.tags.length > 3"
-              variant="secondary"
-              class="text-xs"
-            >
-              +{{ project.tags.length - 3 }}
-            </Badge>
+        <div
+          class="mt-auto flex items-center gap-4 text-xs text-muted-foreground"
+        >
+          <div class="flex items-center gap-1">
+            <Calendar class="h-3 w-3" />
+            <span>{{ formatDate(project.updatedAt) }}</span>
           </div>
-
           <div
-            class="mt-auto flex items-center gap-4 text-xs text-muted-foreground"
+            v-if="projectMembersWithData.length > 0"
+            class="flex -space-x-2 *:data-[slot=avatar]:ring-background *:data-[slot=avatar]:ring-2"
           >
-            <div class="flex items-center gap-1">
-              <Calendar class="h-3 w-3" />
-              <span>{{ formatDate(project.updatedAt) }}</span>
-            </div>
-            <div
-              v-if="project.members && project.members.length > 0"
-              class="flex items-center gap-1"
+            <Avatar
+              v-for="member in displayedMembers"
+              :key="member.uid"
+              class="h-6 w-6"
             >
-              <Users class="h-3 w-3" />
-              <span
-                >{{ project.members.length }}
-                {{ project.members.length === 1 ? 'member' : 'members' }}</span
-              >
-            </div>
+              <AvatarImage :src="member.photoURL || undefined" :alt="member.username || ''" />
+              <AvatarFallback class="text-xs">
+                {{ member.username?.charAt(0).toUpperCase() || '?' }}
+              </AvatarFallback>
+            </Avatar>
+            <Avatar v-if="extraMembersCount > 0" class="h-6 w-6">
+              <AvatarFallback class="text-xs bg-muted">
+                +{{ extraMembersCount }}
+              </AvatarFallback>
+            </Avatar>
           </div>
         </div>
       </div>

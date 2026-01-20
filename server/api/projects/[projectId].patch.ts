@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   const { uid } = await verifyAuth(event)
   const projectId = getRouterParam(event, 'projectId')
 
-  const { workspaceId, title, description, emoji, tags, memberIds } =
+  const { workspaceId, title, description, emoji, memberIds } =
     await readBody(event)
 
   if (!workspaceId || !projectId) {
@@ -59,7 +59,6 @@ export default defineEventHandler(async (event) => {
   if (description !== undefined)
     updateData.description = description?.trim() || null
   if (emoji !== undefined) updateData.emoji = emoji || null
-  if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : []
 
   await projectRef.update(updateData)
 

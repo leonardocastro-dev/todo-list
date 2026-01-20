@@ -68,18 +68,6 @@ onMounted(async () => {
         <p v-if="currentProject.description" class="text-muted-foreground mb-3">
           {{ currentProject.description }}
         </p>
-        <div
-          v-if="currentProject.tags && currentProject.tags.length > 0"
-          class="flex flex-wrap gap-2"
-        >
-          <Badge
-            v-for="tag in currentProject.tags"
-            :key="tag"
-            variant="secondary"
-          >
-            {{ tag }}
-          </Badge>
-        </div>
       </div>
 
       <div v-else class="text-center py-8">

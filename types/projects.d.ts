@@ -2,7 +2,6 @@ declare interface Project {
   id: string
   title: string
   description?: string
-  tags: string[]
   emoji?: string
   members?: string[]
   workspaceId?: string

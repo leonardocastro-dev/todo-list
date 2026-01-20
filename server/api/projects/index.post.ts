@@ -9,7 +9,7 @@ import { PERMISSIONS } from '@/constants/permissions'
 export default defineEventHandler(async (event) => {
   const { uid } = await verifyAuth(event)
 
-  const { workspaceId, title, description, emoji, tags, memberIds } =
+  const { workspaceId, title, description, emoji, memberIds } =
     await readBody(event)
 
   if (!workspaceId) {
@@ -32,7 +32,6 @@ export default defineEventHandler(async (event) => {
     title: title.trim(),
     description: description?.trim() || null,
     emoji: emoji || null,
-    tags: Array.isArray(tags) ? tags : [],
     workspaceId,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()

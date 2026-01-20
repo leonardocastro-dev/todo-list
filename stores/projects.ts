@@ -201,7 +201,6 @@ export const useProjectStore = defineStore('projects', {
               title: project.title,
               description: project.description,
               emoji: project.emoji,
-              tags: project.tags,
               memberIds
             }
           }
