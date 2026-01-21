@@ -72,12 +72,14 @@ export const useProjectStore = defineStore('projects', {
     // Check if user has access to a specific project
     hasProjectAccess(projectId: string): boolean {
       if (!this.memberPermissions) return false
-      return hasAnyPermission(this.memberPermissions, [
-        PERMISSIONS.OWNER,
-        PERMISSIONS.ADMIN,
-        PERMISSIONS.ACCESS_PROJECTS,
-        PERMISSIONS.ALL_PROJECTS
-      ]) || this.memberPermissions[projectId] === true
+      return (
+        hasAnyPermission(this.memberPermissions, [
+          PERMISSIONS.OWNER,
+          PERMISSIONS.ADMIN,
+          PERMISSIONS.ACCESS_PROJECTS,
+          PERMISSIONS.ALL_PROJECTS
+        ]) || this.memberPermissions[projectId] === true
+      )
     },
 
     async loadProjects(userId: string | null = null) {
@@ -208,7 +210,7 @@ export const useProjectStore = defineStore('projects', {
 
         if (response.success && response.project) {
           // Update with server response
-          const index = this.projects.findIndex(p => p.id === project.id)
+          const index = this.projects.findIndex((p) => p.id === project.id)
           if (index !== -1) {
             this.projects[index] = { ...response.project, workspaceId }
           }
@@ -217,7 +219,7 @@ export const useProjectStore = defineStore('projects', {
         showSuccessToast('Project added successfully')
       } catch (error) {
         // Rollback: Remove from state
-        this.projects = this.projects.filter(p => p.id !== project.id)
+        this.projects = this.projects.filter((p) => p.id !== project.id)
         console.error('Error adding project:', error)
         showErrorToast('Failed to add project')
         throw error

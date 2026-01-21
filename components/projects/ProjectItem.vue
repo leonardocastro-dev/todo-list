@@ -36,37 +36,24 @@ const canEdit = computed(() => projectStore.canEditProjects)
 const canDelete = computed(() => projectStore.canDeleteProjects)
 const hasAnyAction = computed(() => canEdit.value || canDelete.value)
 
-// TODO: Remove mock data after testing
-const MOCK_MEMBERS: WorkspaceMember[] = [
-  { uid: '1', email: 'alice@test.com', username: 'Alice', photoURL: 'https://i.pravatar.cc/150?u=alice' },
-  { uid: '2', email: 'bob@test.com', username: 'Bob', photoURL: 'https://i.pravatar.cc/150?u=bob' },
-  { uid: '3', email: 'carol@test.com', username: 'Carol', photoURL: 'https://i.pravatar.cc/150?u=carol' },
-  { uid: '4', email: 'dave@test.com', username: 'Dave', photoURL: 'https://i.pravatar.cc/150?u=dave' },
-  { uid: '5', email: 'eve@test.com', username: 'Eve', photoURL: 'https://i.pravatar.cc/150?u=eve' },
-  { uid: '6', email: 'frank@test.com', username: 'Frank', photoURL: null },
-  { uid: '7', email: 'grace@test.com', username: 'Grace', photoURL: 'https://i.pravatar.cc/150?u=grace' },
-  { uid: '8', email: 'henry@test.com', username: 'Henry', photoURL: null },
-  { uid: '9', email: 'iris@test.com', username: 'Iris', photoURL: 'https://i.pravatar.cc/150?u=iris' },
-  { uid: '10', email: 'jack@test.com', username: 'Jack', photoURL: 'https://i.pravatar.cc/150?u=jack' }
-]
-
 const projectMembersWithData = computed(() => {
-  // TODO: Remove this line and uncomment the real logic after testing
-  return MOCK_MEMBERS
+  if (!props.workspaceMembers || props.workspaceMembers.length === 0) {
+    return []
+  }
 
-  // if (!props.workspaceMembers || props.workspaceMembers.length === 0) {
-  //   return []
-  // }
-
-  // // Filter members who have permission for this project
-  // // Rule: member.permissions[project.id] === true
-  // return props.workspaceMembers.filter(member => {
-  //   return member.permissions?.[props.project.id] === true
-  // })
+  // Filter members who have permission for this project
+  // Rule: member.permissions[project.id] === true
+  return props.workspaceMembers.filter((member) => {
+    return member.permissions?.[props.project.id] === true
+  })
 })
 
-const displayedMembers = computed(() => projectMembersWithData.value.slice(0, 3))
-const extraMembersCount = computed(() => Math.max(0, projectMembersWithData.value.length - 3))
+const displayedMembers = computed(() =>
+  projectMembersWithData.value.slice(0, 3)
+)
+const extraMembersCount = computed(() =>
+  Math.max(0, projectMembersWithData.value.length - 3)
+)
 
 const formatDate = (date: string) => {
   const d = new Date(date)
@@ -96,9 +83,7 @@ const handleEdit = () => {
         <div
           class="w-11 h-11 rounded-full flex items-center justify-center bg-muted"
         >
-          <span v-if="project.emoji" class="text-xl">{{
-            project.emoji
-          }}</span>
+          <span v-if="project.emoji" class="text-xl">{{ project.emoji }}</span>
           <span v-else class="text-lg font-semibold text-muted-foreground">{{
             project.title?.charAt(0).toUpperCase()
           }}</span>
@@ -130,7 +115,11 @@ const handleEdit = () => {
             :key="member.uid"
             class="h-8 w-8"
           >
-            <AvatarImage v-if="member.photoURL" :src="member.photoURL" :alt="member.username || ''" />
+            <AvatarImage
+              v-if="member.photoURL"
+              :src="member.photoURL"
+              :alt="member.username || ''"
+            />
             <AvatarFallback class="text-xs">
               {{ member.username?.charAt(0).toUpperCase() || '?' }}
             </AvatarFallback>
@@ -145,7 +134,12 @@ const handleEdit = () => {
 
       <DropdownMenu v-if="hasAnyAction">
         <DropdownMenuTrigger as-child>
-          <Button variant="ghost" size="sm" class="absolute top-3 right-3 h-8 w-8 p-0" @click.stop>
+          <Button
+            variant="ghost"
+            size="sm"
+            class="absolute top-3 right-3 h-8 w-8 p-0"
+            @click.stop
+          >
             <span class="sr-only">Open menu</span>
             <MoreHorizontal class="h-4 w-4" />
           </Button>

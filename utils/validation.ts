@@ -27,6 +27,8 @@ export const validateProjectForm = (data: {
   return errors
 }
 
-export const hasValidationErrors = (errors: ProjectValidationErrors): boolean => {
+export const hasValidationErrors = (
+  errors: ProjectValidationErrors
+): boolean => {
   return Object.keys(errors).length > 0
 }

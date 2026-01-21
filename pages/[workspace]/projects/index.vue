@@ -25,7 +25,10 @@ const closeForm = () => {
 
 onMounted(async () => {
   if (workspaceId.value) {
-    await projectStore.loadProjectsForWorkspace(workspaceId.value, user.value?.uid)
+    await projectStore.loadProjectsForWorkspace(
+      workspaceId.value,
+      user.value?.uid
+    )
   }
 })
 </script>

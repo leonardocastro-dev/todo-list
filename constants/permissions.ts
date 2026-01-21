@@ -12,17 +12,23 @@ export const PERMISSIONS = {
   REMOVE_MEMBERS: 'remove-members'
 } as const
 
-export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS]
+export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
-export const isOwner = (permissions: Record<string, boolean> | null): boolean => {
+export const isOwner = (
+  permissions: Record<string, boolean> | null
+): boolean => {
   return permissions?.[PERMISSIONS.OWNER] === true
 }
 
-export const isAdmin = (permissions: Record<string, boolean> | null): boolean => {
+export const isAdmin = (
+  permissions: Record<string, boolean> | null
+): boolean => {
   return permissions?.[PERMISSIONS.ADMIN] === true
 }
 
-export const isOwnerOrAdmin = (permissions: Record<string, boolean> | null): boolean => {
+export const isOwnerOrAdmin = (
+  permissions: Record<string, boolean> | null
+): boolean => {
   return isOwner(permissions) || isAdmin(permissions)
 }
 
@@ -40,7 +46,7 @@ export const hasAnyPermission = (
 ): boolean => {
   if (!permissions) return false
   if (isOwnerOrAdmin(permissions)) return true
-  return permissionList.some(p => permissions[p] === true)
+  return permissionList.some((p) => permissions[p] === true)
 }
 
 export const canAccessProject = (

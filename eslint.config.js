@@ -18,7 +18,7 @@ export default withNuxt([
     },
     rules: {
       'vue/html-self-closing': 'off',
-      'vue/require-default-prop': 'off',
+      'vue/require-default-prop': 'off'
     }
   },
   {

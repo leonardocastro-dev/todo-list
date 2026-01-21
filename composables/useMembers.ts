@@ -10,7 +10,9 @@ export interface WorkspaceMember {
   permissions?: Record<string, boolean>
 }
 
-const hasUniversalAccess = (permissions: Record<string, boolean> | undefined): boolean => {
+const hasUniversalAccess = (
+  permissions: Record<string, boolean> | undefined
+): boolean => {
   if (!permissions) return false
   return !!(
     permissions[PERMISSIONS.OWNER] ||
@@ -28,7 +30,6 @@ const error = ref<string | null>(null)
 const loadedWorkspaceId = ref<string | null>(null)
 
 export const useMembers = () => {
-
   const loadWorkspaceMembers = async (workspaceId: string) => {
     if (!workspaceId) return
 
@@ -42,18 +43,23 @@ export const useMembers = () => {
 
     try {
       const { $firestore } = useNuxtApp()
-      const membersRef = collection($firestore, 'workspaces', workspaceId, 'members')
+      const membersRef = collection(
+        $firestore,
+        'workspaces',
+        workspaceId,
+        'members'
+      )
       const snapshot = await getDocs(membersRef)
 
       members.value = snapshot.docs
-        .map(doc => ({
+        .map((doc) => ({
           uid: doc.id,
           email: doc.data().email,
           username: doc.data().username,
           photoURL: doc.data().photoURL || null,
           permissions: doc.data().permissions || {}
         }))
-        .filter(member => !hasUniversalAccess(member.permissions))
+        .filter((member) => !hasUniversalAccess(member.permissions))
 
       loadedWorkspaceId.value = workspaceId
     } catch (e) {
@@ -64,7 +70,10 @@ export const useMembers = () => {
     }
   }
 
-  const loadProjectMemberAccess = async (workspaceId: string, projectId: string) => {
+  const loadProjectMemberAccess = async (
+    workspaceId: string,
+    projectId: string
+  ) => {
     if (!workspaceId || !projectId) {
       selectedMemberIds.value = []
       return
@@ -74,11 +83,16 @@ export const useMembers = () => {
 
     try {
       const { $firestore } = useNuxtApp()
-      const membersRef = collection($firestore, 'workspaces', workspaceId, 'members')
+      const membersRef = collection(
+        $firestore,
+        'workspaces',
+        workspaceId,
+        'members'
+      )
       const snapshot = await getDocs(membersRef)
 
       const memberIdsWithAccess: string[] = []
-      snapshot.docs.forEach(doc => {
+      snapshot.docs.forEach((doc) => {
         const permissions = doc.data().permissions || {}
 
         if (hasUniversalAccess(permissions)) {

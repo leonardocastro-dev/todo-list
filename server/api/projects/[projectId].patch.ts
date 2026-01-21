@@ -34,7 +34,10 @@ export default defineEventHandler(async (event) => {
 
   const canEdit =
     isOwnerOrAdmin(permissions) ||
-    (hasAnyPermission(permissions, [PERMISSIONS.MANAGE_PROJECTS, PERMISSIONS.EDIT_PROJECTS]) &&
+    (hasAnyPermission(permissions, [
+      PERMISSIONS.MANAGE_PROJECTS,
+      PERMISSIONS.EDIT_PROJECTS
+    ]) &&
       canAccessProject(permissions, projectId))
 
   if (!canEdit) {

@@ -98,7 +98,7 @@ const handleSubmit = async () => {
   // Validate
   const errors = validateProjectForm({
     title: title.value,
-    description: description.value,
+    description: description.value
   })
 
   if (hasValidationErrors(errors)) {
