@@ -20,14 +20,22 @@ const hasUniversalAccess = (permissions: Record<string, boolean> | undefined): b
   )
 }
 
+// Singleton state - shared across all component instances
+const members = ref<WorkspaceMember[]>([])
+const selectedMemberIds = ref<string[]>([])
+const isLoadingMembers = ref(false)
+const error = ref<string | null>(null)
+const loadedWorkspaceId = ref<string | null>(null)
+
 export const useMembers = () => {
-  const members = ref<WorkspaceMember[]>([])
-  const selectedMemberIds = ref<string[]>([])
-  const isLoadingMembers = ref(false)
-  const error = ref<string | null>(null)
 
   const loadWorkspaceMembers = async (workspaceId: string) => {
     if (!workspaceId) return
+
+    // Skip if already loaded for this workspace
+    if (loadedWorkspaceId.value === workspaceId && members.value.length > 0) {
+      return
+    }
 
     isLoadingMembers.value = true
     error.value = null
@@ -46,6 +54,8 @@ export const useMembers = () => {
           permissions: doc.data().permissions || {}
         }))
         .filter(member => !hasUniversalAccess(member.permissions))
+
+      loadedWorkspaceId.value = workspaceId
     } catch (e) {
       error.value = 'Failed to load members'
       console.error('Error loading workspace members:', e)

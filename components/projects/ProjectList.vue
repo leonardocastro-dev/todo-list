@@ -1,15 +1,28 @@
 <script setup lang="ts">
 import ProjectItem from './ProjectItem.vue'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useMembers } from '@/composables/useMembers'
+import { useWorkspace } from '@/composables/useWorkspace'
 
 const emit = defineEmits<{
   edit: [project: Project]
 }>()
 
 const projectStore = useProjectStore()
+const { workspaceId } = useWorkspace()
+const { members, loadWorkspaceMembers } = useMembers()
 
-// REMOVIDO: onMounted (página já carrega os projetos)
-// REMOVIDO: useAuth import
+onMounted(async () => {
+  if (workspaceId.value) {
+    await loadWorkspaceMembers(workspaceId.value)
+  }
+})
+
+watch(workspaceId, async (newId) => {
+  if (newId) {
+    await loadWorkspaceMembers(newId)
+  }
+})
 </script>
 
 <template>
@@ -44,6 +57,7 @@ const projectStore = useProjectStore()
         v-for="project in projectStore.sortedProjects"
         :key="project.id"
         :project="project"
+        :workspace-members="members"
         @edit="emit('edit', $event)"
       />
     </div>

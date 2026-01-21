@@ -37,15 +37,17 @@ const canDelete = computed(() => projectStore.canDeleteProjects)
 const hasAnyAction = computed(() => canEdit.value || canDelete.value)
 
 const projectMembersWithData = computed(() => {
-  if (!props.project.members || props.project.members.length === 0) {
+  if (!props.workspaceMembers || props.workspaceMembers.length === 0) {
     return []
   }
-  return props.project.members
-    .map(memberEmail => props.workspaceMembers.find(m => m.email === memberEmail))
-    .filter((m): m is WorkspaceMember => m !== undefined)
+
+  // Filter members who have permission for this project
+  // Rule: member.permissions[project.id] === true
+  return props.workspaceMembers.filter(member => {
+    return member.permissions?.[props.project.id] === true
+  })
 })
 
-console.log('projectMembersWithData', projectMembersWithData.value);
 const displayedMembers = computed(() => projectMembersWithData.value.slice(0, 3))
 const extraMembersCount = computed(() => Math.max(0, projectMembersWithData.value.length - 3))
 
@@ -112,7 +114,7 @@ const handleEdit = () => {
               :key="member.uid"
               class="h-6 w-6"
             >
-              <AvatarImage :src="member.photoURL || undefined" :alt="member.username || ''" />
+              <AvatarImage v-if="member.photoURL" :src="member.photoURL" :alt="member.username || ''" />
               <AvatarFallback class="text-xs">
                 {{ member.username?.charAt(0).toUpperCase() || '?' }}
               </AvatarFallback>
