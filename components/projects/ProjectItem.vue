@@ -36,16 +36,33 @@ const canEdit = computed(() => projectStore.canEditProjects)
 const canDelete = computed(() => projectStore.canDeleteProjects)
 const hasAnyAction = computed(() => canEdit.value || canDelete.value)
 
-const projectMembersWithData = computed(() => {
-  if (!props.workspaceMembers || props.workspaceMembers.length === 0) {
-    return []
-  }
+// TODO: Remove mock data after testing
+const MOCK_MEMBERS: WorkspaceMember[] = [
+  { uid: '1', email: 'alice@test.com', username: 'Alice', photoURL: 'https://i.pravatar.cc/150?u=alice' },
+  { uid: '2', email: 'bob@test.com', username: 'Bob', photoURL: 'https://i.pravatar.cc/150?u=bob' },
+  { uid: '3', email: 'carol@test.com', username: 'Carol', photoURL: 'https://i.pravatar.cc/150?u=carol' },
+  { uid: '4', email: 'dave@test.com', username: 'Dave', photoURL: 'https://i.pravatar.cc/150?u=dave' },
+  { uid: '5', email: 'eve@test.com', username: 'Eve', photoURL: 'https://i.pravatar.cc/150?u=eve' },
+  { uid: '6', email: 'frank@test.com', username: 'Frank', photoURL: null },
+  { uid: '7', email: 'grace@test.com', username: 'Grace', photoURL: 'https://i.pravatar.cc/150?u=grace' },
+  { uid: '8', email: 'henry@test.com', username: 'Henry', photoURL: null },
+  { uid: '9', email: 'iris@test.com', username: 'Iris', photoURL: 'https://i.pravatar.cc/150?u=iris' },
+  { uid: '10', email: 'jack@test.com', username: 'Jack', photoURL: 'https://i.pravatar.cc/150?u=jack' }
+]
 
-  // Filter members who have permission for this project
-  // Rule: member.permissions[project.id] === true
-  return props.workspaceMembers.filter(member => {
-    return member.permissions?.[props.project.id] === true
-  })
+const projectMembersWithData = computed(() => {
+  // TODO: Remove this line and uncomment the real logic after testing
+  return MOCK_MEMBERS
+
+  // if (!props.workspaceMembers || props.workspaceMembers.length === 0) {
+  //   return []
+  // }
+
+  // // Filter members who have permission for this project
+  // // Rule: member.permissions[project.id] === true
+  // return props.workspaceMembers.filter(member => {
+  //   return member.permissions?.[props.project.id] === true
+  // })
 })
 
 const displayedMembers = computed(() => projectMembersWithData.value.slice(0, 3))
@@ -71,66 +88,64 @@ const handleEdit = () => {
 
 <template>
   <Card
-    class="aspect-[1.55] hover:shadow-lg transition-shadow cursor-pointer"
+    class="relative aspect-[1.55] hover:shadow-lg transition-shadow cursor-pointer"
     @click="goToProject"
   >
-    <CardContent class="flex items-start justify-between h-full">
-      <div class="flex h-full flex-col justify-between">
-        <div class="flex flex-col gap-2">
-          <div
-            class="w-11 h-11 rounded-full flex items-center justify-center bg-muted"
-          >
-            <span v-if="project.emoji" class="text-xl">{{
-              project.emoji
-            }}</span>
-            <span v-else class="text-lg font-semibold text-muted-foreground">{{
-              project.title?.charAt(0).toUpperCase()
-            }}</span>
-          </div>
-          <h3 class="text-lg font-semibold line-clamp-2">
-            {{ project.title }}
-          </h3>
-          <p
-            v-if="project.description"
-            class="text-sm text-muted-foreground mb-2 line-clamp-2"
-          >
-            {{ project.description }}
-          </p>
-        </div>
-
+    <CardContent class="flex flex-col justify-between h-full">
+      <div class="flex flex-col gap-2">
         <div
-          class="mt-auto flex items-center gap-4 text-xs text-muted-foreground"
+          class="w-11 h-11 rounded-full flex items-center justify-center bg-muted"
         >
-          <div class="flex items-center gap-1">
-            <Calendar class="h-3 w-3" />
-            <span>{{ formatDate(project.updatedAt) }}</span>
-          </div>
-          <div
-            v-if="projectMembersWithData.length > 0"
-            class="flex -space-x-2 *:data-[slot=avatar]:ring-background *:data-[slot=avatar]:ring-2"
+          <span v-if="project.emoji" class="text-xl">{{
+            project.emoji
+          }}</span>
+          <span v-else class="text-lg font-semibold text-muted-foreground">{{
+            project.title?.charAt(0).toUpperCase()
+          }}</span>
+        </div>
+        <h3 class="text-lg font-semibold line-clamp-2">
+          {{ project.title }}
+        </h3>
+        <p
+          v-if="project.description"
+          class="text-sm text-muted-foreground mb-2 line-clamp-2"
+        >
+          {{ project.description }}
+        </p>
+      </div>
+
+      <div
+        class="mt-auto flex items-center justify-between w-full gap-4 text-xs text-muted-foreground"
+      >
+        <div class="flex items-center gap-1">
+          <Calendar class="h-3 w-3" />
+          <span>{{ formatDate(project.updatedAt) }}</span>
+        </div>
+        <div
+          v-if="projectMembersWithData.length > 0"
+          class="flex -space-x-2 *:data-[slot=avatar]:ring-background *:data-[slot=avatar]:ring-2"
+        >
+          <Avatar
+            v-for="member in displayedMembers"
+            :key="member.uid"
+            class="h-8 w-8"
           >
-            <Avatar
-              v-for="member in displayedMembers"
-              :key="member.uid"
-              class="h-6 w-6"
-            >
-              <AvatarImage v-if="member.photoURL" :src="member.photoURL" :alt="member.username || ''" />
-              <AvatarFallback class="text-xs">
-                {{ member.username?.charAt(0).toUpperCase() || '?' }}
-              </AvatarFallback>
-            </Avatar>
-            <Avatar v-if="extraMembersCount > 0" class="h-6 w-6">
-              <AvatarFallback class="text-xs bg-muted">
-                +{{ extraMembersCount }}
-              </AvatarFallback>
-            </Avatar>
-          </div>
+            <AvatarImage v-if="member.photoURL" :src="member.photoURL" :alt="member.username || ''" />
+            <AvatarFallback class="text-xs">
+              {{ member.username?.charAt(0).toUpperCase() || '?' }}
+            </AvatarFallback>
+          </Avatar>
+          <Avatar v-if="extraMembersCount > 0" class="h-8 w-8">
+            <AvatarFallback class="text-xs bg-muted">
+              +{{ extraMembersCount }}
+            </AvatarFallback>
+          </Avatar>
         </div>
       </div>
 
       <DropdownMenu v-if="hasAnyAction">
         <DropdownMenuTrigger as-child>
-          <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click.stop>
+          <Button variant="ghost" size="sm" class="absolute top-3 right-3 h-8 w-8 p-0" @click.stop>
             <span class="sr-only">Open menu</span>
             <MoreHorizontal class="h-4 w-4" />
           </Button>
