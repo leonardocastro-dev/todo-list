@@ -58,7 +58,7 @@ watch(() => route.fullPath, closeMobileMenu)
         v-if="isMobileMenuOpen"
         class="lg:hidden fixed inset-0 top-16 bg-background z-30 flex flex-col origin-top"
       >
-        <nav class="flex flex-col flex-1 gap-2 px-4 py-4">
+        <nav aria-label="Main navigation" class="flex flex-col flex-1 gap-2 px-4 py-4">
           <NuxtLink
             :to="`/${workspaceSlug}/projects`"
             class="flex items-center px-4 py-3 text-base font-medium text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
@@ -164,7 +164,7 @@ watch(() => route.fullPath, closeMobileMenu)
         </NuxtLink>
       </div>
 
-      <nav class="flex flex-col flex-1 gap-2 px-4 py-2">
+      <nav aria-label="Main navigation" class="flex flex-col flex-1 gap-2 px-4 py-2">
         <NuxtLink
           :to="`/${workspaceSlug}/projects`"
           class="flex items-center px-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
