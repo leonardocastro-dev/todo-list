@@ -1,8 +1,10 @@
 import { db } from '@/server/utils/firebase-admin'
 import {
   verifyAuth,
-  requirePermission,
-  updateProjectMemberAccess
+  getMemberPermissions,
+  hasAnyPermission,
+  updateProjectMembers,
+  validateWorkspaceMemberIds
 } from '@/server/utils/permissions'
 import { PERMISSIONS } from '@/constants/permissions'
 
@@ -20,10 +22,28 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Project title is required' })
   }
 
-  await requirePermission(workspaceId, uid, [
-    PERMISSIONS.MANAGE_PROJECTS,
-    PERMISSIONS.CREATE_PROJECTS
-  ])
+  // Verify user is a workspace member
+  const permissions = await getMemberPermissions(workspaceId, uid)
+
+  if (!permissions) {
+    throw createError({
+      statusCode: 403,
+      message: 'You are not a member of this workspace'
+    })
+  }
+
+  // Verify user has permission to create projects
+  if (
+    !hasAnyPermission(permissions, [
+      PERMISSIONS.MANAGE_PROJECTS,
+      PERMISSIONS.CREATE_PROJECTS
+    ])
+  ) {
+    throw createError({
+      statusCode: 403,
+      message: 'You do not have permission to create projects'
+    })
+  }
 
   const projectId = String(Date.now())
 
@@ -40,9 +60,23 @@ export default defineEventHandler(async (event) => {
   const projectRef = db.doc(`workspaces/${workspaceId}/projects/${projectId}`)
   await projectRef.set(project)
 
-  // Assign member access if provided
+  // Assign member access if provided (validate memberIds first)
   if (Array.isArray(memberIds) && memberIds.length > 0) {
-    await updateProjectMemberAccess(workspaceId, projectId, memberIds)
+    const { valid, invalid } = await validateWorkspaceMemberIds(
+      workspaceId,
+      memberIds
+    )
+
+    if (invalid.length > 0) {
+      throw createError({
+        statusCode: 400,
+        message: `Invalid member IDs: ${invalid.join(', ')}`
+      })
+    }
+
+    if (valid.length > 0) {
+      await updateProjectMembers(workspaceId, projectId, valid, uid)
+    }
   }
 
   return { success: true, project }

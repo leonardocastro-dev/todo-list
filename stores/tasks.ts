@@ -104,6 +104,7 @@ export const useTaskStore = defineStore('tasks', {
         this.isLoading = true
 
         if (userId && workspaceId) {
+          // Query nested tasks collection
           const tasksRef = collection(
             $firestore,
             'workspaces',
@@ -123,7 +124,7 @@ export const useTaskStore = defineStore('tasks', {
             this.tasks = []
           }
         } else {
-          // localStorage também separado por projeto
+          // localStorage also separated by project
           const localTasks = localStorage.getItem(`localTasks_${projectId}`)
           this.tasks = localTasks ? JSON.parse(localTasks) : []
         }
@@ -141,7 +142,8 @@ export const useTaskStore = defineStore('tasks', {
     async addTask(
       task: Omit<Task, 'id' | 'projectId' | 'createdAt'>,
       userId: string | null = null,
-      workspaceId?: string
+      workspaceId?: string,
+      memberIds?: string[]
     ) {
       if (!this.currentProjectId) {
         toast.error('No project selected')
@@ -184,7 +186,8 @@ export const useTaskStore = defineStore('tasks', {
               description: task.description,
               status: task.status,
               priority: task.priority,
-              dueDate: task.dueDate
+              dueDate: task.dueDate,
+              memberIds
             }
           }
         )
@@ -205,7 +208,8 @@ export const useTaskStore = defineStore('tasks', {
     async updateTask(
       id: string,
       updatedTask: Partial<Task>,
-      userId: string | null = null
+      userId: string | null = null,
+      memberIds?: string[]
     ) {
       if (!this.currentProjectId) return
 
@@ -236,7 +240,8 @@ export const useTaskStore = defineStore('tasks', {
             body: {
               workspaceId,
               projectId: this.currentProjectId,
-              ...updatedTask
+              ...updatedTask,
+              memberIds
             }
           }
         )

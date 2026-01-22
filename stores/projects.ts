@@ -9,7 +9,8 @@ export const useProjectStore = defineStore('projects', {
     projects: [] as Project[],
     isLoading: false,
     error: null as string | null,
-    memberPermissions: null as Record<string, boolean> | null
+    memberPermissions: null as Record<string, boolean> | null,
+    isGuestMode: false
   }),
 
   getters: {
@@ -20,18 +21,10 @@ export const useProjectStore = defineStore('projects', {
           new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       )
     },
-    // Check if user has access to all projects
-    hasAllProjectsAccess: (state) => {
-      if (!state.memberPermissions) return false
-      return hasAnyPermission(state.memberPermissions, [
-        PERMISSIONS.OWNER,
-        PERMISSIONS.ADMIN,
-        PERMISSIONS.ACCESS_PROJECTS,
-        PERMISSIONS.ALL_PROJECTS
-      ])
-    },
     // Check if user can create projects
     canCreateProjects: (state) => {
+      // Guest mode: can always create local projects
+      if (state.isGuestMode) return true
       if (!state.memberPermissions) return false
       return hasAnyPermission(state.memberPermissions, [
         PERMISSIONS.OWNER,
@@ -42,6 +35,8 @@ export const useProjectStore = defineStore('projects', {
     },
     // Check if user can delete projects
     canDeleteProjects: (state) => {
+      // Guest mode: can always delete local projects
+      if (state.isGuestMode) return true
       if (!state.memberPermissions) return false
       return hasAnyPermission(state.memberPermissions, [
         PERMISSIONS.OWNER,
@@ -52,6 +47,8 @@ export const useProjectStore = defineStore('projects', {
     },
     // Check if user can edit projects
     canEditProjects: (state) => {
+      // Guest mode: can always edit local projects
+      if (state.isGuestMode) return true
       if (!state.memberPermissions) return false
       return hasAnyPermission(state.memberPermissions, [
         PERMISSIONS.OWNER,
@@ -69,26 +66,16 @@ export const useProjectStore = defineStore('projects', {
       if (!user.value) return null
       return await user.value.getIdToken()
     },
-    // Check if user has access to a specific project
-    hasProjectAccess(projectId: string): boolean {
-      if (!this.memberPermissions) return false
-      return (
-        hasAnyPermission(this.memberPermissions, [
-          PERMISSIONS.OWNER,
-          PERMISSIONS.ADMIN,
-          PERMISSIONS.ACCESS_PROJECTS,
-          PERMISSIONS.ALL_PROJECTS
-        ]) || this.memberPermissions[projectId] === true
-      )
-    },
 
     async loadProjects(userId: string | null = null) {
       if (!userId) {
+        this.isGuestMode = true
         const localProjects = localStorage.getItem('localProjects')
         this.projects = localProjects ? JSON.parse(localProjects) : []
         return
       }
 
+      this.isGuestMode = false
       // Legacy support - now projects are in workspaces subcollections
       this.projects = []
     },
@@ -102,14 +89,17 @@ export const useProjectStore = defineStore('projects', {
         this.error = null
 
         if (!userId) {
+          this.isGuestMode = true
           const localProjects = localStorage.getItem('localProjects')
           this.projects = localProjects ? JSON.parse(localProjects) : []
           return
         }
 
+        this.isGuestMode = false
+
         const { $firestore } = useNuxtApp()
 
-        // First, get the member's permissions
+        // Get the member's permissions for workspace-level access checks
         const memberRef = doc(
           $firestore,
           'workspaces',
@@ -135,24 +125,12 @@ export const useProjectStore = defineStore('projects', {
           const snapshot = await getDocs(projectsRef)
 
           if (!snapshot.empty) {
-            const allProjects = snapshot.docs.map((doc) => ({
+            // Server handles filtering - return all projects the user can see
+            // For client-side, we load all and let server API handle access control
+            this.projects = snapshot.docs.map((doc) => ({
               id: doc.id,
               ...doc.data()
             })) as Project[]
-
-            // Filter projects based on permissions
-            if (this.hasAllProjectsAccess) {
-              // User has access to all projects
-              this.projects = allProjects
-            } else if (this.memberPermissions) {
-              // User has access to specific projects only
-              this.projects = allProjects.filter(
-                (project) => this.memberPermissions![project.id] === true
-              )
-            } else {
-              // No permissions - no access
-              this.projects = []
-            }
           } else {
             this.projects = []
           }

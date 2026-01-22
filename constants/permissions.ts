@@ -2,7 +2,6 @@ export const PERMISSIONS = {
   OWNER: 'owner',
   ADMIN: 'admin',
   ACCESS_PROJECTS: 'access-projects',
-  ALL_PROJECTS: 'all-projects',
   MANAGE_PROJECTS: 'manage-projects',
   CREATE_PROJECTS: 'create-projects',
   EDIT_PROJECTS: 'edit-projects',
@@ -47,17 +46,4 @@ export const hasAnyPermission = (
   if (!permissions) return false
   if (isOwnerOrAdmin(permissions)) return true
   return permissionList.some((p) => permissions[p] === true)
-}
-
-export const canAccessProject = (
-  permissions: Record<string, boolean> | null,
-  projectId: string
-): boolean => {
-  if (!permissions) return false
-  return (
-    isOwnerOrAdmin(permissions) ||
-    permissions[PERMISSIONS.ACCESS_PROJECTS] === true ||
-    permissions[PERMISSIONS.ALL_PROJECTS] === true ||
-    permissions[projectId] === true
-  )
 }

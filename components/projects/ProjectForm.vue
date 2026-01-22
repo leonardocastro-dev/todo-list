@@ -11,16 +11,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Skeleton } from '@/components/ui/skeleton'
-import { X, Smile, Users } from 'lucide-vue-next'
+import { Smile, Users } from 'lucide-vue-next'
 import data from 'emoji-mart-vue-fast/data/all.json'
 import 'emoji-mart-vue-fast/css/emoji-mart.css'
 import { Picker, EmojiIndex } from 'emoji-mart-vue-fast/src'
 import { useMembers } from '@/composables/useMembers'
 import { useWorkspace } from '@/composables/useWorkspace'
-import { validateProjectForm, hasValidationErrors } from '@/utils/validation'
+import {
+  validateProjectForm,
+  hasValidationErrors,
+  type ProjectValidationErrors
+} from '@/utils/validation'
 import { showErrorToast } from '@/utils/toast'
 
 const emojiIndex = new EmojiIndex(data)
@@ -41,7 +44,7 @@ const {
   selectedMemberIds,
   isLoadingMembers,
   loadWorkspaceMembers,
-  loadProjectMemberAccess
+  loadProjectMembers
 } = useMembers()
 
 const projectStore = useProjectStore()
@@ -51,7 +54,7 @@ const description = ref(props.editProject?.description || '')
 const emoji = ref(props.editProject?.emoji || '')
 const showEmojiPicker = ref(false)
 const currentTag = ref('')
-const validationErrors = ref<Record<string, string>>({})
+const validationErrors = ref<ProjectValidationErrors>({})
 const isSaving = ref(false)
 
 watch(
@@ -60,7 +63,7 @@ watch(
     if (isOpen && workspaceId.value) {
       await loadWorkspaceMembers(workspaceId.value)
       if (props.editProject) {
-        await loadProjectMemberAccess(workspaceId.value, props.editProject.id)
+        await loadProjectMembers(workspaceId.value, props.editProject.id)
       } else {
         selectedMemberIds.value = []
       }
@@ -77,7 +80,7 @@ watch(
       emoji.value = newProject.emoji || ''
 
       if (props.isOpen && workspaceId.value) {
-        await loadProjectMemberAccess(workspaceId.value, newProject.id)
+        await loadProjectMembers(workspaceId.value, newProject.id)
       }
     }
   },
@@ -134,17 +137,17 @@ const handleSubmit = async () => {
           createdAt: now,
           updatedAt: now,
           members: [],
-          workspaceId: workspaceId.value
+          workspaceId: workspaceId.value || undefined
         },
         props.userId,
-        workspaceId.value,
+        workspaceId.value || undefined,
         selectedMemberIds.value
       )
     }
 
     resetForm()
     emit('close')
-  } catch (error) {
+  } catch {
     showErrorToast('Failed to save project. Please try again.')
   } finally {
     isSaving.value = false
@@ -272,51 +275,53 @@ const handleClose = () => {
           </p>
 
           <!-- Members List -->
-          <div class="max-h-[200px] overflow-y-auto rounded-md border p-4">
+          <div class="max-h-[140px] overflow-y-auto rounded-md border p-4">
             <div class="space-y-3">
-              <div
-                v-for="i in 3"
-                v-if="isLoadingMembers"
-                :key="i"
-                class="flex items-center space-x-2"
-              >
-                <Skeleton class="h-4 w-4" />
-                <Skeleton class="h-4 w-32" />
-              </div>
-              <div
-                v-for="member in members"
-                v-else
-                :key="member.uid"
-                class="flex items-center space-x-2"
-              >
-                <Checkbox
-                  :id="`member-${member.uid}`"
-                  :model-value="selectedMemberIds.includes(member.uid)"
-                  @update:model-value="
-                    (checked) => {
-                      if (checked) {
-                        selectedMemberIds.push(member.uid)
-                      } else {
-                        const index = selectedMemberIds.indexOf(member.uid)
-                        if (index > -1) selectedMemberIds.splice(index, 1)
-                      }
-                    }
-                  "
-                />
-                <Label
-                  :for="`member-${member.uid}`"
-                  class="cursor-pointer flex-1 font-normal"
+              <template v-if="isLoadingMembers">
+                <div
+                  v-for="i in 3"
+                  :key="i"
+                  class="flex items-center space-x-2"
                 >
-                  {{ member.username || member.email }}
-                </Label>
-              </div>
+                  <Skeleton class="h-4 w-4" />
+                  <Skeleton class="h-4 w-32" />
+                </div>
+              </template>
+              <template v-else>
+                <div
+                  v-for="member in members"
+                  :key="member.uid"
+                  class="flex items-center space-x-2"
+                >
+                  <Checkbox
+                    :id="`member-${member.uid}`"
+                    :model-value="selectedMemberIds.includes(member.uid)"
+                    @update:model-value="
+                      (checked) => {
+                        if (checked) {
+                          selectedMemberIds.push(member.uid)
+                        } else {
+                          const index = selectedMemberIds.indexOf(member.uid)
+                          if (index > -1) selectedMemberIds.splice(index, 1)
+                        }
+                      }
+                    "
+                  />
+                  <Label
+                    :for="`member-${member.uid}`"
+                    class="cursor-pointer flex-1 font-normal"
+                  >
+                    {{ member.username || member.email }}
+                  </Label>
+                </div>
 
-              <p
-                v-if="members.length === 0"
-                class="text-sm text-muted-foreground text-center py-4"
-              >
-                No members in this workspace
-              </p>
+                <p
+                  v-if="members.length === 0"
+                  class="text-sm text-muted-foreground text-center py-4"
+                >
+                  No members in this workspace
+                </p>
+              </template>
             </div>
           </div>
         </div>

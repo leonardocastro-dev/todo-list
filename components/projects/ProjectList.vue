@@ -10,19 +10,35 @@ const emit = defineEmits<{
 
 const projectStore = useProjectStore()
 const { workspaceId } = useWorkspace()
-const { members, loadWorkspaceMembers } = useMembers()
+const {
+  members,
+  projectAssignmentsMap,
+  loadWorkspaceMembers,
+  loadAllProjectAssignments
+} = useMembers()
+
+const loadAssignments = async () => {
+  if (workspaceId.value && projectStore.projects.length > 0) {
+    const projectIds = projectStore.projects.map((p) => p.id)
+    await loadAllProjectAssignments(workspaceId.value, projectIds)
+  }
+}
 
 onMounted(async () => {
   if (workspaceId.value) {
     await loadWorkspaceMembers(workspaceId.value)
+    await loadAssignments()
   }
 })
 
 watch(workspaceId, async (newId) => {
   if (newId) {
     await loadWorkspaceMembers(newId)
+    await loadAssignments()
   }
 })
+
+watch(() => projectStore.projects, loadAssignments, { deep: true })
 </script>
 
 <template>
@@ -58,6 +74,7 @@ watch(workspaceId, async (newId) => {
         :key="project.id"
         :project="project"
         :workspace-members="members"
+        :assigned-member-ids="projectAssignmentsMap[project.id] || []"
         @edit="emit('edit', $event)"
       />
     </div>

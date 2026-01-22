@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,14 +14,36 @@ import {
 import { Check, Flag, ArrowRight, Star, StarHalf } from 'lucide-vue-next'
 import TaskForm from './TaskForm.vue'
 import { useAuth } from '@/composables/useAuth'
+import type { WorkspaceMember } from '@/composables/useMembers'
 
 const props = defineProps<{
   task: Task
+  workspaceId?: string
+  workspaceMembers?: WorkspaceMember[]
+  assignedMemberIds?: string[]
 }>()
 
 const taskStore = useTaskStore()
 const { user } = useAuth()
 const isEditing = ref(false)
+
+const taskMembersWithData = computed(() => {
+  if (!props.workspaceMembers || props.workspaceMembers.length === 0) {
+    return []
+  }
+  if (!props.assignedMemberIds || props.assignedMemberIds.length === 0) {
+    return []
+  }
+
+  return props.workspaceMembers.filter((member) => {
+    return props.assignedMemberIds?.includes(member.uid)
+  })
+})
+
+const displayedMembers = computed(() => taskMembersWithData.value.slice(0, 3))
+const extraMembersCount = computed(() =>
+  Math.max(0, taskMembersWithData.value.length - 3)
+)
 
 const getPriorityIcon = () => {
   switch (props.task.priority) {
@@ -106,26 +129,53 @@ const formatDate = (date: Date) => {
             {{ task.description }}
           </p>
 
-          <div class="flex items-center gap-2 text-xs text-muted-foreground">
-            <div class="flex items-center">
-              <component
-                :is="getPriorityIcon()"
-                class="h-4 w-4"
-                :class="`priority-${task.priority}`"
-              />
-              <span class="ml-1">{{ task.priority }}</span>
-            </div>
-            <span>•</span>
-            <span>{{
-              formatDate(new Date(task.createdAt || Date.now()))
-            }}</span>
-            <template v-if="task.status === 'completed'">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 text-xs text-muted-foreground">
+              <div class="flex items-center">
+                <component
+                  :is="getPriorityIcon()"
+                  class="h-4 w-4"
+                  :class="`priority-${task.priority}`"
+                />
+                <span class="ml-1">{{ task.priority }}</span>
+              </div>
               <span>•</span>
-              <span class="flex items-center text-emerald-600">
-                <Check class="h-3 w-3 mr-1" />
-                Completed
-              </span>
-            </template>
+              <span>{{
+                formatDate(new Date(task.createdAt || Date.now()))
+              }}</span>
+              <template v-if="task.status === 'completed'">
+                <span>•</span>
+                <span class="flex items-center text-emerald-600">
+                  <Check class="h-3 w-3 mr-1" />
+                  Completed
+                </span>
+              </template>
+            </div>
+
+            <div
+              v-if="taskMembersWithData.length > 0"
+              class="flex -space-x-2 *:data-[slot=avatar]:ring-background *:data-[slot=avatar]:ring-2"
+            >
+              <Avatar
+                v-for="member in displayedMembers"
+                :key="member.uid"
+                class="h-8 w-8"
+              >
+                <AvatarImage
+                  v-if="member.photoURL"
+                  :src="member.photoURL"
+                  :alt="member.username || ''"
+                />
+                <AvatarFallback class="text-xs">
+                  {{ member.username?.charAt(0).toUpperCase() || '?' }}
+                </AvatarFallback>
+              </Avatar>
+              <Avatar v-if="extraMembersCount > 0" class="h-8 w-8">
+                <AvatarFallback class="text-xs bg-muted">
+                  +{{ extraMembersCount }}
+                </AvatarFallback>
+              </Avatar>
+            </div>
           </div>
         </div>
       </div>
@@ -137,6 +187,7 @@ const formatDate = (date: Date) => {
     :is-open="isEditing"
     :edit-task="task"
     :user-id="user?.uid"
+    :workspace-id="workspaceId"
     @close="isEditing = false"
   />
 </template>

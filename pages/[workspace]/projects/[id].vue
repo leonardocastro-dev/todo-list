@@ -1,18 +1,24 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { Plus, ArrowLeft } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import TaskStats from '@/components/tasks/TaskStats.vue'
 import TaskList from '@/components/tasks/TaskList.vue'
 import TaskFilters from '@/components/tasks/TaskFilters.vue'
 import TaskForm from '@/components/tasks/TaskForm.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useMembers } from '@/composables/useMembers'
 
 const route = useRoute()
 const router = useRouter()
 const { user } = useAuth()
+const {
+  members,
+  taskAssignmentsMap,
+  loadWorkspaceMembers,
+  loadAllTaskAssignments
+} = useMembers()
 
 const isAddingTask = ref(false)
 const taskStore = useTaskStore()
@@ -25,8 +31,21 @@ const currentProject = computed(() => {
   return projectStore.projects.find((p) => p.id === projectId)
 })
 
+// Load task assignments when tasks change
+watch(
+  () => taskStore.tasks,
+  async (tasks) => {
+    if (tasks.length > 0 && workspaceId) {
+      const taskIds = tasks.map((t) => t.id)
+      await loadAllTaskAssignments(workspaceId, taskIds)
+    }
+  },
+  { immediate: true }
+)
+
 onMounted(async () => {
   await projectStore.loadProjectsForWorkspace(workspaceId, user.value?.uid)
+  await loadWorkspaceMembers(workspaceId)
   taskStore.setCurrentProject(projectId, user.value?.uid, workspaceId)
 })
 </script>
@@ -93,7 +112,11 @@ onMounted(async () => {
 
       <TaskStats />
       <TaskFilters />
-      <TaskList />
+      <TaskList
+        :workspace-id="workspaceId"
+        :workspace-members="members"
+        :task-assignments-map="taskAssignmentsMap"
+      />
 
       <TaskForm
         :is-open="isAddingTask"

@@ -1,8 +1,8 @@
 import { db } from '@/server/utils/firebase-admin'
 import {
   verifyAuth,
-  getMemberPermissions,
-  canAccessProject
+  canAccessProject,
+  deleteTaskAssignments
 } from '@/server/utils/permissions'
 
 export default defineEventHandler(async (event) => {
@@ -23,16 +23,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const permissions = await getMemberPermissions(workspaceId, uid)
+  const hasAccess = await canAccessProject(workspaceId, projectId, uid)
 
-  if (!permissions) {
-    throw createError({
-      statusCode: 403,
-      message: 'You are not a member of this workspace'
-    })
-  }
-
-  if (!canAccessProject(permissions, projectId)) {
+  if (!hasAccess) {
     throw createError({
       statusCode: 403,
       message: 'You do not have access to this project'
@@ -48,6 +41,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Task not found' })
   }
 
+  // Delete task assignments
+  await deleteTaskAssignments(workspaceId, taskId)
+
+  // Delete the task
   await taskRef.delete()
 
   return { success: true }

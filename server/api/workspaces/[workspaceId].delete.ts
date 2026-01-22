@@ -1,5 +1,9 @@
 import { db } from '@/server/utils/firebase-admin'
-import { verifyAuth, requireOwner } from '@/server/utils/permissions'
+import {
+  verifyAuth,
+  requireOwner,
+  cleanupWorkspaceAssignments
+} from '@/server/utils/permissions'
 
 export default defineEventHandler(async (event) => {
   const { uid } = await verifyAuth(event)
@@ -10,6 +14,9 @@ export default defineEventHandler(async (event) => {
   }
 
   await requireOwner(workspaceId, uid)
+
+  // Clean up all projectAssignments and taskAssignments first
+  await cleanupWorkspaceAssignments(workspaceId)
 
   const batch = db.batch()
 

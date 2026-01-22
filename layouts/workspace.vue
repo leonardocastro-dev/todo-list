@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { LogOut, Lock } from 'lucide-vue-next'
+import { computed, ref, watch } from 'vue'
+import { LogOut, Lock, Menu, X } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/composables/useAuth'
 
@@ -9,11 +9,155 @@ const route = useRoute()
 
 const workspaceSlug = computed(() => route.params.workspace as string)
 const isGuest = computed(() => !user.value)
+const isMobileMenuOpen = ref(false)
+
+const toggleMobileMenu = () => {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value
+}
+
+const closeMobileMenu = () => {
+  isMobileMenuOpen.value = false
+}
+
+// Close menu on route change
+watch(() => route.fullPath, closeMobileMenu)
 </script>
 
 <template>
   <div class="flex min-h-screen bg-gray-50">
-    <aside class="w-64 bg-background border-r fixed h-screen flex flex-col">
+    <!-- Mobile Header -->
+    <header
+      class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-background border-b z-40 flex items-center justify-between px-4 transition-shadow duration-200"
+      :class="isMobileMenuOpen ? '' : 'shadow-sm'"
+    >
+      <NuxtLink to="/workspaces" class="text-2xl font-bold text-primary">
+        Fokuz
+      </NuxtLink>
+      <Button
+        variant="ghost"
+        size="icon"
+        :aria-label="isMobileMenuOpen ? 'Close menu' : 'Open menu'"
+        :aria-expanded="isMobileMenuOpen"
+        @click="toggleMobileMenu"
+      >
+        <Menu v-if="!isMobileMenuOpen" class="h-6 w-6" />
+        <X v-else class="h-6 w-6" />
+      </Button>
+    </header>
+
+    <!-- Mobile Menu Overlay -->
+    <Transition
+      enter-active-class="transition-transform duration-200 ease-out"
+      enter-from-class="-translate-y-full"
+      enter-to-class="translate-y-0"
+      leave-active-class="transition-transform duration-200 ease-in"
+      leave-from-class="translate-y-0"
+      leave-to-class="-translate-y-full"
+    >
+      <div
+        v-if="isMobileMenuOpen"
+        class="lg:hidden fixed inset-0 top-16 bg-background z-30 flex flex-col origin-top"
+      >
+        <nav class="flex flex-col flex-1 gap-2 px-4 py-4">
+          <NuxtLink
+            :to="`/${workspaceSlug}/projects`"
+            class="flex items-center px-4 py-3 text-base font-medium text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
+            active-class="!text-primary !bg-accent"
+            @click="closeMobileMenu"
+          >
+            Projects
+          </NuxtLink>
+          <div
+            v-if="isGuest"
+            class="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-md transition-colors text-muted-foreground/50 cursor-not-allowed opacity-60"
+            title="Members feature is only available for logged-in users"
+          >
+            <Lock class="h-4 w-4" />
+            <span>Members</span>
+          </div>
+          <NuxtLink
+            v-else
+            :to="`/${workspaceSlug}/members`"
+            class="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-md transition-colors text-muted-foreground hover:text-primary hover:bg-accent"
+            active-class="!text-primary !bg-accent"
+            @click="closeMobileMenu"
+          >
+            <span>Members</span>
+          </NuxtLink>
+
+          <div class="border-t my-2" />
+
+          <NuxtLink
+            to="/workspaces"
+            class="flex items-center px-4 py-3 text-base font-medium text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
+            @click="closeMobileMenu"
+          >
+            Workspaces
+          </NuxtLink>
+          <div
+            v-if="isGuest"
+            class="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-md transition-colors text-muted-foreground/50 cursor-not-allowed opacity-60"
+            title="Settings is only available for logged-in users"
+          >
+            <Lock class="h-4 w-4" />
+            <span>Settings</span>
+          </div>
+          <NuxtLink
+            v-else
+            :to="`/settings?from=${workspaceSlug}`"
+            class="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-md transition-colors text-muted-foreground hover:text-primary hover:bg-accent"
+            active-class="!text-primary !bg-accent"
+            @click="closeMobileMenu"
+          >
+            <span>Settings</span>
+          </NuxtLink>
+        </nav>
+
+        <div class="p-4 border-t">
+          <div v-if="user">
+            <div class="mb-3 px-2">
+              <p class="text-sm text-muted-foreground truncate">
+                {{ user.email }}
+              </p>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              class="w-full flex items-center justify-center gap-2"
+              @click="logout"
+            >
+              <LogOut class="h-4 w-4" />
+              <span>Logout</span>
+            </Button>
+          </div>
+
+          <div v-else class="space-y-2">
+            <Button
+              variant="default"
+              size="sm"
+              class="w-full"
+              @click="$router.push('/login')"
+            >
+              Login
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              class="w-full"
+              @click="$router.push('/register')"
+            >
+              Register
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Desktop Sidebar -->
+    <aside
+      class="hidden lg:flex w-64 bg-background border-r fixed h-screen flex-col"
+    >
       <div class="p-6">
         <NuxtLink to="/workspaces" class="text-2xl font-bold text-primary">
           Fokuz
@@ -56,7 +200,7 @@ const isGuest = computed(() => !user.value)
         <div
           v-if="isGuest"
           class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors text-muted-foreground/50 cursor-not-allowed opacity-60"
-          title="Members feature is only available for logged-in users"
+          title="Settings is only available for logged-in users"
         >
           <Lock class="h-4 w-4" />
           <span>Settings</span>
@@ -111,7 +255,7 @@ const isGuest = computed(() => !user.value)
       </div>
     </aside>
 
-    <main class="flex-1 ml-64 p-6">
+    <main class="flex-1 lg:ml-64 p-6 pt-20 lg:pt-6">
       <slot />
     </main>
   </div>

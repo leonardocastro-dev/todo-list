@@ -10,21 +10,18 @@ export interface WorkspaceMember {
   permissions?: Record<string, boolean>
 }
 
-const hasUniversalAccess = (
+const isOwnerOrAdmin = (
   permissions: Record<string, boolean> | undefined
 ): boolean => {
   if (!permissions) return false
-  return !!(
-    permissions[PERMISSIONS.OWNER] ||
-    permissions[PERMISSIONS.ADMIN] ||
-    permissions[PERMISSIONS.ACCESS_PROJECTS] ||
-    permissions[PERMISSIONS.ALL_PROJECTS]
-  )
+  return !!(permissions[PERMISSIONS.OWNER] || permissions[PERMISSIONS.ADMIN])
 }
 
 // Singleton state - shared across all component instances
 const members = ref<WorkspaceMember[]>([])
 const selectedMemberIds = ref<string[]>([])
+const projectAssignmentsMap = ref<Record<string, string[]>>({})
+const taskAssignmentsMap = ref<Record<string, string[]>>({})
 const isLoadingMembers = ref(false)
 const error = ref<string | null>(null)
 const loadedWorkspaceId = ref<string | null>(null)
@@ -51,6 +48,7 @@ export const useMembers = () => {
       )
       const snapshot = await getDocs(membersRef)
 
+      // Filter out owners/admins since they always have access
       members.value = snapshot.docs
         .map((doc) => ({
           uid: doc.id,
@@ -59,7 +57,7 @@ export const useMembers = () => {
           photoURL: doc.data().photoURL || null,
           permissions: doc.data().permissions || {}
         }))
-        .filter((member) => !hasUniversalAccess(member.permissions))
+        .filter((member) => !isOwnerOrAdmin(member.permissions))
 
       loadedWorkspaceId.value = workspaceId
     } catch (e) {
@@ -70,10 +68,7 @@ export const useMembers = () => {
     }
   }
 
-  const loadProjectMemberAccess = async (
-    workspaceId: string,
-    projectId: string
-  ) => {
+  const loadProjectMembers = async (workspaceId: string, projectId: string) => {
     if (!workspaceId || !projectId) {
       selectedMemberIds.value = []
       return
@@ -83,41 +78,136 @@ export const useMembers = () => {
 
     try {
       const { $firestore } = useNuxtApp()
-      const membersRef = collection(
+      // Query projectAssignments collection for assigned members
+      const assignmentsRef = collection(
         $firestore,
         'workspaces',
         workspaceId,
-        'members'
+        'projectAssignments',
+        projectId,
+        'users'
       )
-      const snapshot = await getDocs(membersRef)
+      const snapshot = await getDocs(assignmentsRef)
 
-      const memberIdsWithAccess: string[] = []
-      snapshot.docs.forEach((doc) => {
-        const permissions = doc.data().permissions || {}
-
-        if (hasUniversalAccess(permissions)) {
-          return
-        }
-
-        if (permissions[projectId] === true) {
-          memberIdsWithAccess.push(doc.id)
-        }
-      })
-
-      selectedMemberIds.value = memberIdsWithAccess
+      selectedMemberIds.value = snapshot.docs.map((doc) => doc.id)
     } catch (e) {
-      console.error('Error loading project member access:', e)
+      console.error('Error loading project members:', e)
+      selectedMemberIds.value = []
     } finally {
       isLoadingMembers.value = false
+    }
+  }
+
+  const loadAllProjectAssignments = async (
+    workspaceId: string,
+    projectIds: string[]
+  ) => {
+    if (!workspaceId || projectIds.length === 0) {
+      projectAssignmentsMap.value = {}
+      return
+    }
+
+    try {
+      const { $firestore } = useNuxtApp()
+      const assignments: Record<string, string[]> = {}
+
+      await Promise.all(
+        projectIds.map(async (projectId) => {
+          const assignmentsRef = collection(
+            $firestore,
+            'workspaces',
+            workspaceId,
+            'projectAssignments',
+            projectId,
+            'users'
+          )
+          const snapshot = await getDocs(assignmentsRef)
+          assignments[projectId] = snapshot.docs.map((doc) => doc.id)
+        })
+      )
+
+      projectAssignmentsMap.value = assignments
+    } catch (e) {
+      console.error('Error loading project assignments:', e)
+      projectAssignmentsMap.value = {}
+    }
+  }
+
+  const loadTaskAssignees = async (workspaceId: string, taskId: string) => {
+    if (!workspaceId || !taskId) {
+      selectedMemberIds.value = []
+      return
+    }
+
+    isLoadingMembers.value = true
+
+    try {
+      const { $firestore } = useNuxtApp()
+      const assignmentsRef = collection(
+        $firestore,
+        'workspaces',
+        workspaceId,
+        'taskAssignments',
+        taskId,
+        'users'
+      )
+      const snapshot = await getDocs(assignmentsRef)
+
+      selectedMemberIds.value = snapshot.docs.map((doc) => doc.id)
+    } catch (e) {
+      console.error('Error loading task assignees:', e)
+      selectedMemberIds.value = []
+    } finally {
+      isLoadingMembers.value = false
+    }
+  }
+
+  const loadAllTaskAssignments = async (
+    workspaceId: string,
+    taskIds: string[]
+  ) => {
+    if (!workspaceId || taskIds.length === 0) {
+      taskAssignmentsMap.value = {}
+      return
+    }
+
+    try {
+      const { $firestore } = useNuxtApp()
+      const assignments: Record<string, string[]> = {}
+
+      await Promise.all(
+        taskIds.map(async (taskId) => {
+          const assignmentsRef = collection(
+            $firestore,
+            'workspaces',
+            workspaceId,
+            'taskAssignments',
+            taskId,
+            'users'
+          )
+          const snapshot = await getDocs(assignmentsRef)
+          assignments[taskId] = snapshot.docs.map((doc) => doc.id)
+        })
+      )
+
+      taskAssignmentsMap.value = assignments
+    } catch (e) {
+      console.error('Error loading task assignments:', e)
+      taskAssignmentsMap.value = {}
     }
   }
 
   return {
     members,
     selectedMemberIds,
+    projectAssignmentsMap,
+    taskAssignmentsMap,
     isLoadingMembers,
     error,
     loadWorkspaceMembers,
-    loadProjectMemberAccess
+    loadProjectMembers,
+    loadAllProjectAssignments,
+    loadTaskAssignees,
+    loadAllTaskAssignments
   }
 }

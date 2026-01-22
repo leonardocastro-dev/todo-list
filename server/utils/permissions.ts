@@ -1,14 +1,11 @@
 import type { H3Event } from 'h3'
 import { createError, getHeader } from 'h3'
-import { FieldValue } from 'firebase-admin/firestore'
 import { auth, db } from './firebase-admin'
-import { PERMISSIONS } from '@/constants/permissions'
 
 export interface MemberPermissions {
   owner?: boolean
   admin?: boolean
   'access-projects'?: boolean
-  'all-projects'?: boolean // Backward compatibility
   'manage-projects'?: boolean
   'create-projects'?: boolean
   'edit-projects'?: boolean
@@ -87,17 +84,23 @@ export function hasAnyPermission(
   return permissionList.some((p) => permissions[p] === true)
 }
 
-export function canAccessProject(
-  permissions: MemberPermissions | null,
-  projectId: string
-): boolean {
-  if (!permissions) return false
-  return (
-    isOwnerOrAdmin(permissions) ||
-    permissions[PERMISSIONS.ACCESS_PROJECTS] === true ||
-    permissions[PERMISSIONS.ALL_PROJECTS] === true || // Backward compatibility
-    permissions[projectId] === true
+export async function canAccessProject(
+  workspaceId: string,
+  projectId: string,
+  userId: string
+): Promise<boolean> {
+  const permissions = await getMemberPermissions(workspaceId, userId)
+  if (isOwnerOrAdmin(permissions)) return true
+
+  // Check if user has access-projects permission (grants access to ALL projects)
+  if (hasPermission(permissions, 'access-projects')) return true
+
+  // Check for specific project assignment
+  const assignmentRef = db.doc(
+    `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${userId}`
   )
+  const snap = await assignmentRef.get()
+  return snap.exists
 }
 
 export async function requireWorkspaceMember(
@@ -175,46 +178,285 @@ export async function requireOwnerOrAdmin(
   return permissions!
 }
 
-export async function updateProjectMemberAccess(
+// Project Assignment Functions
+
+export async function assignUserToProject(
   workspaceId: string,
   projectId: string,
-  memberIds: string[]
+  userId: string,
+  role: ProjectRole = 'editor',
+  assignedBy?: string
 ): Promise<void> {
-  // Get all workspace members
-  const membersRef = db.collection(`workspaces/${workspaceId}/members`)
-  const membersSnap = await membersRef.get()
+  const assignmentRef = db.doc(
+    `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${userId}`
+  )
+  const assignment: ProjectAssignment = {
+    role,
+    assignedAt: new Date().toISOString(),
+    assignedBy
+  }
+  await assignmentRef.set(assignment)
+}
+
+export async function removeUserFromProject(
+  workspaceId: string,
+  projectId: string,
+  userId: string
+): Promise<void> {
+  const assignmentRef = db.doc(
+    `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${userId}`
+  )
+  await assignmentRef.delete()
+}
+
+export async function getProjectMembers(
+  workspaceId: string,
+  projectId: string
+): Promise<string[]> {
+  const assignmentsRef = db.collection(
+    `workspaces/${workspaceId}/projectAssignments/${projectId}/users`
+  )
+  const snapshot = await assignmentsRef.get()
+  return snapshot.docs.map((doc) => doc.id)
+}
+
+export async function updateProjectMembers(
+  workspaceId: string,
+  projectId: string,
+  memberIds: string[],
+  assignedBy?: string
+): Promise<void> {
+  const assignmentsRef = db.collection(
+    `workspaces/${workspaceId}/projectAssignments/${projectId}/users`
+  )
+  const currentSnapshot = await assignmentsRef.get()
+  const currentMemberIds = currentSnapshot.docs.map((doc) => doc.id)
 
   const batch = db.batch()
 
-  membersSnap.docs.forEach((memberDoc) => {
-    const memberId = memberDoc.id
-    const permissions = memberDoc.data().permissions || {}
-
-    // Skip owners/admins and universal access holders
-    if (
-      permissions.owner ||
-      permissions.admin ||
-      permissions['access-projects'] ||
-      permissions['all-projects']
-    ) {
-      return
+  // Add new members
+  for (const memberId of memberIds) {
+    if (!currentMemberIds.includes(memberId)) {
+      const assignmentRef = db.doc(
+        `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${memberId}`
+      )
+      const assignment: ProjectAssignment = {
+        role: 'editor',
+        assignedAt: new Date().toISOString(),
+        assignedBy
+      }
+      batch.set(assignmentRef, assignment)
     }
+  }
 
-    const shouldHaveAccess = memberIds.includes(memberId)
-    const hasAccess = permissions[projectId] === true
-
-    if (shouldHaveAccess && !hasAccess) {
-      // Add access
-      batch.update(memberDoc.ref, {
-        [`permissions.${projectId}`]: true
-      })
-    } else if (!shouldHaveAccess && hasAccess) {
-      // Remove access
-      batch.update(memberDoc.ref, {
-        [`permissions.${projectId}`]: FieldValue.delete()
-      })
+  // Remove members no longer in the list
+  for (const doc of currentSnapshot.docs) {
+    if (!memberIds.includes(doc.id)) {
+      batch.delete(doc.ref)
     }
-  })
+  }
 
   await batch.commit()
+}
+
+// Task Assignment Functions
+
+export async function assignUserToTask(
+  workspaceId: string,
+  taskId: string,
+  userId: string,
+  assignedBy?: string
+): Promise<void> {
+  const assignmentRef = db.doc(
+    `workspaces/${workspaceId}/taskAssignments/${taskId}/users/${userId}`
+  )
+  const assignment: TaskAssignment = {
+    role: 'assignee',
+    assignedAt: new Date().toISOString(),
+    assignedBy
+  }
+  await assignmentRef.set(assignment)
+}
+
+export async function removeUserFromTask(
+  workspaceId: string,
+  taskId: string,
+  userId: string
+): Promise<void> {
+  const assignmentRef = db.doc(
+    `workspaces/${workspaceId}/taskAssignments/${taskId}/users/${userId}`
+  )
+  await assignmentRef.delete()
+}
+
+export async function getTaskAssignees(
+  workspaceId: string,
+  taskId: string
+): Promise<string[]> {
+  const assignmentsRef = db.collection(
+    `workspaces/${workspaceId}/taskAssignments/${taskId}/users`
+  )
+  const snapshot = await assignmentsRef.get()
+  return snapshot.docs.map((doc) => doc.id)
+}
+
+export async function deleteTaskAssignments(
+  workspaceId: string,
+  taskId: string
+): Promise<void> {
+  const assignmentsRef = db.collection(
+    `workspaces/${workspaceId}/taskAssignments/${taskId}/users`
+  )
+  const snapshot = await assignmentsRef.get()
+
+  const batch = db.batch()
+  snapshot.docs.forEach((doc) => batch.delete(doc.ref))
+  await batch.commit()
+}
+
+export async function deleteProjectAssignments(
+  workspaceId: string,
+  projectId: string
+): Promise<void> {
+  const assignmentsRef = db.collection(
+    `workspaces/${workspaceId}/projectAssignments/${projectId}/users`
+  )
+  const snapshot = await assignmentsRef.get()
+
+  const batch = db.batch()
+  snapshot.docs.forEach((doc) => batch.delete(doc.ref))
+  await batch.commit()
+}
+
+export async function updateTaskMembers(
+  workspaceId: string,
+  taskId: string,
+  memberIds: string[],
+  assignedBy?: string
+): Promise<void> {
+  const assignmentsRef = db.collection(
+    `workspaces/${workspaceId}/taskAssignments/${taskId}/users`
+  )
+  const currentSnapshot = await assignmentsRef.get()
+  const currentMemberIds = currentSnapshot.docs.map((doc) => doc.id)
+
+  const batch = db.batch()
+
+  // Add new members
+  for (const memberId of memberIds) {
+    if (!currentMemberIds.includes(memberId)) {
+      const assignmentRef = db.doc(
+        `workspaces/${workspaceId}/taskAssignments/${taskId}/users/${memberId}`
+      )
+      const assignment: TaskAssignment = {
+        role: 'assignee',
+        assignedAt: new Date().toISOString(),
+        assignedBy
+      }
+      batch.set(assignmentRef, assignment)
+    }
+  }
+
+  // Remove members no longer in the list
+  for (const doc of currentSnapshot.docs) {
+    if (!memberIds.includes(doc.id)) {
+      batch.delete(doc.ref)
+    }
+  }
+
+  await batch.commit()
+}
+
+// Cleanup Functions
+
+export async function cleanupWorkspaceAssignments(
+  workspaceId: string
+): Promise<void> {
+  const batch = db.batch()
+
+  // Delete all projectAssignments
+  const projectAssignmentsRef = db.collection(
+    `workspaces/${workspaceId}/projectAssignments`
+  )
+  const projectAssignmentsSnap = await projectAssignmentsRef.get()
+
+  for (const projectDoc of projectAssignmentsSnap.docs) {
+    const usersSnap = await projectDoc.ref.collection('users').get()
+    usersSnap.docs.forEach((userDoc) => batch.delete(userDoc.ref))
+    batch.delete(projectDoc.ref)
+  }
+
+  // Delete all taskAssignments
+  const taskAssignmentsRef = db.collection(
+    `workspaces/${workspaceId}/taskAssignments`
+  )
+  const taskAssignmentsSnap = await taskAssignmentsRef.get()
+
+  for (const taskDoc of taskAssignmentsSnap.docs) {
+    const usersSnap = await taskDoc.ref.collection('users').get()
+    usersSnap.docs.forEach((userDoc) => batch.delete(userDoc.ref))
+    batch.delete(taskDoc.ref)
+  }
+
+  await batch.commit()
+}
+
+export async function cleanupMemberAssignments(
+  workspaceId: string,
+  memberId: string
+): Promise<void> {
+  const batch = db.batch()
+
+  // Remove from all projectAssignments
+  const projectAssignmentsRef = db.collection(
+    `workspaces/${workspaceId}/projectAssignments`
+  )
+  const projectAssignmentsSnap = await projectAssignmentsRef.get()
+
+  for (const projectDoc of projectAssignmentsSnap.docs) {
+    const userRef = projectDoc.ref.collection('users').doc(memberId)
+    const userSnap = await userRef.get()
+    if (userSnap.exists) {
+      batch.delete(userRef)
+    }
+  }
+
+  // Remove from all taskAssignments
+  const taskAssignmentsRef = db.collection(
+    `workspaces/${workspaceId}/taskAssignments`
+  )
+  const taskAssignmentsSnap = await taskAssignmentsRef.get()
+
+  for (const taskDoc of taskAssignmentsSnap.docs) {
+    const userRef = taskDoc.ref.collection('users').doc(memberId)
+    const userSnap = await userRef.get()
+    if (userSnap.exists) {
+      batch.delete(userRef)
+    }
+  }
+
+  await batch.commit()
+}
+
+// Validation Functions
+
+export async function validateWorkspaceMemberIds(
+  workspaceId: string,
+  memberIds: string[]
+): Promise<{ valid: string[]; invalid: string[] }> {
+  const valid: string[] = []
+  const invalid: string[] = []
+
+  for (const memberId of memberIds) {
+    const memberRef = db.doc(`workspaces/${workspaceId}/members/${memberId}`)
+    const memberSnap = await memberRef.get()
+
+    if (memberSnap.exists) {
+      valid.push(memberId)
+    } else {
+      invalid.push(memberId)
+    }
+  }
+
+  return { valid, invalid }
 }

@@ -2,10 +2,10 @@ import { db } from '@/server/utils/firebase-admin'
 import {
   verifyAuth,
   getMemberPermissions,
-  isOwnerOrAdmin,
   hasAnyPermission,
   canAccessProject,
-  updateProjectMemberAccess
+  updateProjectMembers,
+  validateWorkspaceMemberIds
 } from '@/server/utils/permissions'
 import { PERMISSIONS } from '@/constants/permissions'
 
@@ -23,27 +23,28 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const permissions = await getMemberPermissions(workspaceId, uid)
+  // Check access via isOwnerOrAdmin, access-projects permission, OR projectAssignment
+  const hasAccess = await canAccessProject(workspaceId, projectId, uid)
 
-  if (!permissions) {
+  if (!hasAccess) {
     throw createError({
       statusCode: 403,
-      message: 'You are not a member of this workspace'
+      message: 'You do not have access to this project'
     })
   }
 
-  const canEdit =
-    isOwnerOrAdmin(permissions) ||
-    (hasAnyPermission(permissions, [
+  // Verify user has permission to edit projects
+  const permissions = await getMemberPermissions(workspaceId, uid)
+
+  if (
+    !hasAnyPermission(permissions, [
       PERMISSIONS.MANAGE_PROJECTS,
       PERMISSIONS.EDIT_PROJECTS
-    ]) &&
-      canAccessProject(permissions, projectId))
-
-  if (!canEdit) {
+    ])
+  ) {
     throw createError({
       statusCode: 403,
-      message: 'You do not have permission to edit this project'
+      message: 'You do not have permission to edit projects'
     })
   }
 
@@ -65,9 +66,26 @@ export default defineEventHandler(async (event) => {
 
   await projectRef.update(updateData)
 
-  // Update member access if provided
+  // Update member access if provided (validate memberIds first)
   if (memberIds !== undefined && Array.isArray(memberIds)) {
-    await updateProjectMemberAccess(workspaceId, projectId, memberIds)
+    if (memberIds.length > 0) {
+      const { valid, invalid } = await validateWorkspaceMemberIds(
+        workspaceId,
+        memberIds
+      )
+
+      if (invalid.length > 0) {
+        throw createError({
+          statusCode: 400,
+          message: `Invalid member IDs: ${invalid.join(', ')}`
+        })
+      }
+
+      await updateProjectMembers(workspaceId, projectId, valid, uid)
+    } else {
+      // Empty array means remove all members
+      await updateProjectMembers(workspaceId, projectId, [], uid)
+    }
   }
 
   const updatedSnap = await projectRef.get()

@@ -22,6 +22,7 @@ import { useAuth } from '@/composables/useAuth'
 const props = defineProps<{
   project: Project
   workspaceMembers: WorkspaceMember[]
+  assignedMemberIds: string[]
 }>()
 
 const emit = defineEmits<{
@@ -41,10 +42,9 @@ const projectMembersWithData = computed(() => {
     return []
   }
 
-  // Filter members who have permission for this project
-  // Rule: member.permissions[project.id] === true
+  // Filter members who are assigned to this project via projectAssignments
   return props.workspaceMembers.filter((member) => {
-    return member.permissions?.[props.project.id] === true
+    return props.assignedMemberIds.includes(member.uid)
   })
 })
 

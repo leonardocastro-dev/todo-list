@@ -2,10 +2,12 @@ import { db } from '@/server/utils/firebase-admin'
 import {
   verifyAuth,
   getMemberPermissions,
-  isOwnerOrAdmin,
   hasAnyPermission,
-  canAccessProject
+  canAccessProject,
+  deleteProjectAssignments,
+  deleteTaskAssignments
 } from '@/server/utils/permissions'
+import { PERMISSIONS } from '@/constants/permissions'
 
 export default defineEventHandler(async (event) => {
   const { uid } = await verifyAuth(event)
@@ -20,24 +22,28 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const permissions = await getMemberPermissions(workspaceId, uid)
+  // Check access via isOwnerOrAdmin, access-projects permission, OR projectAssignment
+  const hasAccess = await canAccessProject(workspaceId, projectId, uid)
 
-  if (!permissions) {
+  if (!hasAccess) {
     throw createError({
       statusCode: 403,
-      message: 'You are not a member of this workspace'
+      message: 'You do not have access to this project'
     })
   }
 
-  const canDelete =
-    isOwnerOrAdmin(permissions) ||
-    (hasAnyPermission(permissions, ['manage-projects', 'delete-projects']) &&
-      canAccessProject(permissions, projectId))
+  // Verify user has permission to delete projects
+  const permissions = await getMemberPermissions(workspaceId, uid)
 
-  if (!canDelete) {
+  if (
+    !hasAnyPermission(permissions, [
+      PERMISSIONS.MANAGE_PROJECTS,
+      PERMISSIONS.DELETE_PROJECTS
+    ])
+  ) {
     throw createError({
       statusCode: 403,
-      message: 'You do not have permission to delete this project'
+      message: 'You do not have permission to delete projects'
     })
   }
 
@@ -48,18 +54,25 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Project not found' })
   }
 
-  const batch = db.batch()
-
+  // Query nested tasks collection
   const tasksSnap = await db
     .collection(`workspaces/${workspaceId}/projects/${projectId}/tasks`)
     .get()
-  tasksSnap.docs.forEach((taskDoc) => {
+
+  const batch = db.batch()
+
+  // Delete tasks and their assignments
+  for (const taskDoc of tasksSnap.docs) {
+    await deleteTaskAssignments(workspaceId, taskDoc.id)
     batch.delete(taskDoc.ref)
-  })
+  }
 
   batch.delete(projectRef)
 
   await batch.commit()
+
+  // Delete project assignments
+  await deleteProjectAssignments(workspaceId, projectId)
 
   return { success: true }
 })

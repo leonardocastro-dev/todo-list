@@ -1,8 +1,9 @@
 import { db } from '@/server/utils/firebase-admin'
 import {
   verifyAuth,
-  getMemberPermissions,
-  canAccessProject
+  canAccessProject,
+  updateTaskMembers,
+  validateWorkspaceMemberIds
 } from '@/server/utils/permissions'
 
 export default defineEventHandler(async (event) => {
@@ -22,7 +23,8 @@ export default defineEventHandler(async (event) => {
     status,
     priority,
     dueDate,
-    completed
+    completed,
+    memberIds
   } = await readBody(event)
 
   if (!workspaceId || !projectId) {
@@ -32,16 +34,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const permissions = await getMemberPermissions(workspaceId, uid)
+  const hasAccess = await canAccessProject(workspaceId, projectId, uid)
 
-  if (!permissions) {
-    throw createError({
-      statusCode: 403,
-      message: 'You are not a member of this workspace'
-    })
-  }
-
-  if (!canAccessProject(permissions, projectId)) {
+  if (!hasAccess) {
     throw createError({
       statusCode: 403,
       message: 'You do not have access to this project'
@@ -92,6 +87,28 @@ export default defineEventHandler(async (event) => {
   }
 
   await taskRef.update(updates)
+
+  // Update task member assignments if provided (validate memberIds first)
+  if (memberIds !== undefined && Array.isArray(memberIds)) {
+    if (memberIds.length > 0) {
+      const { valid, invalid } = await validateWorkspaceMemberIds(
+        workspaceId,
+        memberIds
+      )
+
+      if (invalid.length > 0) {
+        throw createError({
+          statusCode: 400,
+          message: `Invalid member IDs: ${invalid.join(', ')}`
+        })
+      }
+
+      await updateTaskMembers(workspaceId, taskId, valid, uid)
+    } else {
+      // Empty array means remove all members
+      await updateTaskMembers(workspaceId, taskId, [], uid)
+    }
+  }
 
   return { success: true }
 })

@@ -4,6 +4,13 @@ import TaskItem from './TaskItem.vue'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
+import type { WorkspaceMember } from '@/composables/useMembers'
+
+const props = defineProps<{
+  workspaceId?: string
+  workspaceMembers?: WorkspaceMember[]
+  taskAssignmentsMap?: Record<string, string[]>
+}>()
 
 const taskStore = useTaskStore()
 const filteredTasks = computed(() => {
@@ -48,6 +55,13 @@ const filteredTasks = computed(() => {
     </AlertDescription>
   </Alert>
   <div v-else class="space-y-2">
-    <TaskItem v-for="task in filteredTasks" :key="task.id" :task="task" />
+    <TaskItem
+      v-for="task in filteredTasks"
+      :key="task.id"
+      :task="task"
+      :workspace-id="workspaceId"
+      :workspace-members="workspaceMembers"
+      :assigned-member-ids="taskAssignmentsMap?.[task.id] || []"
+    />
   </div>
 </template>

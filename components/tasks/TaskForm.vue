@@ -12,6 +12,10 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Users } from 'lucide-vue-next'
+import { useMembers } from '@/composables/useMembers'
 
 type Priority = 'normal' | 'important' | 'urgent'
 
@@ -27,6 +31,13 @@ const emit = defineEmits<{
 }>()
 
 const taskStore = useTaskStore()
+const {
+  members,
+  selectedMemberIds,
+  isLoadingMembers,
+  loadWorkspaceMembers,
+  loadTaskAssignees
+} = useMembers()
 
 const title = ref(props.editTask?.title || '')
 const description = ref(props.editTask?.description || '')
@@ -36,12 +47,30 @@ const priority = ref<Priority>(
 const titleError = ref('')
 
 watch(
+  () => props.isOpen,
+  async (isOpen) => {
+    if (isOpen && props.workspaceId) {
+      await loadWorkspaceMembers(props.workspaceId)
+      if (props.editTask) {
+        await loadTaskAssignees(props.workspaceId, props.editTask.id)
+      } else {
+        selectedMemberIds.value = []
+      }
+    }
+  }
+)
+
+watch(
   () => props.editTask,
-  (newTask) => {
+  async (newTask) => {
     if (newTask) {
       title.value = newTask.title
       description.value = newTask.description || ''
       priority.value = newTask.priority as Priority
+
+      if (props.isOpen && props.workspaceId) {
+        await loadTaskAssignees(props.workspaceId, newTask.id)
+      }
     }
   },
   { immediate: true }
@@ -61,7 +90,8 @@ const handleSubmit = () => {
         description: description.value,
         priority: priority.value
       },
-      props.userId
+      props.userId,
+      selectedMemberIds.value
     )
   } else {
     taskStore.addTask(
@@ -72,7 +102,8 @@ const handleSubmit = () => {
         status: 'pending'
       },
       props.userId,
-      props.workspaceId
+      props.workspaceId,
+      selectedMemberIds.value
     )
   }
 
@@ -85,6 +116,7 @@ const resetForm = () => {
   description.value = ''
   priority.value = 'normal'
   titleError.value = ''
+  selectedMemberIds.value = []
 }
 
 const handleClose = () => {
@@ -166,6 +198,67 @@ const handleClose = () => {
               </Label>
             </div>
           </RadioGroup>
+        </div>
+
+        <!-- Assign Members Section -->
+        <div v-if="workspaceId && userId" class="space-y-2">
+          <Label class="flex items-center gap-2 font-medium">
+            <Users class="h-4 w-4" />
+            Assign Members
+          </Label>
+          <p class="text-sm text-muted-foreground">
+            Select members to assign to this task.
+          </p>
+
+          <div class="max-h-[140px] overflow-y-auto rounded-md border p-4">
+            <div class="space-y-3">
+              <template v-if="isLoadingMembers">
+                <div
+                  v-for="i in 3"
+                  :key="i"
+                  class="flex items-center space-x-2"
+                >
+                  <Skeleton class="h-4 w-4" />
+                  <Skeleton class="h-4 w-32" />
+                </div>
+              </template>
+              <template v-else>
+                <div
+                  v-for="member in members"
+                  :key="member.uid"
+                  class="flex items-center space-x-2"
+                >
+                  <Checkbox
+                    :id="`task-member-${member.uid}`"
+                    :model-value="selectedMemberIds.includes(member.uid)"
+                    @update:model-value="
+                      (checked) => {
+                        if (checked) {
+                          selectedMemberIds.push(member.uid)
+                        } else {
+                          const index = selectedMemberIds.indexOf(member.uid)
+                          if (index > -1) selectedMemberIds.splice(index, 1)
+                        }
+                      }
+                    "
+                  />
+                  <Label
+                    :for="`task-member-${member.uid}`"
+                    class="cursor-pointer flex-1 font-normal"
+                  >
+                    {{ member.username || member.email }}
+                  </Label>
+                </div>
+
+                <p
+                  v-if="members.length === 0"
+                  class="text-sm text-muted-foreground text-center py-4"
+                >
+                  No members in this workspace
+                </p>
+              </template>
+            </div>
+          </div>
         </div>
 
         <DialogFooter class="pt-4">
