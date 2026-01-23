@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { Plus, ArrowLeft } from 'lucide-vue-next'
+import { Plus, ArrowLeft, RefreshCw } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import TaskStats from '@/components/tasks/TaskStats.vue'
@@ -21,8 +21,22 @@ const {
 } = useMembers()
 
 const isAddingTask = ref(false)
+const isReloading = ref(false)
 const taskStore = useTaskStore()
 const projectStore = useProjectStore()
+
+const handleReload = async () => {
+  isReloading.value = true
+  try {
+    await taskStore.reloadTasks(user.value?.uid)
+    if (taskStore.tasks.length > 0) {
+      const taskIds = taskStore.tasks.map((t) => t.id)
+      await loadAllTaskAssignments(workspaceId, taskIds)
+    }
+  } finally {
+    isReloading.value = false
+  }
+}
 
 const projectId = route.params.id as string
 const workspaceId = route.params.workspace as string
@@ -100,14 +114,25 @@ onMounted(async () => {
     <div v-if="currentProject || projectStore.isLoading">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-semibold">Project Tasks</h2>
-        <Button
-          class="flex items-center gap-1"
-          :disabled="projectStore.isLoading"
-          @click="isAddingTask = true"
-        >
-          <Plus class="h-5 w-5" />
-          <span>Add Task</span>
-        </Button>
+        <div class="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            :disabled="taskStore.isLoading || isReloading"
+            @click="handleReload"
+          >
+            <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': isReloading }" />
+            Sync
+          </Button>
+          <Button
+            class="flex items-center gap-1"
+            :disabled="projectStore.isLoading"
+            @click="isAddingTask = true"
+          >
+            <Plus class="h-5 w-5" />
+            <span>Add Task</span>
+          </Button>
+        </div>
       </div>
 
       <TaskStats />

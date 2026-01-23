@@ -11,7 +11,9 @@ export const useTaskStore = defineStore('tasks', {
     searchQuery: '',
     statusFilter: 'all',
     priorityFilter: 'all',
-    isLoading: true
+    isLoading: true,
+    loadedProjectId: null as string | null,
+    loadedWorkspaceId: null as string | null
   }),
 
   getters: {
@@ -81,8 +83,19 @@ export const useTaskStore = defineStore('tasks', {
     async setCurrentProject(
       projectId: string | null,
       userId: string | null = null,
-      workspaceId?: string
+      workspaceId?: string,
+      forceReload: boolean = false
     ) {
+      // Skip if already loaded for this project/workspace (unless forced)
+      if (
+        !forceReload &&
+        this.loadedProjectId === projectId &&
+        this.loadedWorkspaceId === workspaceId
+      ) {
+        this.currentProjectId = projectId
+        return
+      }
+
       this.currentProjectId = projectId
 
       if (!projectId) {
@@ -128,6 +141,9 @@ export const useTaskStore = defineStore('tasks', {
           const localTasks = localStorage.getItem(`localTasks_${projectId}`)
           this.tasks = localTasks ? JSON.parse(localTasks) : []
         }
+
+        this.loadedProjectId = projectId
+        this.loadedWorkspaceId = workspaceId || null
       } catch (error) {
         console.error('Error loading tasks:', error)
         toast.error('Failed to load tasks', {
@@ -137,6 +153,20 @@ export const useTaskStore = defineStore('tasks', {
       } finally {
         this.isLoading = false
       }
+    },
+
+    async reloadTasks(userId: string | null = null) {
+      if (!this.currentProjectId || !this.loadedWorkspaceId) return
+      await this.loadTasksForProject(
+        this.currentProjectId,
+        userId,
+        this.loadedWorkspaceId
+      )
+    },
+
+    clearCache() {
+      this.loadedProjectId = null
+      this.loadedWorkspaceId = null
     },
 
     async addTask(

@@ -10,7 +10,8 @@ export const useProjectStore = defineStore('projects', {
     isLoading: false,
     error: null as string | null,
     memberPermissions: null as Record<string, boolean> | null,
-    isGuestMode: false
+    isGuestMode: false,
+    loadedWorkspaceId: null as string | null
   }),
 
   getters: {
@@ -82,8 +83,14 @@ export const useProjectStore = defineStore('projects', {
 
     async loadProjectsForWorkspace(
       workspaceId: string,
-      userId: string | null = null
+      userId: string | null = null,
+      forceReload: boolean = false
     ) {
+      // Skip if already loaded for this workspace (unless forced)
+      if (!forceReload && this.loadedWorkspaceId === workspaceId) {
+        return
+      }
+
       try {
         this.isLoading = true
         this.error = null
@@ -92,6 +99,7 @@ export const useProjectStore = defineStore('projects', {
           this.isGuestMode = true
           const localProjects = localStorage.getItem('localProjects')
           this.projects = localProjects ? JSON.parse(localProjects) : []
+          this.loadedWorkspaceId = workspaceId
           return
         }
 
@@ -137,6 +145,8 @@ export const useProjectStore = defineStore('projects', {
         } else {
           this.projects = []
         }
+
+        this.loadedWorkspaceId = workspaceId
       } catch (error) {
         console.error('Error loading workspace projects:', error)
         this.error = 'Failed to load projects'
@@ -145,6 +155,14 @@ export const useProjectStore = defineStore('projects', {
       } finally {
         this.isLoading = false
       }
+    },
+
+    async reloadProjects(workspaceId: string, userId: string | null = null) {
+      await this.loadProjectsForWorkspace(workspaceId, userId, true)
+    },
+
+    clearCache() {
+      this.loadedWorkspaceId = null
     },
 
     async addProject(

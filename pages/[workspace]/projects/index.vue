@@ -1,18 +1,33 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { Plus } from 'lucide-vue-next'
+import { ref, onMounted, watch } from 'vue'
+import { Plus, RefreshCw } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import ProjectList from '@/components/projects/ProjectList.vue'
 import ProjectForm from '@/components/projects/ProjectForm.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useWorkspace } from '@/composables/useWorkspace'
+import { useMembers } from '@/composables/useMembers'
 
 const { user } = useAuth()
 const { workspaceId } = useWorkspace()
 const projectStore = useProjectStore()
+const {
+  members,
+  projectAssignmentsMap,
+  loadWorkspaceMembers,
+  loadAllProjectAssignments
+} = useMembers()
 
 const isAddingProject = ref(false)
 const editingProject = ref<Project | undefined>()
+const isReloading = ref(false)
+
+const loadAssignments = async () => {
+  if (workspaceId.value && projectStore.projects.length > 0) {
+    const projectIds = projectStore.projects.map((p) => p.id)
+    await loadAllProjectAssignments(workspaceId.value, projectIds)
+  }
+}
 
 const handleEdit = (project: Project) => {
   editingProject.value = project
@@ -29,8 +44,23 @@ onMounted(async () => {
       workspaceId.value,
       user.value?.uid
     )
+    await loadWorkspaceMembers(workspaceId.value)
+    await loadAssignments()
   }
 })
+
+watch(() => projectStore.projects, loadAssignments, { deep: true })
+
+const handleReload = async () => {
+  if (!workspaceId.value) return
+  isReloading.value = true
+  try {
+    await projectStore.reloadProjects(workspaceId.value, user.value?.uid)
+    await loadAssignments()
+  } finally {
+    isReloading.value = false
+  }
+}
 </script>
 
 <template>
@@ -48,17 +78,32 @@ onMounted(async () => {
           {{ projectStore.totalProjects === 1 ? 'project' : 'projects' }}
         </p>
       </div>
-      <Button
-        v-if="projectStore.canCreateProjects"
-        class="flex items-center gap-1"
-        @click="isAddingProject = true"
-      >
-        <Plus class="h-5 w-5" />
-        <span>New Project</span>
-      </Button>
+      <div class="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          :disabled="projectStore.isLoading || isReloading"
+          @click="handleReload"
+        >
+          <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': isReloading }" />
+          Sync
+        </Button>
+        <Button
+          v-if="projectStore.canCreateProjects"
+          class="flex items-center gap-1"
+          @click="isAddingProject = true"
+        >
+          <Plus class="h-5 w-5" />
+          <span>New Project</span>
+        </Button>
+      </div>
     </div>
 
-    <ProjectList @edit="handleEdit" />
+    <ProjectList
+      :workspace-members="members"
+      :project-assignments-map="projectAssignmentsMap"
+      @edit="handleEdit"
+    />
 
     <ProjectForm
       :is-open="isAddingProject || !!editingProject"
