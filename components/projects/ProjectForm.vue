@@ -40,7 +40,7 @@ const emit = defineEmits<{
 
 const { workspaceId } = useWorkspace()
 const {
-  members,
+  membersForProjects,
   selectedMemberIds,
   isLoadingMembers,
   loadWorkspaceMembers,
@@ -289,7 +289,7 @@ const handleClose = () => {
               </template>
               <template v-else>
                 <div
-                  v-for="member in members"
+                  v-for="member in membersForProjects"
                   :key="member.uid"
                   class="flex items-center space-x-2"
                 >
@@ -316,7 +316,7 @@ const handleClose = () => {
                 </div>
 
                 <p
-                  v-if="members.length === 0"
+                  v-if="membersForProjects.length === 0"
                   class="text-sm text-muted-foreground text-center py-4"
                 >
                   No members in this workspace

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -14,6 +14,7 @@ import {
 import { Check, Flag, ArrowRight, Star, StarHalf } from 'lucide-vue-next'
 import TaskForm from './TaskForm.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useTaskStatusSync } from '@/composables/useTaskStatusSync'
 import type { WorkspaceMember } from '@/composables/useMembers'
 
 const props = defineProps<{
@@ -26,6 +27,21 @@ const props = defineProps<{
 const taskStore = useTaskStore()
 const { user } = useAuth()
 const isEditing = ref(false)
+
+const { localChecked, toggle, syncFromExternal } = useTaskStatusSync({
+  taskId: props.task.id,
+  initialStatus: props.task.status,
+  onLocalUpdate: (status) => {
+    taskStore.updateLocalTaskStatus(props.task.id, status)
+  },
+  onServerSync: async (status) => {
+    await taskStore.syncTaskStatusToServer(props.task.id, status, user.value?.uid)
+  }
+})
+
+watch(() => props.task.status, (newStatus) => {
+  syncFromExternal(newStatus)
+})
 
 const taskMembersWithData = computed(() => {
   if (!props.workspaceMembers || props.workspaceMembers.length === 0) {
@@ -68,19 +84,16 @@ const formatDate = (date: Date) => {
 
 <template>
   <Card
-    :class="`mb-3 ${task.status === 'completed' ? 'opacity-70' : ''} hover:shadow-md transition-shadow`"
+    :class="`mb-3 ${localChecked ? 'opacity-70' : ''} hover:shadow-md transition-shadow`"
   >
     <CardContent class="px-4">
       <div class="flex items-start gap-3">
         <div class="pt-0.5">
           <Checkbox
             :id="`task-${task.id}`"
-            :model-value="task.status === 'completed'"
+            :model-value="localChecked"
             class="mt-1"
-            @update:model-value="
-              (checked) =>
-                taskStore.toggleTaskStatus(task.id, !!checked, user?.uid)
-            "
+            @update:model-value="(checked) => toggle(!!checked)"
           />
         </div>
 
@@ -89,13 +102,13 @@ const formatDate = (date: Date) => {
             <div class="flex items-center gap-2">
               <label
                 :for="`task-${task.id}`"
-                :class="`font-medium text-lg cursor-pointer ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}`"
+                :class="`font-medium text-lg cursor-pointer ${localChecked ? 'line-through text-muted-foreground' : ''}`"
               >
                 {{ task.title }}
               </label>
               <Badge
                 variant="outline"
-                :class="`ml-2 ${task.status === 'completed' ? 'bg-gray-200' : `priority-badge-${task.priority}`}`"
+                :class="`ml-2 ${localChecked ? 'bg-gray-200' : `priority-badge-${task.priority}`}`"
               >
                 {{ task.priority }}
               </Badge>
@@ -124,7 +137,7 @@ const formatDate = (date: Date) => {
 
           <p
             v-if="task.description"
-            :class="`text-sm mb-2 ${task.status === 'completed' ? 'text-muted-foreground' : ''}`"
+            :class="`text-sm mb-2 ${localChecked ? 'text-muted-foreground' : ''}`"
           >
             {{ task.description }}
           </p>
@@ -143,7 +156,7 @@ const formatDate = (date: Date) => {
               <span>{{
                 formatDate(new Date(task.createdAt || Date.now()))
               }}</span>
-              <template v-if="task.status === 'completed'">
+              <template v-if="localChecked">
                 <span>•</span>
                 <span class="flex items-center text-emerald-600">
                   <Check class="h-3 w-3 mr-1" />

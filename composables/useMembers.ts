@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { collection, getDocs } from 'firebase/firestore'
 import { PERMISSIONS } from '@/constants/permissions'
 
@@ -18,8 +18,17 @@ const isOwnerOrAdmin = (
 }
 
 // Singleton state - shared across all component instances
-const members = ref<WorkspaceMember[]>([])
+const allMembers = ref<WorkspaceMember[]>([])
 const selectedMemberIds = ref<string[]>([])
+
+// Filtered members for project access (excludes owners/admins/access-projects)
+const membersForProjects = computed(() =>
+  allMembers.value.filter(
+    (member) =>
+      !isOwnerOrAdmin(member.permissions) &&
+      !member.permissions?.[PERMISSIONS.ACCESS_PROJECTS]
+  )
+)
 const projectAssignmentsMap = ref<Record<string, string[]>>({})
 const taskAssignmentsMap = ref<Record<string, string[]>>({})
 const isLoadingMembers = ref(false)
@@ -31,7 +40,10 @@ export const useMembers = () => {
     if (!workspaceId) return
 
     // Skip if already loaded for this workspace
-    if (loadedWorkspaceId.value === workspaceId && members.value.length > 0) {
+    if (
+      loadedWorkspaceId.value === workspaceId &&
+      allMembers.value.length > 0
+    ) {
       return
     }
 
@@ -48,16 +60,13 @@ export const useMembers = () => {
       )
       const snapshot = await getDocs(membersRef)
 
-      // Filter out owners/admins since they always have access
-      members.value = snapshot.docs
-        .map((doc) => ({
-          uid: doc.id,
-          email: doc.data().email,
-          username: doc.data().username,
-          photoURL: doc.data().photoURL || null,
-          permissions: doc.data().permissions || {}
-        }))
-        .filter((member) => !isOwnerOrAdmin(member.permissions))
+      allMembers.value = snapshot.docs.map((doc) => ({
+        uid: doc.id,
+        email: doc.data().email,
+        username: doc.data().username,
+        photoURL: doc.data().photoURL || null,
+        permissions: doc.data().permissions || {}
+      }))
 
       loadedWorkspaceId.value = workspaceId
     } catch (e) {
@@ -198,7 +207,8 @@ export const useMembers = () => {
   }
 
   return {
-    members,
+    members: allMembers,
+    membersForProjects,
     selectedMemberIds,
     projectAssignmentsMap,
     taskAssignmentsMap,

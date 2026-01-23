@@ -322,11 +322,6 @@ export const useTaskStore = defineStore('tasks', {
       const previousStatus = this.tasks[taskIndex].status
       this.tasks[taskIndex].status = status
 
-      toast.message(`Task changed to ${status}`, {
-        style: { background: checked ? '#6ee7b7' : '#fdba74' },
-        duration: 3000
-      })
-
       if (userId) {
         try {
           await this.updateTask(id, { status }, userId)
@@ -337,6 +332,44 @@ export const useTaskStore = defineStore('tasks', {
             duration: 3000
           })
         }
+      }
+    },
+
+    // Atualiza apenas o estado local (para UI otimista)
+    updateLocalTaskStatus(id: string, status: 'pending' | 'completed') {
+      const taskIndex = this.tasks.findIndex((task) => task.id === id)
+      if (taskIndex === -1) return
+
+      this.tasks[taskIndex].status = status
+
+      // Atualiza localStorage se não houver projeto autenticado
+      if (this.currentProjectId) {
+        const localTasks = localStorage.getItem(`localTasks_${this.currentProjectId}`)
+        if (localTasks) {
+          localStorage.setItem(
+            `localTasks_${this.currentProjectId}`,
+            JSON.stringify(this.tasks)
+          )
+        }
+      }
+    },
+
+    // Sincroniza com servidor (chamado com debounce)
+    async syncTaskStatusToServer(
+      id: string,
+      status: 'pending' | 'completed',
+      userId: string | null = null
+    ) {
+      if (!userId) return
+
+      try {
+        await this.updateTask(id, { status }, userId)
+      } catch (error) {
+        console.error('Error syncing task status:', error)
+        toast.error('Failed to sync task status', {
+          style: { background: '#fda4af' },
+          duration: 3000
+        })
       }
     },
 
