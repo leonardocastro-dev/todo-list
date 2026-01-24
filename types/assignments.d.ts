@@ -6,6 +6,7 @@ declare interface ProjectAssignmentPermissions {
   'create-tasks'?: boolean
   'edit-tasks'?: boolean
   'delete-tasks'?: boolean
+  [key: string]: boolean | undefined
 }
 
 declare interface ProjectAssignment {

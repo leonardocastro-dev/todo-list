@@ -154,19 +154,14 @@ const initializeProjectTaskPermissions = (projectId: string) => {
 
   const state: Record<string, boolean> = {}
 
-  const initFromItems = (items: NestedItem[]) => {
+  const initFromItems = (items: NestedItem[], parentIsChecked = false) => {
     for (const item of items) {
-      state[item.id] = savedPermissions[item.id] || false
-
-      // If parent permission exists, expand to children
-      if (savedPermissions[item.id] && item.children) {
-        for (const child of item.children) {
-          state[child.id] = true
-        }
-      }
+      // Item is checked if: saved in DB, OR parent is checked (inherited)
+      const isChecked = savedPermissions[item.id] === true || parentIsChecked
+      state[item.id] = isChecked
 
       if (item.children) {
-        initFromItems(item.children)
+        initFromItems(item.children, isChecked)
       }
     }
   }
