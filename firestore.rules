@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user is the document owner
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Helper function to check if user is a workspace member
+    function isWorkspaceMember(workspaceId) {
+      return isAuthenticated() &&
+             request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.members;
+    }
+
+    // ==========================================
+    // USERS COLLECTION
+    // ==========================================
+
+    // Public user profiles - readable by any authenticated user
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
+    // Private user data - only accessible by the user themselves
+    match /users_private/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ==========================================
+    // INVITES COLLECTION
+    // ==========================================
+
+    match /invites/{inviteId} {
+      // Anyone authenticated can read invites (needed to accept)
+      allow read: if isAuthenticated();
+      // Only backend can create/update invites
+      allow write: if false;
+    }
+
+    // ==========================================
+    // WORKSPACES COLLECTION
+    // ==========================================
+
+    match /workspaces/{workspaceId} {
+      // Only workspace members can read the workspace
+      allow read: if isWorkspaceMember(workspaceId);
+      // All writes go through backend API
+      allow write: if false;
+
+      // Members subcollection
+      match /members/{memberId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        allow write: if false;
+      }
+
+      // Projects subcollection
+      match /projects/{projectId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        allow write: if false;
+
+        // Tasks nested under projects
+        match /tasks/{taskId} {
+          allow read: if isWorkspaceMember(workspaceId);
+          allow write: if false;
+        }
+
+        // Task assignments nested under projects (new structure)
+        match /taskAssignments/{taskId}/users/{userId} {
+          allow read: if isWorkspaceMember(workspaceId);
+          allow write: if false;
+        }
+      }
+
+      // Project assignments
+      match /projectAssignments/{projectId}/users/{userId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        allow write: if false;
+      }
+
+      // Legacy task assignments at workspace level (for migration period)
+      match /taskAssignments/{taskId}/users/{userId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        allow write: if false;
+      }
+    }
+  }
+}

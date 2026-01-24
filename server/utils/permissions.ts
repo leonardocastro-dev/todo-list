@@ -10,6 +10,10 @@ export interface MemberPermissions {
   'create-projects'?: boolean
   'edit-projects'?: boolean
   'delete-projects'?: boolean
+  'manage-tasks'?: boolean
+  'create-tasks'?: boolean
+  'edit-tasks'?: boolean
+  'delete-tasks'?: boolean
   'manage-members'?: boolean
   'add-members'?: boolean
   'remove-members'?: boolean
@@ -260,16 +264,45 @@ export async function updateProjectMembers(
   await batch.commit()
 }
 
+export async function updateMemberProjectAssignment(
+  workspaceId: string,
+  projectId: string,
+  memberId: string,
+  permissions: ProjectAssignmentPermissions,
+  assignedBy?: string
+): Promise<void> {
+  const assignmentRef = db.doc(
+    `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${memberId}`
+  )
+  const assignmentSnap = await assignmentRef.get()
+
+  if (assignmentSnap.exists) {
+    // Update existing assignment with new permissions
+    await assignmentRef.update({ permissions })
+  } else {
+    // Create new assignment with permissions
+    const assignment: ProjectAssignment = {
+      role: 'editor',
+      assignedAt: new Date().toISOString(),
+      assignedBy,
+      permissions
+    }
+    await assignmentRef.set(assignment)
+  }
+}
+
 // Task Assignment Functions
+// Path: workspaces/{workspaceId}/projects/{projectId}/taskAssignments/{taskId}/users/{userId}
 
 export async function assignUserToTask(
   workspaceId: string,
+  projectId: string,
   taskId: string,
   userId: string,
   assignedBy?: string
 ): Promise<void> {
   const assignmentRef = db.doc(
-    `workspaces/${workspaceId}/taskAssignments/${taskId}/users/${userId}`
+    `workspaces/${workspaceId}/projects/${projectId}/taskAssignments/${taskId}/users/${userId}`
   )
   const assignment: TaskAssignment = {
     role: 'assignee',
@@ -281,21 +314,23 @@ export async function assignUserToTask(
 
 export async function removeUserFromTask(
   workspaceId: string,
+  projectId: string,
   taskId: string,
   userId: string
 ): Promise<void> {
   const assignmentRef = db.doc(
-    `workspaces/${workspaceId}/taskAssignments/${taskId}/users/${userId}`
+    `workspaces/${workspaceId}/projects/${projectId}/taskAssignments/${taskId}/users/${userId}`
   )
   await assignmentRef.delete()
 }
 
 export async function getTaskAssignees(
   workspaceId: string,
+  projectId: string,
   taskId: string
 ): Promise<string[]> {
   const assignmentsRef = db.collection(
-    `workspaces/${workspaceId}/taskAssignments/${taskId}/users`
+    `workspaces/${workspaceId}/projects/${projectId}/taskAssignments/${taskId}/users`
   )
   const snapshot = await assignmentsRef.get()
   return snapshot.docs.map((doc) => doc.id)
@@ -303,10 +338,11 @@ export async function getTaskAssignees(
 
 export async function deleteTaskAssignments(
   workspaceId: string,
+  projectId: string,
   taskId: string
 ): Promise<void> {
   const assignmentsRef = db.collection(
-    `workspaces/${workspaceId}/taskAssignments/${taskId}/users`
+    `workspaces/${workspaceId}/projects/${projectId}/taskAssignments/${taskId}/users`
   )
   const snapshot = await assignmentsRef.get()
 
@@ -331,12 +367,13 @@ export async function deleteProjectAssignments(
 
 export async function updateTaskMembers(
   workspaceId: string,
+  projectId: string,
   taskId: string,
   memberIds: string[],
   assignedBy?: string
 ): Promise<void> {
   const assignmentsRef = db.collection(
-    `workspaces/${workspaceId}/taskAssignments/${taskId}/users`
+    `workspaces/${workspaceId}/projects/${projectId}/taskAssignments/${taskId}/users`
   )
   const currentSnapshot = await assignmentsRef.get()
   const currentMemberIds = currentSnapshot.docs.map((doc) => doc.id)
@@ -347,7 +384,7 @@ export async function updateTaskMembers(
   for (const memberId of memberIds) {
     if (!currentMemberIds.includes(memberId)) {
       const assignmentRef = db.doc(
-        `workspaces/${workspaceId}/taskAssignments/${taskId}/users/${memberId}`
+        `workspaces/${workspaceId}/projects/${projectId}/taskAssignments/${taskId}/users/${memberId}`
       )
       const assignment: TaskAssignment = {
         role: 'assignee',
@@ -387,16 +424,19 @@ export async function cleanupWorkspaceAssignments(
     batch.delete(projectDoc.ref)
   }
 
-  // Delete all taskAssignments
-  const taskAssignmentsRef = db.collection(
-    `workspaces/${workspaceId}/taskAssignments`
-  )
-  const taskAssignmentsSnap = await taskAssignmentsRef.get()
+  // Delete all taskAssignments (now nested under projects)
+  const projectsRef = db.collection(`workspaces/${workspaceId}/projects`)
+  const projectsSnap = await projectsRef.get()
 
-  for (const taskDoc of taskAssignmentsSnap.docs) {
-    const usersSnap = await taskDoc.ref.collection('users').get()
-    usersSnap.docs.forEach((userDoc) => batch.delete(userDoc.ref))
-    batch.delete(taskDoc.ref)
+  for (const projectDoc of projectsSnap.docs) {
+    const taskAssignmentsRef = projectDoc.ref.collection('taskAssignments')
+    const taskAssignmentsSnap = await taskAssignmentsRef.get()
+
+    for (const taskDoc of taskAssignmentsSnap.docs) {
+      const usersSnap = await taskDoc.ref.collection('users').get()
+      usersSnap.docs.forEach((userDoc) => batch.delete(userDoc.ref))
+      batch.delete(taskDoc.ref)
+    }
   }
 
   await batch.commit()
@@ -422,17 +462,20 @@ export async function cleanupMemberAssignments(
     }
   }
 
-  // Remove from all taskAssignments
-  const taskAssignmentsRef = db.collection(
-    `workspaces/${workspaceId}/taskAssignments`
-  )
-  const taskAssignmentsSnap = await taskAssignmentsRef.get()
+  // Remove from all taskAssignments (now nested under projects)
+  const projectsRef = db.collection(`workspaces/${workspaceId}/projects`)
+  const projectsSnap = await projectsRef.get()
 
-  for (const taskDoc of taskAssignmentsSnap.docs) {
-    const userRef = taskDoc.ref.collection('users').doc(memberId)
-    const userSnap = await userRef.get()
-    if (userSnap.exists) {
-      batch.delete(userRef)
+  for (const projectDoc of projectsSnap.docs) {
+    const taskAssignmentsRef = projectDoc.ref.collection('taskAssignments')
+    const taskAssignmentsSnap = await taskAssignmentsRef.get()
+
+    for (const taskDoc of taskAssignmentsSnap.docs) {
+      const userRef = taskDoc.ref.collection('users').doc(memberId)
+      const userSnap = await userRef.get()
+      if (userSnap.exists) {
+        batch.delete(userRef)
+      }
     }
   }
 

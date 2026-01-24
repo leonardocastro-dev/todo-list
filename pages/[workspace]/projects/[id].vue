@@ -31,7 +31,7 @@ const handleReload = async () => {
     await taskStore.reloadTasks(user.value?.uid)
     if (taskStore.tasks.length > 0) {
       const taskIds = taskStore.tasks.map((t) => t.id)
-      await loadAllTaskAssignments(workspaceId, taskIds)
+      await loadAllTaskAssignments(workspaceId, projectId, taskIds)
     }
   } finally {
     isReloading.value = false
@@ -49,9 +49,9 @@ const currentProject = computed(() => {
 watch(
   () => taskStore.tasks,
   async (tasks) => {
-    if (tasks.length > 0 && workspaceId) {
+    if (tasks.length > 0 && workspaceId && projectId) {
       const taskIds = tasks.map((t) => t.id)
-      await loadAllTaskAssignments(workspaceId, taskIds)
+      await loadAllTaskAssignments(workspaceId, projectId, taskIds)
     }
   },
   { immediate: true }
@@ -147,6 +147,7 @@ onMounted(async () => {
         :is-open="isAddingTask"
         :user-id="user?.uid"
         :workspace-id="workspaceId"
+        :project-id="projectId"
         @close="isAddingTask = false"
       />
     </div>

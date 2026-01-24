@@ -30,6 +30,7 @@ const membersForProjects = computed(() =>
   )
 )
 const projectAssignmentsMap = ref<Record<string, string[]>>({})
+const projectAssignmentsDataMap = ref<Record<string, Record<string, ProjectAssignment>>>({})
 const taskAssignmentsMap = ref<Record<string, string[]>>({})
 const isLoadingMembers = ref(false)
 const error = ref<string | null>(null)
@@ -113,12 +114,15 @@ export const useMembers = () => {
   ) => {
     if (!workspaceId || projectIds.length === 0) {
       projectAssignmentsMap.value = {}
+      projectAssignmentsDataMap.value = {}
       return
     }
 
     try {
       const { $firestore } = useNuxtApp()
       const assignments: Record<string, string[]> = {}
+      const assignmentsData: Record<string, Record<string, ProjectAssignment>> =
+        {}
 
       await Promise.all(
         projectIds.map(async (projectId) => {
@@ -132,18 +136,28 @@ export const useMembers = () => {
           )
           const snapshot = await getDocs(assignmentsRef)
           assignments[projectId] = snapshot.docs.map((doc) => doc.id)
+          assignmentsData[projectId] = {}
+          snapshot.docs.forEach((doc) => {
+            assignmentsData[projectId][doc.id] = doc.data() as ProjectAssignment
+          })
         })
       )
 
       projectAssignmentsMap.value = assignments
+      projectAssignmentsDataMap.value = assignmentsData
     } catch (e) {
       console.error('Error loading project assignments:', e)
       projectAssignmentsMap.value = {}
+      projectAssignmentsDataMap.value = {}
     }
   }
 
-  const loadTaskAssignees = async (workspaceId: string, taskId: string) => {
-    if (!workspaceId || !taskId) {
+  const loadTaskAssignees = async (
+    workspaceId: string,
+    projectId: string,
+    taskId: string
+  ) => {
+    if (!workspaceId || !projectId || !taskId) {
       selectedMemberIds.value = []
       return
     }
@@ -156,6 +170,8 @@ export const useMembers = () => {
         $firestore,
         'workspaces',
         workspaceId,
+        'projects',
+        projectId,
         'taskAssignments',
         taskId,
         'users'
@@ -173,9 +189,10 @@ export const useMembers = () => {
 
   const loadAllTaskAssignments = async (
     workspaceId: string,
+    projectId: string,
     taskIds: string[]
   ) => {
-    if (!workspaceId || taskIds.length === 0) {
+    if (!workspaceId || !projectId || taskIds.length === 0) {
       taskAssignmentsMap.value = {}
       return
     }
@@ -190,6 +207,8 @@ export const useMembers = () => {
             $firestore,
             'workspaces',
             workspaceId,
+            'projects',
+            projectId,
             'taskAssignments',
             taskId,
             'users'
@@ -211,6 +230,7 @@ export const useMembers = () => {
     membersForProjects,
     selectedMemberIds,
     projectAssignmentsMap,
+    projectAssignmentsDataMap,
     taskAssignmentsMap,
     isLoadingMembers,
     error,

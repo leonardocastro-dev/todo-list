@@ -30,8 +30,8 @@ export default defineEventHandler(async (event) => {
     description: description?.trim() || null,
     ownerId: uid,
     members: [uid],
-    createdAt: Date.now(),
-    updatedAt: Date.now()
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }
 
   const batch = db.batch()

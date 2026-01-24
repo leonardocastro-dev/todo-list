@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
   await workspaceRef.update({
     name: name.trim(),
     description: description?.trim() || null,
-    updatedAt: Date.now()
+    updatedAt: new Date().toISOString()
   })
 
   const updatedSnap = await workspaceRef.get()

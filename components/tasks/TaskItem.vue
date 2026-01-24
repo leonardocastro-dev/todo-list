@@ -201,6 +201,7 @@ const formatDate = (date: Date) => {
     :edit-task="task"
     :user-id="user?.uid"
     :workspace-id="workspaceId"
+    :project-id="task.projectId"
     @close="isEditing = false"
   />
 </template>

@@ -103,10 +103,10 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      await updateTaskMembers(workspaceId, taskId, valid, uid)
+      await updateTaskMembers(workspaceId, projectId, taskId, valid, uid)
     } else {
       // Empty array means remove all members
-      await updateTaskMembers(workspaceId, taskId, [], uid)
+      await updateTaskMembers(workspaceId, projectId, taskId, [], uid)
     }
   }
 

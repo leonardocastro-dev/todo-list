@@ -69,8 +69,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         description,
         ownerId: 'local',
         members: ['local'],
-        createdAt: Date.now(),
-        updatedAt: Date.now()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }
       workspaces.value.push(workspace)
       saveToLocalStorage()
@@ -117,7 +117,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         ...workspaces.value[workspaceIndex],
         name,
         description,
-        updatedAt: Date.now()
+        updatedAt: new Date().toISOString()
       }
       workspaces.value[workspaceIndex] = updatedWorkspace
       saveToLocalStorage()

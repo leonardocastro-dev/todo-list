@@ -5,6 +5,6 @@ export interface Workspace {
   description?: string
   ownerId: string
   members: string[]
-  createdAt: number
-  updatedAt: number
+  createdAt: string
+  updatedAt: string
 }

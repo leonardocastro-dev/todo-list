@@ -24,6 +24,7 @@ const props = defineProps<{
   editTask?: Task
   userId?: string
   workspaceId?: string
+  projectId?: string
 }>()
 
 const emit = defineEmits<{
@@ -51,8 +52,8 @@ watch(
   async (isOpen) => {
     if (isOpen && props.workspaceId) {
       await loadWorkspaceMembers(props.workspaceId)
-      if (props.editTask) {
-        await loadTaskAssignees(props.workspaceId, props.editTask.id)
+      if (props.editTask && props.projectId) {
+        await loadTaskAssignees(props.workspaceId, props.projectId, props.editTask.id)
       } else {
         selectedMemberIds.value = []
       }
@@ -68,8 +69,8 @@ watch(
       description.value = newTask.description || ''
       priority.value = newTask.priority as Priority
 
-      if (props.isOpen && props.workspaceId) {
-        await loadTaskAssignees(props.workspaceId, newTask.id)
+      if (props.isOpen && props.workspaceId && props.projectId) {
+        await loadTaskAssignees(props.workspaceId, props.projectId, newTask.id)
       }
     }
   },

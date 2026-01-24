@@ -74,7 +74,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (valid.length > 0) {
-      await updateTaskMembers(workspaceId, taskId, valid, uid)
+      await updateTaskMembers(workspaceId, projectId, taskId, valid, uid)
     }
   }
 
