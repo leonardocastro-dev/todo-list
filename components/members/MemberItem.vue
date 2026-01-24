@@ -15,11 +15,13 @@ import {
   Crown,
   Shield,
   Lock,
-  Trash2
+  Trash2,
+  FolderOpen
 } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { toast } from 'vue-sonner'
 import MemberPermissionsModal from './MemberPermissionsModal.vue'
+import AssignToProjectModal from './AssignToProjectModal.vue'
 
 interface Member {
   uid: string
@@ -39,11 +41,13 @@ const props = defineProps<{
 const emit = defineEmits<{
   'member-removed': [memberId: string]
   'permissions-updated': []
+  'project-assigned': []
 }>()
 
 const { user } = useAuth()
 const isRemoving = ref(false)
 const isPermissionsOpen = ref(false)
+const isAssignProjectOpen = ref(false)
 
 const isOwner = computed(() => props.member.permissions?.['owner'] === true)
 const isAdmin = computed(() => props.member.permissions?.['admin'] === true)
@@ -72,8 +76,21 @@ const canRemoveMember = computed(() => {
   )
 })
 
+const canAssignToProject = computed(() => {
+  if (isOwner.value) return false
+  if (isCurrentUser.value) return false
+  return (
+    isCurrentUserOwner.value ||
+    isCurrentUserAdmin.value ||
+    props.currentUserPermissions?.['assign-project'] === true
+  )
+})
+
 const showDropdown = computed(
-  () => canManagePermissions.value || canRemoveMember.value
+  () =>
+    canManagePermissions.value ||
+    canRemoveMember.value ||
+    canAssignToProject.value
 )
 
 const getAuthToken = async (): Promise<string | null> => {
@@ -119,6 +136,10 @@ const removeMember = async () => {
 
 const handlePermissionsUpdated = () => {
   emit('permissions-updated')
+}
+
+const handleProjectAssigned = () => {
+  emit('project-assigned')
 }
 </script>
 
@@ -180,6 +201,22 @@ const handlePermissionsUpdated = () => {
             Permissions
           </DropdownMenuItem>
 
+          <DropdownMenuItem
+            v-if="canAssignToProject"
+            @click="isAssignProjectOpen = true"
+          >
+            <FolderOpen class="h-4 w-4" />
+            Assign to Project
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            v-else
+            disabled
+            class="flex items-center gap-2 opacity-50 cursor-not-allowed"
+          >
+            <Lock class="h-4 w-4" />
+            Assign to Project
+          </DropdownMenuItem>
+
           <DropdownMenuSeparator />
 
           <DropdownMenuItem
@@ -208,5 +245,12 @@ const handlePermissionsUpdated = () => {
     :member="member"
     :workspace-id="workspaceId"
     @permissions-updated="handlePermissionsUpdated"
+  />
+
+  <AssignToProjectModal
+    v-model:open="isAssignProjectOpen"
+    :member="member"
+    :workspace-id="workspaceId"
+    @project-assigned="handleProjectAssigned"
   />
 </template>

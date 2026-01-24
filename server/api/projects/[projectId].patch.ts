@@ -36,16 +36,40 @@ export default defineEventHandler(async (event) => {
   // Verify user has permission to edit projects
   const permissions = await getMemberPermissions(workspaceId, uid)
 
-  if (
-    !hasAnyPermission(permissions, [
-      PERMISSIONS.MANAGE_PROJECTS,
-      PERMISSIONS.EDIT_PROJECTS
-    ])
-  ) {
-    throw createError({
-      statusCode: 403,
-      message: 'You do not have permission to edit projects'
-    })
+  // Check if this is only a member assignment update (no title, description, or emoji changes)
+  const isMemberAssignmentOnly =
+    memberIds !== undefined &&
+    title === undefined &&
+    description === undefined &&
+    emoji === undefined
+
+  if (isMemberAssignmentOnly) {
+    // For member-only updates, allow assign-project permission
+    if (
+      !hasAnyPermission(permissions, [
+        PERMISSIONS.MANAGE_PROJECTS,
+        PERMISSIONS.EDIT_PROJECTS,
+        PERMISSIONS.ASSIGN_PROJECT
+      ])
+    ) {
+      throw createError({
+        statusCode: 403,
+        message: 'You do not have permission to assign members to projects'
+      })
+    }
+  } else {
+    // For full project edits, require manage-projects or edit-projects
+    if (
+      !hasAnyPermission(permissions, [
+        PERMISSIONS.MANAGE_PROJECTS,
+        PERMISSIONS.EDIT_PROJECTS
+      ])
+    ) {
+      throw createError({
+        statusCode: 403,
+        message: 'You do not have permission to edit projects'
+      })
+    }
   }
 
   const projectRef = db.doc(`workspaces/${workspaceId}/projects/${projectId}`)

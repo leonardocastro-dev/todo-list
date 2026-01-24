@@ -119,6 +119,10 @@ const nestedItems = computed<NestedItem[]>(() => {
         {
           id: 'remove-members',
           name: 'Remove members'
+        },
+        {
+          id: 'assign-project',
+          name: 'Assign to project'
         }
       ]
     }

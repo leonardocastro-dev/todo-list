@@ -158,6 +158,10 @@ export const useProjectStore = defineStore('projects', {
     },
 
     async reloadProjects(workspaceId: string, userId: string | null = null) {
+      // Limpa o cache de tasks ao recarregar projetos
+      const taskStore = useTaskStore()
+      taskStore.clearCache()
+
       await this.loadProjectsForWorkspace(workspaceId, userId, true)
     },
 

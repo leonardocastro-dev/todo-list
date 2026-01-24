@@ -6,35 +6,47 @@ import { useAuth } from '@/composables/useAuth'
 
 export const useTaskStore = defineStore('tasks', {
   state: () => ({
-    tasks: [] as Task[],
+    // Cache multi-projeto: Map de projectId → tasks
+    tasksByProject: {} as Record<string, Task[]>,
+    // Rastreia quais projetos já foram carregados (para evitar re-fetch)
+    loadedProjects: {} as Record<string, { workspaceId: string; loadedAt: number }>,
     currentProjectId: null as string | null,
+    currentWorkspaceId: null as string | null,
     searchQuery: '',
     statusFilter: 'all',
     priorityFilter: 'all',
-    isLoading: true,
-    loadedProjectId: null as string | null,
-    loadedWorkspaceId: null as string | null
+    isLoading: true
   }),
 
   getters: {
-    totalTasks: (state) => state.tasks.length,
-    completedTasks: (state) =>
-      state.tasks.filter((task) => task.status === 'completed').length,
-    pendingTasks: (state) =>
-      state.tasks.filter((task) => task.status === 'pending').length,
-    urgentTasks: (state) =>
-      state.tasks.filter(
-        (task) => task.priority === 'urgent' && task.status === 'pending'
-      ).length,
-    completionPercentage: (state) => {
-      const total = state.tasks.length
-      const completed = state.tasks.filter(
-        (task) => task.status === 'completed'
+    // Getter para obter as tasks do projeto atual
+    tasks: (state): Task[] => {
+      if (!state.currentProjectId) return []
+      return state.tasksByProject[state.currentProjectId] || []
+    },
+    totalTasks(): number {
+      return this.tasks.length
+    },
+    completedTasks(): number {
+      return this.tasks.filter((task: Task) => task.status === 'completed').length
+    },
+    pendingTasks(): number {
+      return this.tasks.filter((task: Task) => task.status === 'pending').length
+    },
+    urgentTasks(): number {
+      return this.tasks.filter(
+        (task: Task) => task.priority === 'urgent' && task.status === 'pending'
+      ).length
+    },
+    completionPercentage(): number {
+      const total = this.tasks.length
+      const completed = this.tasks.filter(
+        (task: Task) => task.status === 'completed'
       ).length
       return total > 0 ? Math.round((completed / total) * 100) : 0
     },
-    filteredTasks: (state) => {
-      return state.tasks.filter((task) => {
+    filteredTasks(state): Task[] {
+      return this.tasks.filter((task: Task) => {
         if (
           state.statusFilter !== 'all' &&
           task.status !== state.statusFilter
@@ -86,20 +98,18 @@ export const useTaskStore = defineStore('tasks', {
       workspaceId?: string,
       forceReload: boolean = false
     ) {
-      // Skip if already loaded for this project/workspace (unless forced)
-      if (
-        !forceReload &&
-        this.loadedProjectId === projectId &&
-        this.loadedWorkspaceId === workspaceId
-      ) {
-        this.currentProjectId = projectId
+      this.currentProjectId = projectId
+      this.currentWorkspaceId = workspaceId || null
+
+      if (!projectId) {
         return
       }
 
-      this.currentProjectId = projectId
-
-      if (!projectId) {
-        this.tasks = []
+      // Verifica se o projeto já está no cache (e não é forceReload)
+      const cachedProject = this.loadedProjects[projectId]
+      if (!forceReload && cachedProject && cachedProject.workspaceId === workspaceId) {
+        // Projeto já carregado, apenas atualiza isLoading para false
+        this.isLoading = false
         return
       }
 
@@ -116,6 +126,8 @@ export const useTaskStore = defineStore('tasks', {
       try {
         this.isLoading = true
 
+        let loadedTasks: Task[] = []
+
         if (userId && workspaceId) {
           // Query nested tasks collection
           const tasksRef = collection(
@@ -129,21 +141,25 @@ export const useTaskStore = defineStore('tasks', {
           const snapshot = await getDocs(tasksRef)
 
           if (!snapshot.empty) {
-            this.tasks = snapshot.docs.map((doc) => ({
+            loadedTasks = snapshot.docs.map((doc) => ({
               id: doc.id,
               ...doc.data()
             })) as Task[]
-          } else {
-            this.tasks = []
           }
         } else {
           // localStorage also separated by project
           const localTasks = localStorage.getItem(`localTasks_${projectId}`)
-          this.tasks = localTasks ? JSON.parse(localTasks) : []
+          loadedTasks = localTasks ? JSON.parse(localTasks) : []
         }
 
-        this.loadedProjectId = projectId
-        this.loadedWorkspaceId = workspaceId || null
+        // Armazena no cache por projectId
+        this.tasksByProject[projectId] = loadedTasks
+
+        // Marca o projeto como carregado
+        this.loadedProjects[projectId] = {
+          workspaceId: workspaceId || '',
+          loadedAt: Date.now()
+        }
       } catch (error) {
         console.error('Error loading tasks:', error)
         toast.error('Failed to load tasks', {
@@ -156,17 +172,26 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     async reloadTasks(userId: string | null = null) {
-      if (!this.currentProjectId || !this.loadedWorkspaceId) return
+      if (!this.currentProjectId || !this.currentWorkspaceId) return
       await this.loadTasksForProject(
         this.currentProjectId,
         userId,
-        this.loadedWorkspaceId
+        this.currentWorkspaceId
       )
     },
 
+    // Limpa cache de um projeto específico
+    clearProjectCache(projectId: string) {
+      delete this.tasksByProject[projectId]
+      delete this.loadedProjects[projectId]
+    },
+
+    // Limpa todo o cache
     clearCache() {
-      this.loadedProjectId = null
-      this.loadedWorkspaceId = null
+      this.tasksByProject = {}
+      this.loadedProjects = {}
+      this.currentProjectId = null
+      this.currentWorkspaceId = null
     },
 
     async addTask(
@@ -180,19 +205,26 @@ export const useTaskStore = defineStore('tasks', {
         return
       }
 
+      const projectId = this.currentProjectId
+
+      // Garante que o array existe
+      if (!this.tasksByProject[projectId]) {
+        this.tasksByProject[projectId] = []
+      }
+
       if (!userId || !workspaceId) {
         const taskId = crypto.randomUUID()
         const now = new Date().toISOString()
         const taskWithData: Task = {
           ...task,
           id: taskId,
-          projectId: this.currentProjectId,
+          projectId,
           createdAt: now
         }
-        this.tasks.push(taskWithData)
+        this.tasksByProject[projectId].push(taskWithData)
         localStorage.setItem(
-          `localTasks_${this.currentProjectId}`,
-          JSON.stringify(this.tasks)
+          `localTasks_${projectId}`,
+          JSON.stringify(this.tasksByProject[projectId])
         )
         toast.message('Task added successfully', {
           style: { background: '#6ee7b7' }
@@ -211,7 +243,7 @@ export const useTaskStore = defineStore('tasks', {
             headers: { Authorization: `Bearer ${token}` },
             body: {
               workspaceId,
-              projectId: this.currentProjectId,
+              projectId,
               title: task.title,
               description: task.description,
               status: task.status,
@@ -223,7 +255,7 @@ export const useTaskStore = defineStore('tasks', {
         )
 
         if (response.success && response.task) {
-          this.tasks.push(response.task)
+          this.tasksByProject[projectId].push(response.task)
         }
 
         toast.message('Task added successfully', {
@@ -243,14 +275,18 @@ export const useTaskStore = defineStore('tasks', {
     ) {
       if (!this.currentProjectId) return
 
-      const taskIndex = this.tasks.findIndex((task) => task.id === id)
+      const projectId = this.currentProjectId
+      const projectTasks = this.tasksByProject[projectId]
+      if (!projectTasks) return
+
+      const taskIndex = projectTasks.findIndex((task) => task.id === id)
       if (taskIndex === -1) return
 
       if (!userId) {
-        this.tasks[taskIndex] = { ...this.tasks[taskIndex], ...updatedTask }
+        projectTasks[taskIndex] = { ...projectTasks[taskIndex], ...updatedTask }
         localStorage.setItem(
-          `localTasks_${this.currentProjectId}`,
-          JSON.stringify(this.tasks)
+          `localTasks_${projectId}`,
+          JSON.stringify(projectTasks)
         )
         return
       }
@@ -269,7 +305,7 @@ export const useTaskStore = defineStore('tasks', {
             headers: { Authorization: `Bearer ${token}` },
             body: {
               workspaceId,
-              projectId: this.currentProjectId,
+              projectId,
               ...updatedTask,
               memberIds
             }
@@ -277,7 +313,7 @@ export const useTaskStore = defineStore('tasks', {
         )
 
         if (response.success) {
-          this.tasks[taskIndex] = { ...this.tasks[taskIndex], ...updatedTask }
+          projectTasks[taskIndex] = { ...projectTasks[taskIndex], ...updatedTask }
         }
       } catch (error) {
         console.error('Error updating task:', error)
@@ -291,11 +327,15 @@ export const useTaskStore = defineStore('tasks', {
     async deleteTask(id: string, userId: string | null = null) {
       if (!this.currentProjectId) return
 
+      const projectId = this.currentProjectId
+
       if (!userId) {
-        this.tasks = this.tasks.filter((task) => task.id !== id)
+        this.tasksByProject[projectId] = (this.tasksByProject[projectId] || []).filter(
+          (task) => task.id !== id
+        )
         localStorage.setItem(
-          `localTasks_${this.currentProjectId}`,
-          JSON.stringify(this.tasks)
+          `localTasks_${projectId}`,
+          JSON.stringify(this.tasksByProject[projectId])
         )
         toast.message('Task deleted successfully', {
           style: { background: '#fda4af' },
@@ -318,13 +358,15 @@ export const useTaskStore = defineStore('tasks', {
             headers: { Authorization: `Bearer ${token}` },
             body: {
               workspaceId,
-              projectId: this.currentProjectId
+              projectId
             }
           }
         )
 
         if (response.success) {
-          this.tasks = this.tasks.filter((task) => task.id !== id)
+          this.tasksByProject[projectId] = (this.tasksByProject[projectId] || []).filter(
+            (task) => task.id !== id
+          )
           toast.message('Task deleted successfully', {
             style: { background: '#fda4af' },
             duration: 3000
@@ -344,19 +386,25 @@ export const useTaskStore = defineStore('tasks', {
       checked: boolean,
       userId: string | null = null
     ) {
+      if (!this.currentProjectId) return
+
+      const projectId = this.currentProjectId
+      const projectTasks = this.tasksByProject[projectId]
+      if (!projectTasks) return
+
       const status = checked ? 'completed' : 'pending'
 
-      const taskIndex = this.tasks.findIndex((task) => task.id === id)
+      const taskIndex = projectTasks.findIndex((task) => task.id === id)
       if (taskIndex === -1) return
 
-      const previousStatus = this.tasks[taskIndex].status
-      this.tasks[taskIndex].status = status
+      const previousStatus = projectTasks[taskIndex].status
+      projectTasks[taskIndex].status = status
 
       if (userId) {
         try {
           await this.updateTask(id, { status }, userId)
         } catch {
-          this.tasks[taskIndex].status = previousStatus
+          projectTasks[taskIndex].status = previousStatus
           toast.error('Failed to update task status', {
             style: { background: '#fda4af' },
             duration: 3000
@@ -367,24 +415,29 @@ export const useTaskStore = defineStore('tasks', {
 
     // Atualiza apenas o estado local (para UI otimista)
     updateLocalTaskStatus(id: string, status: 'pending' | 'completed') {
-      const taskIndex = this.tasks.findIndex((task) => task.id === id)
+      if (!this.currentProjectId) return
+
+      const projectId = this.currentProjectId
+      const projectTasks = this.tasksByProject[projectId]
+      if (!projectTasks) return
+
+      const taskIndex = projectTasks.findIndex((task) => task.id === id)
       if (taskIndex === -1) return
 
-      this.tasks[taskIndex].status = status
+      projectTasks[taskIndex].status = status
 
-      // Atualiza localStorage se não houver projeto autenticado
-      if (this.currentProjectId) {
-        const localTasks = localStorage.getItem(`localTasks_${this.currentProjectId}`)
-        if (localTasks) {
-          localStorage.setItem(
-            `localTasks_${this.currentProjectId}`,
-            JSON.stringify(this.tasks)
-          )
-        }
+      // Atualiza localStorage se necessário
+      const localTasks = localStorage.getItem(`localTasks_${projectId}`)
+      if (localTasks) {
+        localStorage.setItem(
+          `localTasks_${projectId}`,
+          JSON.stringify(projectTasks)
+        )
       }
     },
 
     // Sincroniza com servidor (chamado com debounce)
+    // Lança erro para que o composable possa reverter a UI
     async syncTaskStatusToServer(
       id: string,
       status: 'pending' | 'completed',
@@ -392,15 +445,7 @@ export const useTaskStore = defineStore('tasks', {
     ) {
       if (!userId) return
 
-      try {
-        await this.updateTask(id, { status }, userId)
-      } catch (error) {
-        console.error('Error syncing task status:', error)
-        toast.error('Failed to sync task status', {
-          style: { background: '#fda4af' },
-          duration: 3000
-        })
-      }
+      await this.updateTask(id, { status }, userId)
     },
 
     setSearchQuery(query: string | null) {

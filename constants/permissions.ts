@@ -8,7 +8,8 @@ export const PERMISSIONS = {
   DELETE_PROJECTS: 'delete-projects',
   MANAGE_MEMBERS: 'manage-members',
   ADD_MEMBERS: 'add-members',
-  REMOVE_MEMBERS: 'remove-members'
+  REMOVE_MEMBERS: 'remove-members',
+  ASSIGN_PROJECT: 'assign-project'
 } as const
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]

@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
+import { toast } from 'vue-sonner'
 
 interface UseTaskStatusSyncOptions {
   taskId: string
@@ -22,11 +23,21 @@ export function useTaskStatusSync(options: UseTaskStatusSyncOptions) {
   const hasPendingSync = ref(false)
 
   // Função de sync com servidor (debounced)
-  const debouncedServerSync = useDebounceFn(async (status: 'pending' | 'completed', requestId: number) => {
+  const debouncedServerSync = useDebounceFn(async (status: 'pending' | 'completed', requestId: number, previousStatus: 'pending' | 'completed') => {
     if (requestId !== currentRequestId) return
 
     try {
       await onServerSync(status)
+    } catch (error) {
+      // Reverte UI em caso de erro
+      if (requestId === currentRequestId) {
+        localChecked.value = previousStatus === 'completed'
+        onLocalUpdate(previousStatus)
+        toast.error('Failed to sync task status', {
+          style: { background: '#fda4af' },
+          duration: 3000
+        })
+      }
     } finally {
       if (requestId === currentRequestId) {
         hasPendingSync.value = false
@@ -36,6 +47,7 @@ export function useTaskStatusSync(options: UseTaskStatusSyncOptions) {
 
   // Handler do toggle
   function toggle(checked: boolean) {
+    const previousStatus = localChecked.value ? 'completed' : 'pending'
     localChecked.value = checked
     currentRequestId++
     hasPendingSync.value = true
@@ -44,8 +56,8 @@ export function useTaskStatusSync(options: UseTaskStatusSyncOptions) {
     // Atualiza store imediatamente (para stats e outros componentes)
     onLocalUpdate(status)
 
-    // Sincroniza com servidor com debounce
-    debouncedServerSync(status, currentRequestId)
+    // Sincroniza com servidor com debounce (passa status anterior para rollback)
+    debouncedServerSync(status, currentRequestId, previousStatus)
   }
 
   // Sincroniza com mudanças externas (ex: outro usuário)

@@ -11,13 +11,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Smile, Users } from 'lucide-vue-next'
+import { Smile } from 'lucide-vue-next'
 import data from 'emoji-mart-vue-fast/data/all.json'
 import 'emoji-mart-vue-fast/css/emoji-mart.css'
 import { Picker, EmojiIndex } from 'emoji-mart-vue-fast/src'
-import { useMembers } from '@/composables/useMembers'
 import { useWorkspace } from '@/composables/useWorkspace'
 import {
   validateProjectForm,
@@ -39,13 +36,6 @@ const emit = defineEmits<{
 }>()
 
 const { workspaceId } = useWorkspace()
-const {
-  membersForProjects,
-  selectedMemberIds,
-  isLoadingMembers,
-  loadWorkspaceMembers,
-  loadProjectMembers
-} = useMembers()
 
 const projectStore = useProjectStore()
 
@@ -57,31 +47,14 @@ const currentTag = ref('')
 const validationErrors = ref<ProjectValidationErrors>({})
 const isSaving = ref(false)
 
-watch(
-  () => props.isOpen,
-  async (isOpen) => {
-    if (isOpen && workspaceId.value) {
-      await loadWorkspaceMembers(workspaceId.value)
-      if (props.editProject) {
-        await loadProjectMembers(workspaceId.value, props.editProject.id)
-      } else {
-        selectedMemberIds.value = []
-      }
-    }
-  }
-)
 
 watch(
   () => props.editProject,
-  async (newProject) => {
+  (newProject) => {
     if (newProject) {
       title.value = newProject.title
       description.value = newProject.description || ''
       emoji.value = newProject.emoji || ''
-
-      if (props.isOpen && workspaceId.value) {
-        await loadProjectMembers(workspaceId.value, newProject.id)
-      }
     }
   },
   { immediate: true }
@@ -124,8 +97,7 @@ const handleSubmit = async () => {
           emoji: emoji.value || undefined,
           updatedAt: now
         },
-        props.userId,
-        selectedMemberIds.value
+        props.userId
       )
     } else {
       await projectStore.addProject(
@@ -140,8 +112,7 @@ const handleSubmit = async () => {
           workspaceId: workspaceId.value || undefined
         },
         props.userId,
-        workspaceId.value || undefined,
-        selectedMemberIds.value
+        workspaceId.value || undefined
       )
     }
 
@@ -161,7 +132,6 @@ const resetForm = () => {
   showEmojiPicker.value = false
   currentTag.value = ''
   validationErrors.value = {}
-  selectedMemberIds.value = []
 }
 
 const handleClose = () => {
@@ -263,69 +233,6 @@ const handleClose = () => {
           </p>
         </div>
 
-        <!-- Member Access Section -->
-        <div v-if="workspaceId && userId" class="space-y-2">
-          <Label class="flex items-center gap-2">
-            <Users class="h-4 w-4" />
-            Member Access
-          </Label>
-          <p class="text-sm text-muted-foreground">
-            Select members who can access this project. Owners and admins always
-            have access.
-          </p>
-
-          <!-- Members List -->
-          <div class="max-h-[140px] overflow-y-auto rounded-md border p-4">
-            <div class="space-y-3">
-              <template v-if="isLoadingMembers">
-                <div
-                  v-for="i in 3"
-                  :key="i"
-                  class="flex items-center space-x-2"
-                >
-                  <Skeleton class="h-4 w-4" />
-                  <Skeleton class="h-4 w-32" />
-                </div>
-              </template>
-              <template v-else>
-                <div
-                  v-for="member in membersForProjects"
-                  :key="member.uid"
-                  class="flex items-center space-x-2"
-                >
-                  <Checkbox
-                    :id="`member-${member.uid}`"
-                    :model-value="selectedMemberIds.includes(member.uid)"
-                    @update:model-value="
-                      (checked) => {
-                        if (checked) {
-                          selectedMemberIds.push(member.uid)
-                        } else {
-                          const index = selectedMemberIds.indexOf(member.uid)
-                          if (index > -1) selectedMemberIds.splice(index, 1)
-                        }
-                      }
-                    "
-                  />
-                  <Label
-                    :for="`member-${member.uid}`"
-                    class="cursor-pointer flex-1 font-normal"
-                  >
-                    {{ member.username || member.email }}
-                  </Label>
-                </div>
-
-                <p
-                  v-if="membersForProjects.length === 0"
-                  class="text-sm text-muted-foreground text-center py-4"
-                >
-                  No members in this workspace
-                </p>
-              </template>
-            </div>
-          </div>
-        </div>
-
         <DialogFooter>
           <Button
             type="button"
@@ -336,8 +243,7 @@ const handleClose = () => {
             Cancel
           </Button>
           <Button type="submit" :disabled="isSaving">
-            {{ isSaving ? 'Saving...' : editProject ? 'Update' : 'Create' }}
-            Project
+            {{ isSaving ? 'Saving...' : editProject ? 'Update Project' : 'Create Project' }}
           </Button>
         </DialogFooter>
       </form>

@@ -13,6 +13,7 @@ export interface MemberPermissions {
   'manage-members'?: boolean
   'add-members'?: boolean
   'remove-members'?: boolean
+  'assign-project'?: boolean
   [key: string]: boolean | undefined
 }
 
