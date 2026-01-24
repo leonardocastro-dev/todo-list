@@ -53,7 +53,11 @@ watch(
     if (isOpen && props.workspaceId) {
       await loadWorkspaceMembers(props.workspaceId)
       if (props.editTask && props.projectId) {
-        await loadTaskAssignees(props.workspaceId, props.projectId, props.editTask.id)
+        await loadTaskAssignees(
+          props.workspaceId,
+          props.projectId,
+          props.editTask.id
+        )
       } else {
         selectedMemberIds.value = []
       }

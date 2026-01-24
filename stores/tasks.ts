@@ -9,7 +9,10 @@ export const useTaskStore = defineStore('tasks', {
     // Cache multi-projeto: Map de projectId → tasks
     tasksByProject: {} as Record<string, Task[]>,
     // Rastreia quais projetos já foram carregados (para evitar re-fetch)
-    loadedProjects: {} as Record<string, { workspaceId: string; loadedAt: number }>,
+    loadedProjects: {} as Record<
+      string,
+      { workspaceId: string; loadedAt: number }
+    >,
     currentProjectId: null as string | null,
     currentWorkspaceId: null as string | null,
     searchQuery: '',
@@ -28,7 +31,8 @@ export const useTaskStore = defineStore('tasks', {
       return this.tasks.length
     },
     completedTasks(): number {
-      return this.tasks.filter((task: Task) => task.status === 'completed').length
+      return this.tasks.filter((task: Task) => task.status === 'completed')
+        .length
     },
     pendingTasks(): number {
       return this.tasks.filter((task: Task) => task.status === 'pending').length
@@ -107,7 +111,11 @@ export const useTaskStore = defineStore('tasks', {
 
       // Verifica se o projeto já está no cache (e não é forceReload)
       const cachedProject = this.loadedProjects[projectId]
-      if (!forceReload && cachedProject && cachedProject.workspaceId === workspaceId) {
+      if (
+        !forceReload &&
+        cachedProject &&
+        cachedProject.workspaceId === workspaceId
+      ) {
         // Projeto já carregado, apenas atualiza isLoading para false
         this.isLoading = false
         return
@@ -182,8 +190,10 @@ export const useTaskStore = defineStore('tasks', {
 
     // Limpa cache de um projeto específico
     clearProjectCache(projectId: string) {
-      delete this.tasksByProject[projectId]
-      delete this.loadedProjects[projectId]
+      const { [projectId]: _tasks, ...restTasks } = this.tasksByProject
+      const { [projectId]: _loaded, ...restLoaded } = this.loadedProjects
+      this.tasksByProject = restTasks
+      this.loadedProjects = restLoaded
     },
 
     // Limpa todo o cache
@@ -313,7 +323,10 @@ export const useTaskStore = defineStore('tasks', {
         )
 
         if (response.success) {
-          projectTasks[taskIndex] = { ...projectTasks[taskIndex], ...updatedTask }
+          projectTasks[taskIndex] = {
+            ...projectTasks[taskIndex],
+            ...updatedTask
+          }
         }
       } catch (error) {
         console.error('Error updating task:', error)
@@ -330,9 +343,9 @@ export const useTaskStore = defineStore('tasks', {
       const projectId = this.currentProjectId
 
       if (!userId) {
-        this.tasksByProject[projectId] = (this.tasksByProject[projectId] || []).filter(
-          (task) => task.id !== id
-        )
+        this.tasksByProject[projectId] = (
+          this.tasksByProject[projectId] || []
+        ).filter((task) => task.id !== id)
         localStorage.setItem(
           `localTasks_${projectId}`,
           JSON.stringify(this.tasksByProject[projectId])
@@ -364,9 +377,9 @@ export const useTaskStore = defineStore('tasks', {
         )
 
         if (response.success) {
-          this.tasksByProject[projectId] = (this.tasksByProject[projectId] || []).filter(
-            (task) => task.id !== id
-          )
+          this.tasksByProject[projectId] = (
+            this.tasksByProject[projectId] || []
+          ).filter((task) => task.id !== id)
           toast.message('Task deleted successfully', {
             style: { background: '#fda4af' },
             duration: 3000

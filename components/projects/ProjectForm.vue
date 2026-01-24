@@ -47,7 +47,6 @@ const currentTag = ref('')
 const validationErrors = ref<ProjectValidationErrors>({})
 const isSaving = ref(false)
 
-
 watch(
   () => props.editProject,
   (newProject) => {
@@ -243,7 +242,13 @@ const handleClose = () => {
             Cancel
           </Button>
           <Button type="submit" :disabled="isSaving">
-            {{ isSaving ? 'Saving...' : editProject ? 'Update Project' : 'Create Project' }}
+            {{
+              isSaving
+                ? 'Saving...'
+                : editProject
+                  ? 'Update Project'
+                  : 'Create Project'
+            }}
           </Button>
         </DialogFooter>
       </form>

@@ -11,7 +11,12 @@ interface UseTaskStatusSyncOptions {
 }
 
 export function useTaskStatusSync(options: UseTaskStatusSyncOptions) {
-  const { initialStatus, onLocalUpdate, onServerSync, debounceMs = 300 } = options
+  const {
+    initialStatus,
+    onLocalUpdate,
+    onServerSync,
+    debounceMs = 300
+  } = options
 
   // Estado local para resposta imediata da UI
   const localChecked = ref(initialStatus === 'completed')
@@ -23,27 +28,34 @@ export function useTaskStatusSync(options: UseTaskStatusSyncOptions) {
   const hasPendingSync = ref(false)
 
   // Função de sync com servidor (debounced)
-  const debouncedServerSync = useDebounceFn(async (status: 'pending' | 'completed', requestId: number, previousStatus: 'pending' | 'completed') => {
-    if (requestId !== currentRequestId) return
+  const debouncedServerSync = useDebounceFn(
+    async (
+      status: 'pending' | 'completed',
+      requestId: number,
+      previousStatus: 'pending' | 'completed'
+    ) => {
+      if (requestId !== currentRequestId) return
 
-    try {
-      await onServerSync(status)
-    } catch (error) {
-      // Reverte UI em caso de erro
-      if (requestId === currentRequestId) {
-        localChecked.value = previousStatus === 'completed'
-        onLocalUpdate(previousStatus)
-        toast.error('Failed to sync task status', {
-          style: { background: '#fda4af' },
-          duration: 3000
-        })
+      try {
+        await onServerSync(status)
+      } catch {
+        // Reverte UI em caso de erro
+        if (requestId === currentRequestId) {
+          localChecked.value = previousStatus === 'completed'
+          onLocalUpdate(previousStatus)
+          toast.error('Failed to sync task status', {
+            style: { background: '#fda4af' },
+            duration: 3000
+          })
+        }
+      } finally {
+        if (requestId === currentRequestId) {
+          hasPendingSync.value = false
+        }
       }
-    } finally {
-      if (requestId === currentRequestId) {
-        hasPendingSync.value = false
-      }
-    }
-  }, debounceMs)
+    },
+    debounceMs
+  )
 
   // Handler do toggle
   function toggle(checked: boolean) {

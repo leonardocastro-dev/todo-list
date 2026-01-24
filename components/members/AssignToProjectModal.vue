@@ -220,7 +220,8 @@ const toggleProject = (projectId: string) => {
   if (index > -1) {
     selectedProjectIds.value.splice(index, 1)
     // Remove task permissions for this project
-    delete projectTaskPermissions.value[projectId]
+    const { [projectId]: _, ...rest } = projectTaskPermissions.value
+    projectTaskPermissions.value = rest
   } else {
     selectedProjectIds.value.push(projectId)
     // Initialize empty task permissions for this project

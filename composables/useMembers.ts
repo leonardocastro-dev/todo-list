@@ -30,7 +30,9 @@ const membersForProjects = computed(() =>
   )
 )
 const projectAssignmentsMap = ref<Record<string, string[]>>({})
-const projectAssignmentsDataMap = ref<Record<string, Record<string, ProjectAssignment>>>({})
+const projectAssignmentsDataMap = ref<
+  Record<string, Record<string, ProjectAssignment>>
+>({})
 const taskAssignmentsMap = ref<Record<string, string[]>>({})
 const isLoadingMembers = ref(false)
 const error = ref<string | null>(null)
@@ -121,8 +123,10 @@ export const useMembers = () => {
     try {
       const { $firestore } = useNuxtApp()
       const assignments: Record<string, string[]> = {}
-      const assignmentsData: Record<string, Record<string, ProjectAssignment>> =
-        {}
+      const assignmentsData: Record<
+        string,
+        Record<string, ProjectAssignment>
+      > = {}
 
       await Promise.all(
         projectIds.map(async (projectId) => {

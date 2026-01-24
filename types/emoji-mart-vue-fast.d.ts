@@ -1,34 +1,36 @@
 declare module 'emoji-mart-vue-fast/src' {
-  import { DefineComponent, SlotsType } from 'vue'
+  import type { DefineComponent, SlotsType } from 'vue'
 
   export const Picker: DefineComponent<
     {
-      data?: any
+      data?: unknown
       set?: string
     },
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
+    object,
+    object,
+    object,
+    object,
+    object,
+    object,
     {
-      select: [emoji: any]
+      select: [emoji: unknown]
     },
     string,
-    {},
-    {},
-    {},
+    object,
+    object,
+    object,
     SlotsType<{
       searchTemplate: { searchValue: string; onSearch: (value: string) => void }
     }>
   >
+
+  // eslint-disable-next-line @typescript-eslint/no-extraneous-class
   export class EmojiIndex {
-    constructor(data: any)
+    constructor(data: unknown)
   }
 }
 
 declare module 'emoji-mart-vue-fast/data/all.json' {
-  const data: any
+  const data: unknown
   export default data
 }

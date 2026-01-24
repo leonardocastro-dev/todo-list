@@ -35,13 +35,20 @@ const { localChecked, toggle, syncFromExternal } = useTaskStatusSync({
     taskStore.updateLocalTaskStatus(props.task.id, status)
   },
   onServerSync: async (status) => {
-    await taskStore.syncTaskStatusToServer(props.task.id, status, user.value?.uid)
+    await taskStore.syncTaskStatusToServer(
+      props.task.id,
+      status,
+      user.value?.uid
+    )
   }
 })
 
-watch(() => props.task.status, (newStatus) => {
-  syncFromExternal(newStatus)
-})
+watch(
+  () => props.task.status,
+  (newStatus) => {
+    syncFromExternal(newStatus)
+  }
+)
 
 const taskMembersWithData = computed(() => {
   if (!props.workspaceMembers || props.workspaceMembers.length === 0) {

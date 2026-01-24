@@ -85,7 +85,10 @@ const handleReload = async () => {
           :disabled="projectStore.isLoading || isReloading"
           @click="handleReload"
         >
-          <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': isReloading }" />
+          <RefreshCw
+            class="h-4 w-4 mr-2"
+            :class="{ 'animate-spin': isReloading }"
+          />
           Sync
         </Button>
         <Button

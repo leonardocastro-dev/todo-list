@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
 import type { WorkspaceMember } from '@/composables/useMembers'
 
-const props = defineProps<{
+defineProps<{
   workspaceId?: string
   workspaceMembers?: WorkspaceMember[]
   taskAssignmentsMap?: Record<string, string[]>
