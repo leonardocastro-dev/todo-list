@@ -12,7 +12,7 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    // Helper function to check if user is a workspace member
+    // Helper function to check if user is a workspace member (for subcollections)
     function isWorkspaceMember(workspaceId) {
       return isAuthenticated() &&
              request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.members;
@@ -49,8 +49,8 @@ service cloud.firestore {
     // ==========================================
 
     match /workspaces/{workspaceId} {
-      // Only workspace members can read the workspace
-      allow read: if isWorkspaceMember(workspaceId);
+      // Members can read workspace - use resource.data directly to avoid circular get()
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.members;
       // All writes go through backend API
       allow write: if false;
 
