@@ -109,7 +109,7 @@ const handleClose = () => {
       }
     "
   >
-    <DialogContent class="sm:max-w-[525px]">
+    <DialogContent>
       <DialogHeader>
         <DialogTitle>{{
           props.editWorkspace ? 'Edit Workspace' : 'Create Workspace'

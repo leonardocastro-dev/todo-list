@@ -139,7 +139,7 @@ const handleClose = () => {
       }
     "
   >
-    <DialogContent class="sm:max-w-[500px]">
+    <DialogContent>
       <DialogHeader>
         <DialogTitle>{{ editTask ? 'Edit Task' : 'Add New Task' }}</DialogTitle>
       </DialogHeader>

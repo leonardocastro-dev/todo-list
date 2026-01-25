@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Plus, RefreshCw } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import ProjectList from '@/components/projects/ProjectList.vue'
@@ -7,6 +7,7 @@ import ProjectForm from '@/components/projects/ProjectForm.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useWorkspace } from '@/composables/useWorkspace'
 import { useMembers } from '@/composables/useMembers'
+import { PERMISSIONS, hasPermission } from '@/constants/permissions'
 
 const { user } = useAuth()
 const { workspaceId } = useWorkspace()
@@ -21,6 +22,25 @@ const {
 const isAddingProject = ref(false)
 const editingProject = ref<Project | undefined>()
 const isReloading = ref(false)
+
+// Filter projects based on access-projects permission
+const visibleProjects = computed(() => {
+  const allProjects = projectStore.projects
+  const userPermissions = projectStore.memberPermissions
+
+  // If user has access-projects permission, show all projects
+  if (hasPermission(userPermissions, PERMISSIONS.ACCESS_PROJECTS)) {
+    return allProjects
+  }
+
+  // Otherwise, only show projects where user is assigned
+  if (!user.value?.uid) return []
+
+  return allProjects.filter((project) => {
+    const assignedMembers = projectAssignmentsMap.value[project.id] || []
+    return assignedMembers.includes(user.value!.uid)
+  })
+})
 
 const loadAssignments = async () => {
   if (workspaceId.value && projectStore.projects.length > 0) {
@@ -74,8 +94,8 @@ const handleReload = async () => {
       <div>
         <h2 class="text-xl font-semibold">Your Projects</h2>
         <p class="text-sm text-muted-foreground mt-1">
-          {{ projectStore.totalProjects }}
-          {{ projectStore.totalProjects === 1 ? 'project' : 'projects' }}
+          {{ visibleProjects.length }}
+          {{ visibleProjects.length === 1 ? 'project' : 'projects' }}
         </p>
       </div>
       <div class="flex items-center gap-2">
@@ -103,6 +123,7 @@ const handleReload = async () => {
     </div>
 
     <ProjectList
+      :projects="visibleProjects"
       :workspace-members="members"
       :project-assignments-map="projectAssignmentsMap"
       @edit="handleEdit"

@@ -148,7 +148,7 @@ const handleClose = () => {
       }
     "
   >
-    <DialogContent class="sm:max-w-[525px]">
+    <DialogContent>
       <DialogHeader>
         <div class="flex items-center gap-4">
           <div class="relative">

@@ -58,20 +58,14 @@ const initializePermissions = () => {
   const state: Record<string, boolean> = {}
 
   // Initialize all nested items from saved permissions
-  const initFromItems = (items: NestedItem[]) => {
+  const initFromItems = (items: NestedItem[], parentIsChecked = false) => {
     for (const item of items) {
-      // Check if this item or any parent is in permissions
-      state[item.id] = memberPermissions[item.id] || false
-
-      // If parent permission exists, expand to children
-      if (memberPermissions[item.id] && item.children) {
-        for (const child of item.children) {
-          state[child.id] = true
-        }
-      }
+      // Item is checked if: saved in DB, OR parent is checked (inherited)
+      const isChecked = memberPermissions[item.id] === true || parentIsChecked
+      state[item.id] = isChecked
 
       if (item.children) {
-        initFromItems(item.children)
+        initFromItems(item.children, isChecked)
       }
     }
   }

@@ -1,11 +1,21 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import ProjectItem from './ProjectItem.vue'
 import { Skeleton } from '@/components/ui/skeleton'
 
-defineProps<{
+const props = defineProps<{
+  projects: Project[]
   workspaceMembers: WorkspaceMember[]
   projectAssignmentsMap: Record<string, string[]>
 }>()
+
+// Sort projects by updatedAt
+const sortedProjects = computed(() => {
+  return [...props.projects].sort(
+    (a, b) =>
+      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  )
+})
 
 const emit = defineEmits<{
   edit: [project: Project]
@@ -29,7 +39,7 @@ const projectStore = useProjectStore()
     </div>
 
     <div
-      v-else-if="projectStore.projects.length === 0"
+      v-else-if="projects.length === 0"
       class="text-center py-12"
     >
       <p class="text-muted-foreground text-lg">No projects yet</p>
@@ -43,7 +53,7 @@ const projectStore = useProjectStore()
       class="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4"
     >
       <ProjectItem
-        v-for="project in projectStore.sortedProjects"
+        v-for="project in sortedProjects"
         :key="project.id"
         :project="project"
         :workspace-members="workspaceMembers"
