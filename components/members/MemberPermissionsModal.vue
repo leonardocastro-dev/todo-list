@@ -52,12 +52,34 @@ watch(open, async (isOpen) => {
   }
 })
 
+// Helper to check if an item is effectively checked (considering parent-child inheritance)
+const isItemEffectivelyChecked = (
+  item: NestedItem,
+  state: Record<string, boolean>
+): boolean => {
+  // If the item itself is checked, return true
+  if (state[item.id]) return true
+
+  // If the item has children, check if all children are effectively checked
+  if (item.children && item.children.length > 0) {
+    return item.children.every((child) => isItemEffectivelyChecked(child, state))
+  }
+
+  // Leaf node that is not checked
+  return false
+}
+
 // Watch for changes in permissions to handle admin logic
 watch(
   permissionsState,
   (newState, oldState) => {
     // Avoid infinite loops
     if (!oldState || Object.keys(oldState).length === 0) return
+
+    // Get all non-admin items
+    const getAllNonAdminItems = (): NestedItem[] => {
+      return nestedItems.value.filter((item) => item.id !== 'admin')
+    }
 
     // Get all non-admin permission IDs
     const getAllNonAdminIds = (): string[] => {
@@ -105,6 +127,18 @@ watch(
           permissionsState.value = { ...newState, admin: false }
           return
         }
+      }
+    }
+
+    // If all non-admin permissions are effectively checked, automatically check admin
+    if (!newState['admin']) {
+      const nonAdminItems = getAllNonAdminItems()
+      const allNonAdminChecked = nonAdminItems.every((item) =>
+        isItemEffectivelyChecked(item, newState)
+      )
+      if (allNonAdminChecked && nonAdminItems.length > 0) {
+        permissionsState.value = { ...newState, admin: true }
+        return
       }
     }
   },
