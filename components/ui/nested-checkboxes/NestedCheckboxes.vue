@@ -107,7 +107,7 @@ const handleChildUpdate = (newValue: Record<string, boolean>) => {
       <!-- Separator between root items -->
       <hr v-if="level === 0 && index > 0" class="my-4" />
 
-      <div :class="cn('space-y-2', props.class)">
+      <div :class="cn('space-y-2 relative', props.class)">
         <!-- Item Checkbox -->
         <div class="flex items-center space-x-2">
           <Checkbox
@@ -128,15 +128,21 @@ const handleChildUpdate = (newValue: Record<string, boolean>) => {
           </Label>
         </div>
 
-        <!-- Nested Children (Recursive) -->
-        <NestedCheckboxes
-          v-if="item.children && item.children.length > 0"
-          :items="item.children"
-          :model-value="modelValue"
-          :disabled="disabled"
-          :level="level + 1"
-          @update:model-value="handleChildUpdate"
-        />
+        <!-- Nested Children (Recursive) with vertical line -->
+        <div v-if="item.children && item.children.length > 0" class="relative">
+          <!-- Vertical line connecting children -->
+          <div
+            class="absolute left-[9px] top-0 bottom-2 w-px bg-border"
+            :style="{ height: 'calc(100% - 0.5rem)' }"
+          />
+          <NestedCheckboxes
+            :items="item.children"
+            :model-value="modelValue"
+            :disabled="disabled"
+            :level="level + 1"
+            @update:model-value="handleChildUpdate"
+          />
+        </div>
       </div>
     </template>
   </div>
