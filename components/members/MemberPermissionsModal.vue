@@ -52,16 +52,79 @@ watch(open, async (isOpen) => {
   }
 })
 
+// Watch for changes in permissions to handle admin logic
+watch(
+  permissionsState,
+  (newState, oldState) => {
+    // Avoid infinite loops
+    if (!oldState || Object.keys(oldState).length === 0) return
+
+    // Get all non-admin permission IDs
+    const getAllNonAdminIds = (): string[] => {
+      const ids: string[] = []
+      const collectIds = (items: NestedItem[]) => {
+        for (const item of items) {
+          if (item.id !== 'admin') {
+            ids.push(item.id)
+            if (item.children) {
+              collectIds(item.children)
+            }
+          }
+        }
+      }
+      collectIds(nestedItems.value)
+      return ids
+    }
+
+    const allNonAdminIds = getAllNonAdminIds()
+
+    // If admin was just checked, check all other permissions
+    if (newState['admin'] && !oldState['admin']) {
+      const updatedState = { ...newState }
+      for (const id of allNonAdminIds) {
+        updatedState[id] = true
+      }
+      permissionsState.value = updatedState
+      return
+    }
+
+    // If admin was just unchecked, uncheck all other permissions
+    if (!newState['admin'] && oldState['admin']) {
+      const updatedState = { ...newState }
+      for (const id of allNonAdminIds) {
+        updatedState[id] = false
+      }
+      permissionsState.value = updatedState
+      return
+    }
+
+    // If admin is checked and any other permission is unchecked, uncheck admin
+    if (newState['admin']) {
+      for (const id of allNonAdminIds) {
+        if (!newState[id] && oldState[id]) {
+          permissionsState.value = { ...newState, admin: false }
+          return
+        }
+      }
+    }
+  },
+  { deep: true }
+)
+
 const initializePermissions = () => {
   const memberPermissions = props.member.permissions || {}
 
   const state: Record<string, boolean> = {}
 
+  // Check if admin permission exists
+  const hasAdminPermission = memberPermissions['admin'] === true
+
   // Initialize all nested items from saved permissions
   const initFromItems = (items: NestedItem[], parentIsChecked = false) => {
     for (const item of items) {
-      // Item is checked if: saved in DB, OR parent is checked (inherited)
-      const isChecked = memberPermissions[item.id] === true || parentIsChecked
+      // If admin is checked, all items should be checked
+      // Otherwise, item is checked if: saved in DB, OR parent is checked (inherited)
+      const isChecked = hasAdminPermission || memberPermissions[item.id] === true || parentIsChecked
       state[item.id] = isChecked
 
       if (item.children) {
@@ -136,6 +199,11 @@ const getAllChildIds = (item: NestedItem): string[] => {
 
 // Computed: get selected permissions as array with optimization
 const selectedPermissions = computed(() => {
+  // If admin is selected, only save admin
+  if (permissionsState.value['admin']) {
+    return ['admin']
+  }
+
   const selectedIds = Object.entries(permissionsState.value)
     .filter(([_, isChecked]) => isChecked)
     .map(([id]) => id)
