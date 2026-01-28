@@ -11,7 +11,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { Check, Flag, ArrowRight, Star, StarHalf } from 'lucide-vue-next'
+import {
+  Check,
+  Flag,
+  ArrowRight,
+  Star,
+  StarHalf,
+  Lock,
+  Trash2,
+  PenLine
+} from 'lucide-vue-next'
 import TaskForm from './TaskForm.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useTaskStatusSync } from '@/composables/useTaskStatusSync'
@@ -27,6 +36,9 @@ const props = defineProps<{
 const taskStore = useTaskStore()
 const { user } = useAuth()
 const isEditing = ref(false)
+const canEdit = computed(() => taskStore.canEditTasks)
+const canDelete = computed(() => taskStore.canDeleteTasks)
+const hasAnyAction = computed(() => canEdit.value || canDelete.value)
 
 const { localChecked, toggle, syncFromExternal } = useTaskStatusSync({
   taskId: props.task.id,
@@ -121,7 +133,7 @@ const formatDate = (date: Date) => {
               </Badge>
             </div>
 
-            <DropdownMenu>
+            <DropdownMenu v-if="hasAnyAction">
               <DropdownMenuTrigger as-child>
                 <Button variant="ghost" size="sm" class="h-8 w-8 p-0">
                   <span class="sr-only">Open menu</span>
@@ -129,14 +141,38 @@ const formatDate = (date: Date) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem @click="isEditing = true">
-                  Edit
+                <DropdownMenuItem
+                  v-if="canEdit"
+                  class="flex items-center gap-2"
+                  @click="isEditing = true"
+                >
+                  <PenLine class="h-3 w-3" />
+                  Edit Task
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  class="text-destructive focus:text-destructive"
+                  v-else
+                  disabled
+                  class="flex items-center gap-2 opacity-50 cursor-not-allowed"
+                >
+                  <Lock class="h-3 w-3" />
+                  Edit Task
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  v-if="canDelete"
+                  class="flex items-center gap-2 text-destructive focus:text-destructive"
                   @click="taskStore.deleteTask(task.id, user?.uid)"
                 >
-                  Delete
+                  <Trash2 class="h-3 w-3 text-destructive/50" />
+                  Delete Task
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  v-else
+                  disabled
+                  class="flex items-center gap-2 opacity-50 cursor-not-allowed text-destructive/50"
+                >
+                  <Lock class="h-3 w-3 text-destructive/50" />
+                  Delete Task
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

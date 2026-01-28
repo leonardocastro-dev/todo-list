@@ -128,6 +128,7 @@ onMounted(async () => {
             Sync
           </Button>
           <Button
+            v-if="taskStore.canCreateTasks"
             class="flex items-center gap-1"
             :disabled="projectStore.isLoading"
             @click="isAddingTask = true"

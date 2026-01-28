@@ -3,8 +3,10 @@ import {
   verifyAuth,
   canAccessProject,
   updateTaskMembers,
-  validateWorkspaceMemberIds
+  validateWorkspaceMemberIds,
+  requirePermission
 } from '@/server/utils/permissions'
+import { PERMISSIONS } from '@/constants/permissions'
 
 export default defineEventHandler(async (event) => {
   const { uid } = await verifyAuth(event)
@@ -33,6 +35,12 @@ export default defineEventHandler(async (event) => {
       message: 'Workspace ID and Project ID are required'
     })
   }
+
+  // Check if user has permission to edit tasks
+  await requirePermission(workspaceId, uid, [
+    PERMISSIONS.MANAGE_TASKS,
+    PERMISSIONS.EDIT_TASKS
+  ])
 
   const hasAccess = await canAccessProject(workspaceId, projectId, uid)
 

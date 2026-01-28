@@ -3,8 +3,10 @@ import {
   verifyAuth,
   canAccessProject,
   updateTaskMembers,
-  validateWorkspaceMemberIds
+  validateWorkspaceMemberIds,
+  requirePermission
 } from '@/server/utils/permissions'
+import { PERMISSIONS } from '@/constants/permissions'
 
 export default defineEventHandler(async (event) => {
   const { uid } = await verifyAuth(event)
@@ -30,6 +32,12 @@ export default defineEventHandler(async (event) => {
   if (!title || typeof title !== 'string' || title.trim().length === 0) {
     throw createError({ statusCode: 400, message: 'Task title is required' })
   }
+
+  // Check if user has permission to create tasks
+  await requirePermission(workspaceId, uid, [
+    PERMISSIONS.MANAGE_TASKS,
+    PERMISSIONS.CREATE_TASKS
+  ])
 
   const hasAccess = await canAccessProject(workspaceId, projectId, uid)
 

@@ -2,8 +2,10 @@ import { db } from '@/server/utils/firebase-admin'
 import {
   verifyAuth,
   canAccessProject,
-  deleteTaskAssignments
+  deleteTaskAssignments,
+  requirePermission
 } from '@/server/utils/permissions'
+import { PERMISSIONS } from '@/constants/permissions'
 
 export default defineEventHandler(async (event) => {
   const { uid } = await verifyAuth(event)
@@ -22,6 +24,12 @@ export default defineEventHandler(async (event) => {
       message: 'Workspace ID and Project ID are required'
     })
   }
+
+  // Check if user has permission to delete tasks
+  await requirePermission(workspaceId, uid, [
+    PERMISSIONS.MANAGE_TASKS,
+    PERMISSIONS.DELETE_TASKS
+  ])
 
   const hasAccess = await canAccessProject(workspaceId, projectId, uid)
 

@@ -3,6 +3,7 @@ import { toast } from 'vue-sonner'
 import { collection, getDocs } from 'firebase/firestore'
 import { useProjectStore } from './projects'
 import { useAuth } from '@/composables/useAuth'
+import { PERMISSIONS, hasAnyPermission } from '@/constants/permissions'
 
 export const useTaskStore = defineStore('tasks', {
   state: () => ({
@@ -18,7 +19,9 @@ export const useTaskStore = defineStore('tasks', {
     searchQuery: '',
     statusFilter: 'all',
     priorityFilter: 'all',
-    isLoading: true
+    isLoading: true,
+    memberPermissions: null as Record<string, boolean> | null,
+    isGuestMode: false
   }),
 
   getters: {
@@ -48,6 +51,53 @@ export const useTaskStore = defineStore('tasks', {
         (task: Task) => task.status === 'completed'
       ).length
       return total > 0 ? Math.round((completed / total) * 100) : 0
+    },
+    // Check if user can create tasks
+    canCreateTasks: (state) => {
+      // Guest mode: can always create local tasks
+      if (state.isGuestMode) return true
+      if (!state.memberPermissions) return false
+      return hasAnyPermission(state.memberPermissions, [
+        PERMISSIONS.OWNER,
+        PERMISSIONS.ADMIN,
+        PERMISSIONS.MANAGE_TASKS,
+        PERMISSIONS.CREATE_TASKS
+      ])
+    },
+    // Check if user can delete tasks
+    canDeleteTasks: (state) => {
+      // Guest mode: can always delete local tasks
+      if (state.isGuestMode) return true
+      if (!state.memberPermissions) return false
+      return hasAnyPermission(state.memberPermissions, [
+        PERMISSIONS.OWNER,
+        PERMISSIONS.ADMIN,
+        PERMISSIONS.MANAGE_TASKS,
+        PERMISSIONS.DELETE_TASKS
+      ])
+    },
+    // Check if user can edit tasks
+    canEditTasks: (state) => {
+      // Guest mode: can always edit local tasks
+      if (state.isGuestMode) return true
+      if (!state.memberPermissions) return false
+      return hasAnyPermission(state.memberPermissions, [
+        PERMISSIONS.OWNER,
+        PERMISSIONS.ADMIN,
+        PERMISSIONS.MANAGE_TASKS,
+        PERMISSIONS.EDIT_TASKS
+      ])
+    },
+    // Check if user can manage tasks (all task permissions)
+    canManageTasks: (state) => {
+      // Guest mode: can always manage local tasks
+      if (state.isGuestMode) return true
+      if (!state.memberPermissions) return false
+      return hasAnyPermission(state.memberPermissions, [
+        PERMISSIONS.OWNER,
+        PERMISSIONS.ADMIN,
+        PERMISSIONS.MANAGE_TASKS
+      ])
     },
     filteredTasks(state): Task[] {
       return this.tasks.filter((task: Task) => {
@@ -137,6 +187,12 @@ export const useTaskStore = defineStore('tasks', {
         let loadedTasks: Task[] = []
 
         if (userId && workspaceId) {
+          this.isGuestMode = false
+
+          // Load member permissions from project store (they should already be loaded)
+          const projectStore = useProjectStore()
+          this.memberPermissions = projectStore.memberPermissions
+
           // Query nested tasks collection
           const tasksRef = collection(
             $firestore,
@@ -155,7 +211,9 @@ export const useTaskStore = defineStore('tasks', {
             })) as Task[]
           }
         } else {
-          // localStorage also separated by project
+          // Guest mode for localStorage
+          this.isGuestMode = true
+          this.memberPermissions = null
           const localTasks = localStorage.getItem(`localTasks_${projectId}`)
           loadedTasks = localTasks ? JSON.parse(localTasks) : []
         }
