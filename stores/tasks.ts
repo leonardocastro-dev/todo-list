@@ -58,8 +58,6 @@ export const useTaskStore = defineStore('tasks', {
       if (state.isGuestMode) return true
       if (!state.memberPermissions) return false
       return hasAnyPermission(state.memberPermissions, [
-        PERMISSIONS.OWNER,
-        PERMISSIONS.ADMIN,
         PERMISSIONS.MANAGE_TASKS,
         PERMISSIONS.CREATE_TASKS
       ])
@@ -70,8 +68,6 @@ export const useTaskStore = defineStore('tasks', {
       if (state.isGuestMode) return true
       if (!state.memberPermissions) return false
       return hasAnyPermission(state.memberPermissions, [
-        PERMISSIONS.OWNER,
-        PERMISSIONS.ADMIN,
         PERMISSIONS.MANAGE_TASKS,
         PERMISSIONS.DELETE_TASKS
       ])
@@ -82,8 +78,6 @@ export const useTaskStore = defineStore('tasks', {
       if (state.isGuestMode) return true
       if (!state.memberPermissions) return false
       return hasAnyPermission(state.memberPermissions, [
-        PERMISSIONS.OWNER,
-        PERMISSIONS.ADMIN,
         PERMISSIONS.MANAGE_TASKS,
         PERMISSIONS.EDIT_TASKS
       ])
@@ -94,8 +88,6 @@ export const useTaskStore = defineStore('tasks', {
       if (state.isGuestMode) return true
       if (!state.memberPermissions) return false
       return hasAnyPermission(state.memberPermissions, [
-        PERMISSIONS.OWNER,
-        PERMISSIONS.ADMIN,
         PERMISSIONS.MANAGE_TASKS
       ])
     },

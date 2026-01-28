@@ -28,8 +28,6 @@ export const useProjectStore = defineStore('projects', {
       if (state.isGuestMode) return true
       if (!state.memberPermissions) return false
       return hasAnyPermission(state.memberPermissions, [
-        PERMISSIONS.OWNER,
-        PERMISSIONS.ADMIN,
         PERMISSIONS.MANAGE_PROJECTS,
         PERMISSIONS.CREATE_PROJECTS
       ])
@@ -40,8 +38,6 @@ export const useProjectStore = defineStore('projects', {
       if (state.isGuestMode) return true
       if (!state.memberPermissions) return false
       return hasAnyPermission(state.memberPermissions, [
-        PERMISSIONS.OWNER,
-        PERMISSIONS.ADMIN,
         PERMISSIONS.MANAGE_PROJECTS,
         PERMISSIONS.DELETE_PROJECTS
       ])
@@ -52,8 +48,6 @@ export const useProjectStore = defineStore('projects', {
       if (state.isGuestMode) return true
       if (!state.memberPermissions) return false
       return hasAnyPermission(state.memberPermissions, [
-        PERMISSIONS.OWNER,
-        PERMISSIONS.ADMIN,
         PERMISSIONS.MANAGE_PROJECTS,
         PERMISSIONS.EDIT_PROJECTS
       ])
