@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { toast } from 'vue-sonner'
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore'
 import { useProjectStore } from './projects'
 import { useAuth } from '@/composables/useAuth'
 import { PERMISSIONS, hasAnyPermission } from '@/constants/permissions'
@@ -9,6 +9,8 @@ export const useTaskStore = defineStore('tasks', {
   state: () => ({
     // Cache multi-projeto: Map de projectId → tasks
     tasksByProject: {} as Record<string, Task[]>,
+    // Cache de permissões por projeto
+    permissionsByProject: {} as Record<string, Record<string, boolean> | null>,
     // Rastreia quais projetos já foram carregados (para evitar re-fetch)
     loadedProjects: {} as Record<
       string,
@@ -20,7 +22,6 @@ export const useTaskStore = defineStore('tasks', {
     statusFilter: 'all',
     priorityFilter: 'all',
     isLoading: true,
-    memberPermissions: null as Record<string, boolean> | null,
     isGuestMode: false
   }),
 
@@ -29,6 +30,11 @@ export const useTaskStore = defineStore('tasks', {
     tasks: (state): Task[] => {
       if (!state.currentProjectId) return []
       return state.tasksByProject[state.currentProjectId] || []
+    },
+    // Getter para obter as permissões do projeto atual
+    memberPermissions: (state): Record<string, boolean> | null => {
+      if (!state.currentProjectId) return null
+      return state.permissionsByProject[state.currentProjectId] ?? null
     },
     totalTasks(): number {
       return this.tasks.length
@@ -53,43 +59,59 @@ export const useTaskStore = defineStore('tasks', {
       return total > 0 ? Math.round((completed / total) * 100) : 0
     },
     // Check if user can create tasks
-    canCreateTasks: (state) => {
+    canCreateTasks(state): boolean {
       // Guest mode: can always create local tasks
       if (state.isGuestMode) return true
-      if (!state.memberPermissions) return false
-      return hasAnyPermission(state.memberPermissions, [
+      if (!this.memberPermissions) return false
+      return hasAnyPermission(this.memberPermissions, [
         PERMISSIONS.MANAGE_TASKS,
         PERMISSIONS.CREATE_TASKS
       ])
     },
     // Check if user can delete tasks
-    canDeleteTasks: (state) => {
+    canDeleteTasks(state): boolean {
       // Guest mode: can always delete local tasks
       if (state.isGuestMode) return true
-      if (!state.memberPermissions) return false
-      return hasAnyPermission(state.memberPermissions, [
+      if (!this.memberPermissions) return false
+      return hasAnyPermission(this.memberPermissions, [
         PERMISSIONS.MANAGE_TASKS,
         PERMISSIONS.DELETE_TASKS
       ])
     },
     // Check if user can edit tasks
-    canEditTasks: (state) => {
+    canEditTasks(state): boolean {
       // Guest mode: can always edit local tasks
       if (state.isGuestMode) return true
-      if (!state.memberPermissions) return false
-      return hasAnyPermission(state.memberPermissions, [
+      if (!this.memberPermissions) return false
+      return hasAnyPermission(this.memberPermissions, [
         PERMISSIONS.MANAGE_TASKS,
         PERMISSIONS.EDIT_TASKS
       ])
     },
     // Check if user can manage tasks (all task permissions)
-    canManageTasks: (state) => {
+    canManageTasks(state): boolean {
       // Guest mode: can always manage local tasks
       if (state.isGuestMode) return true
-      if (!state.memberPermissions) return false
-      return hasAnyPermission(state.memberPermissions, [
+      if (!this.memberPermissions) return false
+      return hasAnyPermission(this.memberPermissions, [
         PERMISSIONS.MANAGE_TASKS
       ])
+    },
+    // Check if user can toggle task status (complete/uncomplete)
+    // This is separate from canEditTasks because assigned members can toggle status
+    canToggleTaskStatus(state) {
+      return (
+        assignedMemberIds: string[] | undefined,
+        userId: string | null
+      ): boolean => {
+        // Guest mode: can always toggle local tasks
+        if (state.isGuestMode) return true
+        // If user has edit permissions, allow toggle
+        if (this.canEditTasks) return true
+        // If user is assigned to the task, allow toggle
+        if (userId && assignedMemberIds?.includes(userId)) return true
+        return false
+      }
     },
     filteredTasks(state): Task[] {
       return this.tasks.filter((task: Task) => {
@@ -181,9 +203,30 @@ export const useTaskStore = defineStore('tasks', {
         if (userId && workspaceId) {
           this.isGuestMode = false
 
-          // Load member permissions from project store (they should already be loaded)
+          // Load workspace member permissions (for OWNER/ADMIN)
           const projectStore = useProjectStore()
-          this.memberPermissions = projectStore.memberPermissions
+          const workspacePermissions = projectStore.memberPermissions || {}
+
+          // Load task-specific permissions from projectAssignments
+          const userAssignmentRef = doc(
+            $firestore,
+            'workspaces',
+            workspaceId,
+            'projectAssignments',
+            projectId,
+            'users',
+            userId
+          )
+          const userAssignmentSnap = await getDoc(userAssignmentRef)
+          const taskPermissions = userAssignmentSnap.exists()
+            ? userAssignmentSnap.data().permissions || {}
+            : {}
+
+          // Merge permissions (workspace + task-specific) e cacheia por projeto
+          this.permissionsByProject[projectId] = {
+            ...workspacePermissions,
+            ...taskPermissions
+          }
 
           // Query nested tasks collection
           const tasksRef = collection(
@@ -205,7 +248,7 @@ export const useTaskStore = defineStore('tasks', {
         } else {
           // Guest mode for localStorage
           this.isGuestMode = true
-          this.memberPermissions = null
+          this.permissionsByProject[projectId] = null
           const localTasks = localStorage.getItem(`localTasks_${projectId}`)
           loadedTasks = localTasks ? JSON.parse(localTasks) : []
         }
@@ -242,14 +285,17 @@ export const useTaskStore = defineStore('tasks', {
     clearProjectCache(projectId: string) {
       const { [projectId]: _tasks, ...restTasks } = this.tasksByProject
       const { [projectId]: _loaded, ...restLoaded } = this.loadedProjects
+      const { [projectId]: _perms, ...restPerms } = this.permissionsByProject
       this.tasksByProject = restTasks
       this.loadedProjects = restLoaded
+      this.permissionsByProject = restPerms
     },
 
     // Limpa todo o cache
     clearCache() {
       this.tasksByProject = {}
       this.loadedProjects = {}
+      this.permissionsByProject = {}
       this.currentProjectId = null
       this.currentWorkspaceId = null
     },

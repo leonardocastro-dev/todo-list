@@ -15,9 +15,9 @@ const isCreatingWorkspace = ref(false)
 const router = useRouter()
 
 watch(
-  () => user.value,
-  async (newUser) => {
-    if (newUser?.uid && !loading.value) {
+  [() => user.value, () => loading.value],
+  async ([newUser, isLoading]) => {
+    if (newUser?.uid && !isLoading && !workspaceStore.loaded) {
       await workspaceStore.loadWorkspaces(newUser.uid)
     }
   },
@@ -37,7 +37,7 @@ onMounted(async () => {
   </div>
 
   <div v-else class="min-h-screen p-8">
-    <div class="mb-8 flex justify-between items-start">
+    <div class="mb-8 flex justify-between gap-3 md:flex-row flex-col items-start">
       <div>
         <h1 class="text-3xl font-bold text-primary mb-2">Workspaces</h1>
         <p class="text-muted-foreground mt-2">
@@ -45,28 +45,30 @@ onMounted(async () => {
         </p>
       </div>
 
-      <div v-if="user" class="flex items-center gap-3">
+      <div v-if="user" class="flex md:flex-row flex-col md:items-center gap-3">
         <div class="text-right">
           <p class="text-sm text-muted-foreground">{{ user.email }}</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          class="flex items-center gap-2"
-          @click="router.push('/settings')"
-        >
-          <Settings class="h-4 w-4" />
-          <span>Settings</span>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          class="flex items-center gap-2"
-          @click="logout"
-        >
-          <LogOut class="h-4 w-4" />
-          <span>Logout</span>
-        </Button>
+        <div class="flex gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            class="flex items-center gap-2"
+            @click="router.push('/settings')"
+          >
+            <Settings class="h-4 w-4" />
+            <span>Settings</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            class="flex items-center gap-2"
+            @click="logout"
+          >
+            <LogOut class="h-4 w-4" />
+            <span>Logout</span>
+          </Button>
+        </div>
       </div>
 
       <div v-else class="flex items-center gap-2">
@@ -80,7 +82,7 @@ onMounted(async () => {
     </div>
 
     <div
-      v-if="workspaceStore.isLoading"
+      v-if="workspaceStore.isLoading || !workspaceStore.loaded"
       class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8"
     >
       <Skeleton class="h-[250px] rounded-lg" />

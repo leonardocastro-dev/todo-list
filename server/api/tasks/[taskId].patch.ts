@@ -4,7 +4,8 @@ import {
   canAccessProject,
   updateTaskMembers,
   validateWorkspaceMemberIds,
-  requirePermission
+  requirePermission,
+  canToggleTaskStatus
 } from '@/server/utils/permissions'
 import { PERMISSIONS } from '@/constants/permissions'
 
@@ -36,11 +37,36 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Check if user has permission to edit tasks
-  await requirePermission(workspaceId, uid, [
-    PERMISSIONS.MANAGE_TASKS,
-    PERMISSIONS.EDIT_TASKS
-  ])
+  // Determine if this is a status-only update (toggle complete/incomplete)
+  const isStatusOnlyUpdate =
+    (status !== undefined || completed !== undefined) &&
+    title === undefined &&
+    description === undefined &&
+    priority === undefined &&
+    dueDate === undefined &&
+    memberIds === undefined
+
+  if (isStatusOnlyUpdate) {
+    // For status toggle, allow if user has edit permissions OR is assigned to the task
+    const canToggle = await canToggleTaskStatus(
+      workspaceId,
+      projectId,
+      taskId,
+      uid
+    )
+    if (!canToggle) {
+      throw createError({
+        statusCode: 403,
+        message: 'You do not have permission to perform this action'
+      })
+    }
+  } else {
+    // For other edits, require full edit permissions
+    await requirePermission(workspaceId, uid, [
+      PERMISSIONS.MANAGE_TASKS,
+      PERMISSIONS.EDIT_TASKS
+    ])
+  }
 
   const hasAccess = await canAccessProject(workspaceId, projectId, uid)
 

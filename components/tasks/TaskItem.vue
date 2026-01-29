@@ -38,6 +38,9 @@ const { user } = useAuth()
 const isEditing = ref(false)
 const canEdit = computed(() => taskStore.canEditTasks)
 const canDelete = computed(() => taskStore.canDeleteTasks)
+const canToggleStatus = computed(() =>
+  taskStore.canToggleTaskStatus(props.assignedMemberIds, user.value?.uid ?? null)
+)
 const hasAnyAction = computed(() => canEdit.value || canDelete.value)
 
 const { localChecked, toggle, syncFromExternal } = useTaskStatusSync({
@@ -69,6 +72,8 @@ const taskMembersWithData = computed(() => {
   if (!props.assignedMemberIds || props.assignedMemberIds.length === 0) {
     return []
   }
+
+  console.log(props.assignedMemberIds)
 
   return props.workspaceMembers.filter((member) => {
     return props.assignedMemberIds?.includes(member.uid)
@@ -111,8 +116,9 @@ const formatDate = (date: Date) => {
           <Checkbox
             :id="`task-${task.id}`"
             :model-value="localChecked"
+            :disabled="!canToggleStatus"
             class="mt-1"
-            @update:model-value="(checked) => toggle(!!checked)"
+            @update:model-value="(checked) => canToggleStatus && toggle(!!checked)"
           />
         </div>
 

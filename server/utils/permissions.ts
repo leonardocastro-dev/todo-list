@@ -336,6 +336,37 @@ export async function getTaskAssignees(
   return snapshot.docs.map((doc) => doc.id)
 }
 
+export async function isUserAssignedToTask(
+  workspaceId: string,
+  projectId: string,
+  taskId: string,
+  userId: string
+): Promise<boolean> {
+  const assignmentRef = db.doc(
+    `workspaces/${workspaceId}/projects/${projectId}/taskAssignments/${taskId}/users/${userId}`
+  )
+  const snap = await assignmentRef.get()
+  return snap.exists
+}
+
+export async function canToggleTaskStatus(
+  workspaceId: string,
+  projectId: string,
+  taskId: string,
+  userId: string
+): Promise<boolean> {
+  const permissions = await getMemberPermissions(workspaceId, userId)
+
+  // Owner/Admin can always toggle
+  if (isOwnerOrAdmin(permissions)) return true
+
+  // Users with manage-tasks or edit-tasks can toggle
+  if (hasAnyPermission(permissions, ['manage-tasks', 'edit-tasks'])) return true
+
+  // Users assigned to the task can toggle
+  return isUserAssignedToTask(workspaceId, projectId, taskId, userId)
+}
+
 export async function deleteTaskAssignments(
   workspaceId: string,
   projectId: string,

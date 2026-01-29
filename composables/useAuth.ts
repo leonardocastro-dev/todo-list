@@ -7,9 +7,15 @@ import {
 import type { User } from 'firebase/auth'
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, setDoc, getDoc } from 'firebase/firestore'
+
+export interface UserProfile {
+  username: string
+  photoURL?: string
+}
 
 const user = ref<User | null>(null)
+const userProfile = ref<UserProfile | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 let authInitialized = false
@@ -17,11 +23,30 @@ let authInitialized = false
 export const useAuth = () => {
   const { $auth, $firestore } = useNuxtApp()
 
+  const fetchUserProfile = async (uid: string) => {
+    try {
+      const userDoc = await getDoc(doc($firestore, 'users', uid))
+      if (userDoc.exists()) {
+        userProfile.value = userDoc.data() as UserProfile
+      } else {
+        userProfile.value = null
+      }
+    } catch (e) {
+      console.error('Error fetching user profile:', e)
+      userProfile.value = null
+    }
+  }
+
   if (!authInitialized) {
     authInitialized = true
 
-    $auth.onAuthStateChanged((newUser) => {
+    $auth.onAuthStateChanged(async (newUser) => {
       user.value = newUser
+      if (newUser) {
+        await fetchUserProfile(newUser.uid)
+      } else {
+        userProfile.value = null
+      }
       loading.value = false
     })
   }
@@ -138,6 +163,7 @@ export const useAuth = () => {
       await setDoc(privateRef, privateData)
 
       user.value = createdUser
+      userProfile.value = { username }
 
       const tasksStore = useTaskStore()
       const projectStore = useProjectStore()
@@ -195,6 +221,7 @@ export const useAuth = () => {
 
       await signOut($auth)
       user.value = null
+      userProfile.value = null
 
       navigateTo('/')
     } catch (e: any) {
@@ -206,6 +233,7 @@ export const useAuth = () => {
 
   return {
     user,
+    userProfile,
     loading,
     error,
     login,

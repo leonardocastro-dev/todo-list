@@ -4,7 +4,7 @@ import { LogOut, Lock, Menu, X } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/composables/useAuth'
 
-const { user, logout } = useAuth()
+const { user, userProfile, logout } = useAuth()
 const route = useRoute()
 
 const workspaceSlug = computed(() => route.params.workspace as string)
@@ -120,7 +120,7 @@ watch(() => route.fullPath, closeMobileMenu)
           <div v-if="user">
             <div class="mb-3 px-2">
               <p class="text-sm text-muted-foreground truncate">
-                {{ user.email }}
+                {{ userProfile?.username || user.email }}
               </p>
             </div>
 
@@ -225,7 +225,7 @@ watch(() => route.fullPath, closeMobileMenu)
         <div v-if="user">
           <div class="mb-3 px-2">
             <p class="text-sm text-muted-foreground truncate">
-              {{ user.email }}
+              {{ userProfile?.username || user.email }}
             </p>
           </div>
 
