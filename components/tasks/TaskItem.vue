@@ -122,18 +122,18 @@ const formatDate = (date: Date) => {
           />
         </div>
 
-        <div class="flex-1">
-          <div class="flex items-center justify-between mb-1">
-            <div class="flex items-center gap-2">
+        <div class="flex-1 overflow-hidden">
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <div class="flex items-center gap-2 min-w-0">
               <label
                 :for="`task-${task.id}`"
-                :class="`font-medium text-lg cursor-pointer ${localChecked ? 'line-through text-muted-foreground' : ''}`"
+                :class="`font-medium text-lg truncate cursor-pointer ${localChecked ? 'line-through text-muted-foreground' : ''}`"
               >
                 {{ task.title }}
               </label>
               <Badge
                 variant="outline"
-                :class="`ml-2 ${localChecked ? 'bg-gray-200' : `priority-badge-${task.priority}`}`"
+                :class="`${localChecked ? 'bg-gray-200' : `priority-badge-${task.priority}`}`"
               >
                 {{ task.priority }}
               </Badge>

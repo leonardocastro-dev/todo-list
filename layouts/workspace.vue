@@ -268,7 +268,7 @@ watch(() => route.fullPath, closeMobileMenu)
       </div>
     </aside>
 
-    <main class="flex-1 lg:ml-64 p-6 pt-20 lg:pt-6">
+    <main class="flex-1 overflow-hidden lg:ml-64 p-6 pt-20 lg:pt-6">
       <slot />
     </main>
   </div>

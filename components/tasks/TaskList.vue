@@ -30,13 +30,13 @@ const filteredTasks = computed(() => {
           <div class="pt-0.5">
             <Skeleton class="h-5 w-5 rounded-full" />
           </div>
-          <div class="flex-1">
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center gap-2">
-                <Skeleton class="h-6 w-40" />
-                <Skeleton class="h-5 w-20 ml-2" />
+          <div class="w-full">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <div class="flex items-center w-full gap-2">
+                <Skeleton class="h-6 w-full max-w-40" />
+                <Skeleton class="h-5 min-w-16" />
               </div>
-              <Skeleton class="h-8 w-8 rounded-full" />
+              <Skeleton class="min-h-8 min-w-8 rounded-full" />
             </div>
             <Skeleton class="h-4 w-2/3 mb-2" />
             <div class="flex items-center gap-2">
