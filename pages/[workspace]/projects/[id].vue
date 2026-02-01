@@ -84,13 +84,8 @@ onMounted(async () => {
         class="flex justify-between items-start"
       >
         <div class="flex-1">
-          <Skeleton class="h-9 w-64 mb-2" />
-          <Skeleton class="h-6 w-96 mb-3" />
-          <div class="flex flex-wrap gap-2">
-            <Skeleton class="h-5 w-20" />
-            <Skeleton class="h-5 w-24" />
-            <Skeleton class="h-5 w-16" />
-          </div>
+          <Skeleton class="h-9 max-w-64 mb-2" />
+          <Skeleton class="h-6 max-w-96 mb-3" />
         </div>
       </div>
 
@@ -112,9 +107,9 @@ onMounted(async () => {
     </header>
 
     <div v-if="currentProject || projectStore.isLoading">
-      <div class="flex justify-between items-center mb-6">
+      <div class="flex sm:justify-between flex-col sm:flex-row sm:items-center justify-center mb-6">
         <h2 class="text-xl font-semibold">Project Tasks</h2>
-        <div class="flex items-center gap-2">
+        <div class="flex sm:flex-row mt-3 sm:mt-0 flex-row-reverse justify-end gap-2">
           <Button
             variant="ghost"
             size="sm"

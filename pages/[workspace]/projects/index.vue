@@ -90,7 +90,7 @@ const handleReload = async () => {
       <p class="text-muted-foreground">Manage your projects and tasks</p>
     </header>
 
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex sm:justify-between flex-col sm:flex-row sm:items-center justify-center mb-6">
       <div>
         <h2 class="text-xl font-semibold">Your Projects</h2>
         <p class="text-sm text-muted-foreground mt-1">
@@ -98,7 +98,7 @@ const handleReload = async () => {
           {{ visibleProjects.length === 1 ? 'project' : 'projects' }}
         </p>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex sm:flex-row mt-3 sm:mt-0 flex-row-reverse justify-end gap-2">
         <Button
           variant="ghost"
           size="sm"

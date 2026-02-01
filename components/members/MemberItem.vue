@@ -145,11 +145,11 @@ const handleProjectAssigned = () => {
 
 <template>
   <div
-    class="flex items-center justify-between p-4 border rounded-lg transition-colors"
+    class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-4 border rounded-lg transition-colors"
   >
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-3 min-w-0">
       <div
-        class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden"
+        class="hidden sm:flex h-10 w-10 shrink-0 rounded-full bg-primary/10 items-center justify-center overflow-hidden"
       >
         <img
           v-if="member.photoURL"
@@ -159,15 +159,28 @@ const handleProjectAssigned = () => {
         />
         <Mail v-else class="h-5 w-5 text-primary" />
       </div>
-      <div>
-        <p class="font-medium text-foreground">
+      <div class="min-w-0 flex-1">
+        <p class="font-medium text-foreground text-sm sm:text-base truncate">
           {{ member.username || member.email }}
         </p>
-        <p class="text-sm text-muted-foreground">{{ member.email }}</p>
+        <p class="text-xs sm:text-sm text-muted-foreground truncate">{{ member.email }}</p>
       </div>
     </div>
 
-    <div class="flex items-center gap-2">
+    <div class="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+      <div
+        class="flex sm:hidden h-9 w-9 shrink-0 rounded-full bg-primary/10 items-center justify-center overflow-hidden"
+      >
+        <img
+          v-if="member.photoURL"
+          :src="member.photoURL"
+          :alt="member.username"
+          class="h-full w-full object-cover"
+        />
+        <Mail v-else class="h-4 w-4 text-primary" />
+      </div>
+
+      <div class="flex items-center gap-2">
       <Badge v-if="isOwner" variant="secondary" class="gap-1">
         <Crown class="h-3 w-3" />
         Owner
@@ -237,6 +250,7 @@ const handleProjectAssigned = () => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      </div>
     </div>
   </div>
 

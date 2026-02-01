@@ -124,7 +124,7 @@ const handlePermissionsUpdated = () => {
 </script>
 
 <template>
-  <div class="flex justify-between items-center mb-6">
+  <div class="flex sm:justify-between flex-col sm:flex-row sm:items-center justify-center mb-6">
     <div>
       <h2 class="text-xl font-semibold">Workspace Members</h2>
       <p class="text-sm text-muted-foreground mt-1">
@@ -134,7 +134,7 @@ const handlePermissionsUpdated = () => {
     </div>
     <Button
       v-if="canInviteMembers"
-      class="flex items-center gap-1"
+      class="flex mt-3 sm:mt-0 items-center gap-1"
       @click="isInviting = true"
     >
       <UserPlus class="h-5 w-5" />

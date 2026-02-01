@@ -143,7 +143,7 @@ const handleAvatarUpload = async (event: Event) => {
     </CardHeader>
     <CardContent class="space-y-6">
       <!-- Avatar Upload -->
-      <div class="flex items-center gap-6">
+      <div class="flex flex-col sm:flex-row gap-6">
         <div class="relative">
           <Avatar class="h-24 w-24">
             <AvatarImage :src="avatarUrl" alt="Profile picture" />
@@ -162,7 +162,7 @@ const handleAvatarUpload = async (event: Event) => {
           <input
             ref="fileInput"
             type="file"
-            accept="image/*"
+            accept= "image/*"
             class="hidden"
             @change="handleAvatarUpload"
           />

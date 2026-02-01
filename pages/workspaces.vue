@@ -45,7 +45,7 @@ onMounted(async () => {
         </p>
       </div>
 
-      <div v-if="user" class="flex md:flex-row flex-col md:items-center gap-3">
+      <div v-if="user" class="flex lg:flex-row flex-col-reverse md:items-end items-start lg:items-center gap-3">
         <div class="text-right">
           <p class="text-sm text-muted-foreground">{{ user.email }}</p>
         </div>

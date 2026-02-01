@@ -414,7 +414,7 @@ const saveAssignments = async () => {
 <template>
   <Dialog v-model:open="open">
     <DialogContent
-      class="p-0 w-[480px] max-h-[90vh] overflow-hidden flex flex-col"
+      class="p-0 sm:w-[480px] sm:max-h-[90vh] overflow-hidden flex flex-col"
       :can-close="!isSaving"
       @interact-outside="
         (e) => {

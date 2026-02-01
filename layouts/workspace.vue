@@ -27,22 +27,24 @@ watch(() => route.fullPath, closeMobileMenu)
   <div class="flex min-h-screen bg-gray-50">
     <!-- Mobile Header -->
     <header
-      class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-background border-b z-40 flex items-center justify-between px-4 transition-shadow duration-200"
+      class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-background border-b z-40 flex items-center justify-between px-6 transition-shadow duration-200"
       :class="isMobileMenuOpen ? '' : 'shadow-sm'"
     >
-      <NuxtLink to="/workspaces" class="text-2xl font-bold text-primary">
-        Fokuz
+      <NuxtLink to="/workspaces" class="flex items-center space-x-2">
+        <div
+          class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary"
+        >
+          <span class="text-xl font-bold text-primary-foreground">FK</span>
+        </div>
+        <span class="text-xl font-bold text-foreground">Fokuz</span>
       </NuxtLink>
-      <Button
-        variant="ghost"
-        size="icon"
-        :aria-label="isMobileMenuOpen ? 'Close menu' : 'Open menu'"
-        :aria-expanded="isMobileMenuOpen"
+      <button
+        aria-label="Toggle menu"
         @click="toggleMobileMenu"
       >
         <Menu v-if="!isMobileMenuOpen" class="h-6 w-6" />
         <X v-else class="h-6 w-6" />
-      </Button>
+      </button>
     </header>
 
     <!-- Mobile Menu Overlay -->
@@ -162,8 +164,13 @@ watch(() => route.fullPath, closeMobileMenu)
       class="hidden lg:flex w-64 bg-background border-r fixed h-screen flex-col"
     >
       <div class="p-6">
-        <NuxtLink to="/workspaces" class="text-2xl font-bold text-primary">
-          Fokuz
+        <NuxtLink to="/workspaces" class="flex items-center space-x-2">
+          <div
+            class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary"
+          >
+            <span class="text-xl font-bold text-primary-foreground">FK</span>
+          </div>
+          <span class="text-xl font-bold text-foreground">Fokuz</span>
         </NuxtLink>
       </div>
 

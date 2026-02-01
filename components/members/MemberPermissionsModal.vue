@@ -228,7 +228,7 @@ const savePermissions = async () => {
 <template>
   <Dialog v-model:open="open">
     <DialogContent
-      class="p-0 w-[380px]"
+      class="p-0 sm:w-[380px]"
       :can-close="!isSaving"
       @interact-outside="
         (e) => {
