@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import type { DateValue } from 'reka-ui'
+import { getLocalTimeZone, parseDate } from '@internationalized/date'
 import {
   Dialog,
   DialogContent,
@@ -14,7 +16,13 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Users } from 'lucide-vue-next'
+import { Calendar } from '@/components/ui/calendar'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from '@/components/ui/popover'
+import { Users, CalendarIcon } from 'lucide-vue-next'
 import { useMembers } from '@/composables/useMembers'
 
 type Priority = 'normal' | 'important' | 'urgent'
@@ -45,7 +53,14 @@ const description = ref(props.editTask?.description || '')
 const priority = ref<Priority>(
   (props.editTask?.priority as Priority) || 'normal'
 )
+const dueDate = ref<DateValue | undefined>(undefined)
 const titleError = ref('')
+
+const formatDisplayDate = (date: DateValue) => {
+  return new Intl.DateTimeFormat('en-US', { dateStyle: 'long' }).format(
+    date.toDate(getLocalTimeZone())
+  )
+}
 
 watch(
   () => props.isOpen,
@@ -73,6 +88,13 @@ watch(
       description.value = newTask.description || ''
       priority.value = newTask.priority as Priority
 
+      if (newTask.dueDate) {
+        const dateOnly = newTask.dueDate.split('T')[0]
+        dueDate.value = parseDate(dateOnly)
+      } else {
+        dueDate.value = undefined
+      }
+
       if (props.isOpen && props.workspaceId && props.projectId) {
         await loadTaskAssignees(props.workspaceId, props.projectId, newTask.id)
       }
@@ -87,13 +109,18 @@ const handleSubmit = () => {
     return
   }
 
+  const dueDateISO = dueDate.value
+    ? dueDate.value.toDate(getLocalTimeZone()).toISOString()
+    : undefined
+
   if (props.editTask) {
     taskStore.updateTask(
       props.editTask.id,
       {
         title: title.value,
         description: description.value,
-        priority: priority.value
+        priority: priority.value,
+        dueDate: dueDateISO
       },
       props.userId,
       selectedMemberIds.value
@@ -104,7 +131,8 @@ const handleSubmit = () => {
         title: title.value,
         description: description.value,
         priority: priority.value,
-        status: 'pending'
+        status: 'pending',
+        dueDate: dueDateISO
       },
       props.userId,
       props.workspaceId,
@@ -120,6 +148,7 @@ const resetForm = () => {
   title.value = ''
   description.value = ''
   priority.value = 'normal'
+  dueDate.value = undefined
   titleError.value = ''
   selectedMemberIds.value = []
 }
@@ -203,6 +232,24 @@ const handleClose = () => {
               </Label>
             </div>
           </RadioGroup>
+        </div>
+
+        <div class="space-y-2">
+          <Label class="font-medium">Due Date (optional)</Label>
+          <Popover>
+            <PopoverTrigger as-child>
+              <Button
+                variant="outline"
+                class="w-full justify-start text-left font-normal"
+              >
+                <CalendarIcon class="mr-2 h-4 w-4" />
+                {{ dueDate ? formatDisplayDate(dueDate) : 'Pick a date' }}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent class="w-auto p-0" align="start">
+              <Calendar v-model="dueDate" layout="month-and-year" />
+            </PopoverContent>
+          </Popover>
         </div>
 
         <!-- Assign Members Section -->

@@ -1,0 +1,217 @@
+<script setup lang="ts">
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Flag, Star, StarHalf, Check, Calendar, Clock, Users, ChevronDown } from 'lucide-vue-next'
+import type { WorkspaceMember } from '@/composables/useMembers'
+
+const props = defineProps<{
+  isOpen: boolean
+  task: Task
+  workspaceMembers?: WorkspaceMember[]
+  assignedMemberIds?: string[]
+}>()
+
+const emit = defineEmits<{
+  close: []
+}>()
+
+const taskMembersWithData = computed(() => {
+  if (!props.workspaceMembers || props.workspaceMembers.length === 0) {
+    return []
+  }
+  if (!props.assignedMemberIds || props.assignedMemberIds.length === 0) {
+    return []
+  }
+  return props.workspaceMembers.filter((member) => {
+    return props.assignedMemberIds?.includes(member.uid)
+  })
+})
+
+const firstMember = computed(() => taskMembersWithData.value[0] || null)
+const otherMembers = computed(() => taskMembersWithData.value.slice(1))
+const hasMultipleMembers = computed(() => taskMembersWithData.value.length > 1)
+
+const isCompleted = computed(() => props.task.status === 'completed')
+
+const getPriorityIcon = () => {
+  switch (props.task.priority) {
+    case 'urgent':
+      return Flag
+    case 'important':
+      return Star
+    default:
+      return StarHalf
+  }
+}
+
+const formatDate = (date: Date) => {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric'
+  }).format(date)
+}
+
+const handleClose = () => {
+  emit('close')
+}
+</script>
+
+<template>
+  <Dialog
+    :open="isOpen"
+    @update:open="
+      (open) => {
+        if (!open) handleClose()
+      }
+    "
+  >
+    <DialogContent class="sm:max-w-[500px]">
+      <DialogHeader>
+        <DialogTitle class="flex flex-col gap-2">
+          <Badge
+            v-if="isCompleted"
+            variant="outline"
+            class="bg-emerald-100 text-emerald-700 border-emerald-300"
+          >
+            <Check class="h-3 w-3 mr-1" />
+            Completed
+          </Badge>
+          <Badge v-else variant="outline" class="bg-gray-100 text-gray-700">
+            Pending
+          </Badge>
+          <span class="truncate">{{ task.title }}</span>
+        </DialogTitle>
+      </DialogHeader>
+
+      <div class="space-y-4 pt-2">
+          <!-- Priority -->
+          <div class="space-y-1">
+            <h4 class="text-sm font-medium text-muted-foreground">Priority</h4>
+            <div class="flex items-center gap-2">
+              <component
+                :is="getPriorityIcon()"
+                class="h-4 w-4"
+                :class="`priority-${task.priority}`"
+              />
+              <Badge
+                variant="outline"
+                :class="`priority-badge-${task.priority}`"
+              >
+                {{ task.priority }}
+              </Badge>
+            </div>
+          </div>
+
+          <!-- Created Date -->
+          <div class="space-y-1">
+            <h4 class="text-sm font-medium text-muted-foreground">Created</h4>
+            <div class="flex items-center gap-2 text-sm">
+              <Calendar class="h-4 w-4 text-muted-foreground" />
+              <span>{{ formatDate(new Date(task.createdAt || Date.now())) }}</span>
+            </div>
+          </div>
+
+          <!-- Due Date -->
+          <div class="space-y-1">
+            <h4 class="text-sm font-medium text-muted-foreground">Due Date</h4>
+            <div class="flex items-center gap-2 text-sm">
+              <Clock class="h-4 w-4 text-muted-foreground" />
+              <span v-if="task.dueDate">{{ formatDate(new Date(task.dueDate)) }}</span>
+              <span v-else>No due date</span>
+            </div>
+          </div>
+
+        <!-- Assigned Members -->
+        <div class="space-y-1">
+          <h4 class="text-sm font-medium text-muted-foreground">
+            Assigned Members
+          </h4>
+          <div class="flex items-center gap-2 text-sm">
+            <Users class="h-4 w-4 text-muted-foreground" />
+            <div v-if="firstMember" class="flex items-center">
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child :disabled="!hasMultipleMembers">
+                  <Button
+                    variant="outline"
+                    :class="{ 'hover:bg-muted/80 cursor-pointer': hasMultipleMembers, 'cursor-default': !hasMultipleMembers }"
+                  >
+                    <Avatar class="h-6 w-6">
+                      <AvatarImage
+                        v-if="firstMember.photoURL"
+                        :src="firstMember.photoURL"
+                        :alt="firstMember.username || ''"
+                      />
+                      <AvatarFallback class="text-xs">
+                        {{ firstMember.username?.charAt(0).toUpperCase() || '?' }}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span class="text-sm">{{ firstMember.username || firstMember.email }}</span>
+                    <template v-if="hasMultipleMembers">
+                      <span class="text-xs text-muted-foreground">+{{ otherMembers.length }}</span>
+                      <ChevronDown class="h-3 w-3 text-muted-foreground" />
+                    </template>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent v-if="hasMultipleMembers" align="start">
+                  <DropdownMenuItem
+                    v-for="member in otherMembers"
+                    :key="member.uid"
+                    class="flex items-center gap-2"
+                  >
+                    <Avatar class="h-6 w-6">
+                      <AvatarImage
+                        v-if="member.photoURL"
+                        :src="member.photoURL"
+                        :alt="member.username || ''"
+                      />
+                      <AvatarFallback class="text-xs">
+                        {{ member.username?.charAt(0).toUpperCase() || '?' }}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span class="text-sm">{{ member.username || member.email }}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div v-else class="text-sm">
+              No members assigned
+            </div>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-1">
+          <h4 class="text-sm font-medium text-muted-foreground">Description</h4>
+          <p v-if="task.description" class="text-sm">
+            {{ task.description }}
+          </p>
+          <p v-else class="text-sm text-muted-foreground italic">
+            - No description provided
+          </p>
+        </div>
+      </div>
+
+      <DialogFooter class="pt-4">
+        <Button type="button" variant="outline" @click="handleClose">
+          Close
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+</template>

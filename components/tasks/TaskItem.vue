@@ -22,6 +22,7 @@ import {
   PenLine
 } from 'lucide-vue-next'
 import TaskForm from './TaskForm.vue'
+import TaskInfos from './TaskInfos.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useTaskStatusSync } from '@/composables/useTaskStatusSync'
 import type { WorkspaceMember } from '@/composables/useMembers'
@@ -36,6 +37,7 @@ const props = defineProps<{
 const taskStore = useTaskStore()
 const { user } = useAuth()
 const isEditing = ref(false)
+const showInfoModal = ref(false)
 const canEdit = computed(() => taskStore.canEditTasks)
 const canDelete = computed(() => taskStore.canDeleteTasks)
 const canToggleStatus = computed(() =>
@@ -73,8 +75,6 @@ const taskMembersWithData = computed(() => {
     return []
   }
 
-  console.log(props.assignedMemberIds)
-
   return props.workspaceMembers.filter((member) => {
     return props.assignedMemberIds?.includes(member.uid)
   })
@@ -104,15 +104,24 @@ const formatDate = (date: Date) => {
     minute: 'numeric'
   }).format(date)
 }
+
+const formatDueDate = (date: Date) => {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  }).format(date)
+}
 </script>
 
 <template>
   <Card
-    :class="`mb-3 ${localChecked ? 'opacity-70' : ''} hover:shadow-md transition-shadow`"
+    :class="`mb-3 ${localChecked ? 'opacity-70' : ''} hover:shadow-md transition-shadow cursor-pointer`"
+    @click="showInfoModal = true"
   >
     <CardContent class="px-4">
       <div class="flex items-start gap-3">
-        <div class="pt-0.5">
+        <div class="pt-0.5" @click.stop>
           <Checkbox
             :id="`task-${task.id}`"
             :model-value="localChecked"
@@ -125,12 +134,11 @@ const formatDate = (date: Date) => {
         <div class="flex-1 overflow-hidden">
           <div class="flex items-center justify-between gap-2 mb-1">
             <div class="flex items-center gap-2 min-w-0">
-              <label
-                :for="`task-${task.id}`"
-                :class="`font-medium text-lg truncate cursor-pointer ${localChecked ? 'line-through text-muted-foreground' : ''}`"
+              <span
+                :class="`font-medium text-lg truncate ${localChecked ? 'line-through text-muted-foreground' : ''}`"
               >
                 {{ task.title }}
-              </label>
+              </span>
               <Badge
                 variant="outline"
                 :class="`${localChecked ? 'bg-gray-200' : `priority-badge-${task.priority}`}`"
@@ -139,7 +147,7 @@ const formatDate = (date: Date) => {
               </Badge>
             </div>
 
-            <DropdownMenu v-if="hasAnyAction">
+            <DropdownMenu v-if="hasAnyAction" @click.stop>
               <DropdownMenuTrigger as-child>
                 <Button variant="ghost" size="sm" class="h-8 w-8 p-0">
                   <span class="sr-only">Open menu</span>
@@ -184,13 +192,6 @@ const formatDate = (date: Date) => {
             </DropdownMenu>
           </div>
 
-          <p
-            v-if="task.description"
-            :class="`text-sm mb-2 ${localChecked ? 'text-muted-foreground' : ''}`"
-          >
-            {{ task.description }}
-          </p>
-
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 text-xs text-muted-foreground">
               <div class="flex items-center">
@@ -202,9 +203,10 @@ const formatDate = (date: Date) => {
                 <span class="ml-1">{{ task.priority }}</span>
               </div>
               <span>•</span>
-              <span>{{
-                formatDate(new Date(task.createdAt || Date.now()))
-              }}</span>
+              <span v-if="task.dueDate">
+                Due: {{ formatDueDate(new Date(task.dueDate)) }}
+              </span>
+              <span v-else class="text-muted-foreground/70">No due date</span>
               <template v-if="localChecked">
                 <span>•</span>
                 <span class="flex items-center text-emerald-600">
@@ -252,5 +254,13 @@ const formatDate = (date: Date) => {
     :workspace-id="workspaceId"
     :project-id="task.projectId"
     @close="isEditing = false"
+  />
+
+  <TaskInfos
+    :is-open="showInfoModal"
+    :task="task"
+    :workspace-members="workspaceMembers"
+    :assigned-member-ids="assignedMemberIds"
+    @close="showInfoModal = false"
   />
 </template>

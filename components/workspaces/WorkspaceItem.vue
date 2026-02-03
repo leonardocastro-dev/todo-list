@@ -38,7 +38,7 @@ const deleteWorkspace = async () => {
     class="bg-card border rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer min-h-[250px] flex flex-col"
     @click="goToWorkspace"
   >
-    <CardContent class="flex-1 flex flex-col">
+    <CardContent class="flex-1 flex p-0 flex-col">
       <div class="flex items-start justify-between mb-4 flex-1">
         <div class="flex-1">
           <h3 class="text-lg font-semibold text-foreground mb-1">
