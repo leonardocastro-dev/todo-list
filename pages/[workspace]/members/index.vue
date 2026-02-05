@@ -1,18 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { onMounted, computed } from 'vue'
 import { useWorkspaceStore } from '@/stores/workspaces'
 import { useAuth } from '@/composables/useAuth'
-import { collection, getDocs } from 'firebase/firestore'
+import { useMembers } from '@/composables/useMembers'
 import MemberList from '@/components/members/MemberList.vue'
-
-interface Member {
-  uid: string
-  email: string
-  username: string
-  photoURL: string | null
-  permissions: Record<string, boolean> | null
-  joinedAt: any
-}
 
 definePageMeta({
   layout: 'workspace'
@@ -21,50 +12,24 @@ definePageMeta({
 const route = useRoute()
 const workspaceStore = useWorkspaceStore()
 const { user } = useAuth()
+const { members, isLoadingMembers, loadWorkspaceMembers, removeMemberLocally } =
+  useMembers()
 
-const members = ref<Member[]>([])
-const isLoadingMembers = ref(false)
 const workspaceId = computed(() => route.params.workspace as string)
 const workspace = computed(() =>
   workspaceStore.workspaces.find((ws) => ws.id === workspaceId.value)
 )
 
-const loadMembers = async () => {
-  if (!workspace.value) return
-
-  isLoadingMembers.value = true
-  const { $firestore } = useNuxtApp()
-
-  try {
-    const membersRef = collection(
-      $firestore,
-      'workspaces',
-      workspaceId.value,
-      'members'
-    )
-    const snapshot = await getDocs(membersRef)
-
-    members.value = snapshot.docs.map((doc) => ({
-      uid: doc.id,
-      ...doc.data()
-    })) as Member[]
-  } catch (error) {
-    console.error('Error loading members:', error)
-  } finally {
-    isLoadingMembers.value = false
-  }
-}
-
 onMounted(async () => {
   if (!workspaceStore.loaded) {
     await workspaceStore.loadWorkspaces(user.value?.uid)
   }
-  await loadMembers()
+  await loadWorkspaceMembers(workspaceId.value)
 })
 
 const handleMemberRemoved = (memberId: string) => {
-  // Remove from local members
-  members.value = members.value.filter((m) => m.uid !== memberId)
+  // Remove from cached members
+  removeMemberLocally(memberId)
 
   // Update workspace members in store
   if (workspace.value) {
@@ -76,7 +41,7 @@ const handleMemberRemoved = (memberId: string) => {
 }
 
 const handlePermissionsUpdated = async () => {
-  await loadMembers()
+  await loadWorkspaceMembers(workspaceId.value, true)
 }
 </script>
 

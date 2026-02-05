@@ -23,8 +23,8 @@ interface Member {
   email: string
   username: string
   photoURL: string | null
-  permissions: Record<string, boolean> | null
-  joinedAt: any
+  permissions?: Record<string, boolean> | null
+  joinedAt?: any
 }
 
 const props = defineProps<{
@@ -124,7 +124,9 @@ const handlePermissionsUpdated = () => {
 </script>
 
 <template>
-  <div class="flex sm:justify-between flex-col sm:flex-row sm:items-center justify-center mb-6">
+  <div
+    class="flex sm:justify-between flex-col sm:flex-row sm:items-center justify-center mb-6"
+  >
     <div>
       <h2 class="text-xl font-semibold">Workspace Members</h2>
       <p class="text-sm text-muted-foreground mt-1">
@@ -149,16 +151,19 @@ const handlePermissionsUpdated = () => {
         <div
           v-for="i in 3"
           :key="i"
-          class="flex items-center justify-between p-4 border rounded-lg"
+          class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-4 border rounded-lg"
         >
           <div class="flex items-center gap-3">
-            <Skeleton class="h-10 w-10 rounded-full" />
+            <Skeleton class="hidden sm:flex h-10 w-10 rounded-full" />
             <div class="space-y-2">
               <Skeleton class="h-5 w-32" />
               <Skeleton class="h-4 w-24" />
             </div>
           </div>
-          <Skeleton class="h-6 w-16" />
+          <div class="flex items-center justify-between sm:justify-end gap-2">
+            <Skeleton class="flex sm:hidden h-9 w-9 rounded-full" />
+            <Skeleton class="h-6 w-8" />
+          </div>
         </div>
       </div>
 

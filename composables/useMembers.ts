@@ -8,6 +8,7 @@ export interface WorkspaceMember {
   username: string
   photoURL: string | null
   permissions?: Record<string, boolean>
+  joinedAt?: any
 }
 
 const isOwnerOrAdmin = (
@@ -39,11 +40,15 @@ const error = ref<string | null>(null)
 const loadedWorkspaceId = ref<string | null>(null)
 
 export const useMembers = () => {
-  const loadWorkspaceMembers = async (workspaceId: string) => {
+  const loadWorkspaceMembers = async (
+    workspaceId: string,
+    forceReload = false
+  ) => {
     if (!workspaceId) return
 
-    // Skip if already loaded for this workspace
+    // Skip if already loaded for this workspace (unless forcing reload)
     if (
+      !forceReload &&
       loadedWorkspaceId.value === workspaceId &&
       allMembers.value.length > 0
     ) {
@@ -68,7 +73,8 @@ export const useMembers = () => {
         email: doc.data().email,
         username: doc.data().username,
         photoURL: doc.data().photoURL || null,
-        permissions: doc.data().permissions || {}
+        permissions: doc.data().permissions || {},
+        joinedAt: doc.data().joinedAt
       }))
 
       loadedWorkspaceId.value = workspaceId
@@ -229,6 +235,10 @@ export const useMembers = () => {
     }
   }
 
+  const removeMemberLocally = (memberId: string) => {
+    allMembers.value = allMembers.value.filter((m) => m.uid !== memberId)
+  }
+
   return {
     members: allMembers,
     membersForProjects,
@@ -242,6 +252,7 @@ export const useMembers = () => {
     loadProjectMembers,
     loadAllProjectAssignments,
     loadTaskAssignees,
-    loadAllTaskAssignments
+    loadAllTaskAssignments,
+    removeMemberLocally
   }
 }

@@ -107,9 +107,13 @@ onMounted(async () => {
     </header>
 
     <div v-if="currentProject || projectStore.isLoading">
-      <div class="flex sm:justify-between flex-col sm:flex-row sm:items-center justify-center mb-6">
+      <div
+        class="flex sm:justify-between flex-col sm:flex-row sm:items-center justify-center mb-6"
+      >
         <h2 class="text-xl font-semibold">Project Tasks</h2>
-        <div class="flex sm:flex-row mt-3 sm:mt-0 flex-row-reverse justify-end gap-2">
+        <div
+          class="flex sm:flex-row mt-3 sm:mt-0 flex-row-reverse justify-end gap-2"
+        >
           <Button
             variant="ghost"
             size="sm"

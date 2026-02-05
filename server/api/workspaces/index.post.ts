@@ -14,10 +14,14 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const slug = name
+  let slug = name
     .toLowerCase()
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '')
+  // Fallback if slug is empty (e.g., name was only emojis)
+  if (!slug) {
+    slug = 'workspace'
+  }
   const workspaceId = `${slug}-${Date.now()}`
 
   const userSnap = await db.doc(`users/${uid}`).get()

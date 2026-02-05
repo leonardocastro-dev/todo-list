@@ -41,7 +41,10 @@ const showInfoModal = ref(false)
 const canEdit = computed(() => taskStore.canEditTasks)
 const canDelete = computed(() => taskStore.canDeleteTasks)
 const canToggleStatus = computed(() =>
-  taskStore.canToggleTaskStatus(props.assignedMemberIds, user.value?.uid ?? null)
+  taskStore.canToggleTaskStatus(
+    props.assignedMemberIds,
+    user.value?.uid ?? null
+  )
 )
 const hasAnyAction = computed(() => canEdit.value || canDelete.value)
 
@@ -96,15 +99,6 @@ const getPriorityIcon = () => {
   }
 }
 
-const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: 'numeric'
-  }).format(date)
-}
-
 const formatDueDate = (date: Date) => {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
@@ -127,7 +121,9 @@ const formatDueDate = (date: Date) => {
             :model-value="localChecked"
             :disabled="!canToggleStatus"
             class="mt-1"
-            @update:model-value="(checked) => canToggleStatus && toggle(!!checked)"
+            @update:model-value="
+              (checked) => canToggleStatus && toggle(!!checked)
+            "
           />
         </div>
 
@@ -147,9 +143,14 @@ const formatDueDate = (date: Date) => {
               </Badge>
             </div>
 
-            <DropdownMenu v-if="hasAnyAction" @click.stop>
+            <DropdownMenu v-if="hasAnyAction">
               <DropdownMenuTrigger as-child>
-                <Button variant="ghost" size="sm" class="h-8 w-8 p-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-8 w-8 p-0"
+                  @click.stop
+                >
                   <span class="sr-only">Open menu</span>
                   <ArrowRight class="h-4 w-4" />
                 </Button>

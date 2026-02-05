@@ -25,9 +25,9 @@ import { watch } from 'vue'
 const { user, login, loading } = useAuth()
 
 watch(
-  () => user.value,
-  (newUser) => {
-    if (newUser && !loading.value) {
+  [() => user.value, () => loading.value],
+  ([newUser, isLoading]) => {
+    if (newUser && !isLoading) {
       navigateTo('/workspaces')
     }
   },

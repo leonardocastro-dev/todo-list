@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import type { DateValue } from 'reka-ui'
+import type { DateValue } from '@internationalized/date'
 import { getLocalTimeZone, parseDate } from '@internationalized/date'
 import {
   Dialog,
@@ -168,7 +168,7 @@ const handleClose = () => {
       }
     "
   >
-    <DialogContent>
+    <DialogContent class="overflow-y-auto sm:max-h-[85vh] h-full flex flex-col">
       <DialogHeader>
         <DialogTitle>{{ editTask ? 'Edit Task' : 'Add New Task' }}</DialogTitle>
       </DialogHeader>
@@ -197,7 +197,7 @@ const handleClose = () => {
             id="description"
             v-model="description"
             placeholder="Add details about your task"
-            class="min-h-[100px]"
+            class="min-h-[100px] break-all resize-none whitespace-pre-wrap"
           />
         </div>
 
@@ -243,7 +243,11 @@ const handleClose = () => {
                 class="w-full justify-start text-left font-normal"
               >
                 <CalendarIcon class="mr-2 h-4 w-4" />
-                {{ dueDate ? formatDisplayDate(dueDate) : 'Pick a date' }}
+                {{
+                  dueDate
+                    ? formatDisplayDate(dueDate as DateValue)
+                    : 'Pick a date'
+                }}
               </Button>
             </PopoverTrigger>
             <PopoverContent class="w-auto p-0" align="start">

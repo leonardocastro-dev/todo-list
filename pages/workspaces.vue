@@ -37,7 +37,9 @@ onMounted(async () => {
   </div>
 
   <div v-else class="min-h-screen p-8">
-    <div class="mb-8 flex justify-between gap-3 md:flex-row flex-col items-start">
+    <div
+      class="mb-8 flex justify-between gap-3 md:flex-row flex-col items-start"
+    >
       <div>
         <h1 class="text-3xl font-bold text-primary mb-2">Workspaces</h1>
         <p class="text-muted-foreground mt-2">
@@ -45,7 +47,10 @@ onMounted(async () => {
         </p>
       </div>
 
-      <div v-if="user" class="flex lg:flex-row flex-col-reverse md:items-end items-start lg:items-center gap-3">
+      <div
+        v-if="user"
+        class="flex lg:flex-row flex-col-reverse md:items-end items-start lg:items-center gap-3"
+      >
         <div class="text-right">
           <p class="text-sm text-muted-foreground">{{ user.email }}</p>
         </div>

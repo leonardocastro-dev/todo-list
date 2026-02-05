@@ -57,10 +57,14 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const createWorkspace = async (name: string, description?: string) => {
     if (!user.value?.uid) {
       // Modo offline - salvar no localStorage
-      const slug = name
+      let slug = name
         .toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '')
+      // Fallback if slug is empty (e.g., name was only emojis)
+      if (!slug) {
+        slug = 'workspace'
+      }
       const workspaceId = `${slug}-${Date.now()}`
       const workspace: Workspace = {
         id: workspaceId,

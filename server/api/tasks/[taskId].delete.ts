@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Delete task assignments
-  await deleteTaskAssignments(workspaceId, taskId)
+  await deleteTaskAssignments(workspaceId, projectId, taskId)
 
   // Delete the task
   await taskRef.delete()

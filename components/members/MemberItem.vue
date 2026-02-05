@@ -28,8 +28,8 @@ interface Member {
   email: string
   username: string
   photoURL: string | null
-  permissions: Record<string, boolean> | null
-  joinedAt: any
+  permissions?: Record<string, boolean> | null
+  joinedAt?: any
 }
 
 const props = defineProps<{
@@ -163,11 +163,15 @@ const handleProjectAssigned = () => {
         <p class="font-medium text-foreground text-sm sm:text-base truncate">
           {{ member.username || member.email }}
         </p>
-        <p class="text-xs sm:text-sm text-muted-foreground truncate">{{ member.email }}</p>
+        <p class="text-xs sm:text-sm text-muted-foreground truncate">
+          {{ member.email }}
+        </p>
       </div>
     </div>
 
-    <div class="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+    <div
+      class="flex items-center justify-between sm:justify-end gap-2 shrink-0"
+    >
       <div
         class="flex sm:hidden h-9 w-9 shrink-0 rounded-full bg-primary/10 items-center justify-center overflow-hidden"
       >
@@ -181,75 +185,75 @@ const handleProjectAssigned = () => {
       </div>
 
       <div class="flex items-center gap-2">
-      <Badge v-if="isOwner" variant="secondary" class="gap-1">
-        <Crown class="h-3 w-3" />
-        Owner
-      </Badge>
-      <Badge v-else-if="isAdmin" variant="outline" class="gap-1">
-        <Shield class="h-3 w-3" />
-        Admin
-      </Badge>
+        <Badge v-if="isOwner" variant="secondary" class="gap-1">
+          <Crown class="h-3 w-3" />
+          Owner
+        </Badge>
+        <Badge v-else-if="isAdmin" variant="outline" class="gap-1">
+          <Shield class="h-3 w-3" />
+          Admin
+        </Badge>
 
-      <DropdownMenu v-if="showDropdown">
-        <DropdownMenuTrigger as-child>
-          <Button variant="ghost" size="sm" class="h-8 w-8 p-0">
-            <span class="sr-only">Open menu</span>
-            <MoreHorizontal class="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            v-if="canManagePermissions"
-            @click="isPermissionsOpen = true"
-          >
-            <Shield class="h-4 w-4" />
-            Permissions
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            v-else
-            disabled
-            class="flex items-center gap-2 opacity-50 cursor-not-allowed"
-          >
-            <Lock class="h-4 w-4" />
-            Permissions
-          </DropdownMenuItem>
+        <DropdownMenu v-if="showDropdown">
+          <DropdownMenuTrigger as-child>
+            <Button variant="ghost" size="sm" class="h-8 w-8 p-0">
+              <span class="sr-only">Open menu</span>
+              <MoreHorizontal class="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              v-if="canManagePermissions"
+              @click="isPermissionsOpen = true"
+            >
+              <Shield class="h-4 w-4" />
+              Permissions
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              v-else
+              disabled
+              class="flex items-center gap-2 opacity-50 cursor-not-allowed"
+            >
+              <Lock class="h-4 w-4" />
+              Permissions
+            </DropdownMenuItem>
 
-          <DropdownMenuItem
-            v-if="canAssignToProject"
-            @click="isAssignProjectOpen = true"
-          >
-            <FolderOpen class="h-4 w-4" />
-            Assign to Project
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            v-else
-            disabled
-            class="flex items-center gap-2 opacity-50 cursor-not-allowed"
-          >
-            <Lock class="h-4 w-4" />
-            Assign to Project
-          </DropdownMenuItem>
+            <DropdownMenuItem
+              v-if="canAssignToProject"
+              @click="isAssignProjectOpen = true"
+            >
+              <FolderOpen class="h-4 w-4" />
+              Assign to Project
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              v-else
+              disabled
+              class="flex items-center gap-2 opacity-50 cursor-not-allowed"
+            >
+              <Lock class="h-4 w-4" />
+              Assign to Project
+            </DropdownMenuItem>
 
-          <DropdownMenuSeparator />
+            <DropdownMenuSeparator />
 
-          <DropdownMenuItem
-            v-if="canRemoveMember"
-            class="flex items-center gap-2 text-destructive focus:text-destructive"
-            @click="removeMember"
-          >
-            <Trash2 class="h-4 w-4 text-destructive/50" />
-            Remove Member
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            v-else
-            disabled
-            class="flex items-center gap-2 opacity-50 cursor-not-allowed text-destructive/50"
-          >
-            <Lock class="h-4 w-4 text-destructive/50" />
-            Remove Member
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <DropdownMenuItem
+              v-if="canRemoveMember"
+              class="flex items-center gap-2 text-destructive focus:text-destructive"
+              @click="removeMember"
+            >
+              <Trash2 class="h-4 w-4 text-destructive/50" />
+              Remove Member
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              v-else
+              disabled
+              class="flex items-center gap-2 opacity-50 cursor-not-allowed text-destructive/50"
+            >
+              <Lock class="h-4 w-4 text-destructive/50" />
+              Remove Member
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   </div>

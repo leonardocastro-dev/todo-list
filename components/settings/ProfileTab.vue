@@ -162,7 +162,7 @@ const handleAvatarUpload = async (event: Event) => {
           <input
             ref="fileInput"
             type="file"
-            accept= "image/*"
+            accept="image/*"
             class="hidden"
             @change="handleAvatarUpload"
           />

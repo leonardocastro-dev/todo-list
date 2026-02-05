@@ -208,3 +208,56 @@
   opacity: 0;
   transition: opacity 300ms ease-in;
 }
+
+/* Container base (tamanho padrão 18x16) */
+.nav-burguer {
+  --icon-size: 1; /* controla o tamanho do ícone globalmente */
+  width: calc(18px * var(--icon-size));
+  height: calc(16px * var(--icon-size));
+  position: relative;
+  transform: scale(var(--icon-size));
+  transform-origin: center;
+  transition: transform 0.3s ease-in-out;
+  cursor: pointer;
+}
+
+/* Barras base */
+.nav-burguer span {
+  display: block;
+  position: absolute;
+  height: 2px;
+  width: 100%;
+  background: var(--muted-foreground);
+  border-radius: 2px;
+  opacity: 1;
+  left: 0;
+  transform: rotate(0deg);
+  transition: 0.25s ease-in-out;
+}
+
+/* ============================= */
+/* ===== Icon 1 ================ */
+/* ============================= */
+
+.nav-burguer span:nth-child(1) {
+  top: 0;
+}
+.nav-burguer span:nth-child(2) {
+  top: 7px;
+}
+.nav-burguer span:nth-child(3) {
+  top: 14px;
+}
+
+.nav-burguer.open span:nth-child(1) {
+  top: 7px;
+  transform: rotate(135deg);
+}
+.nav-burguer.open span:nth-child(2) {
+  opacity: 0;
+  left: -18px;
+}
+.nav-burguer.open span:nth-child(3) {
+  top: 7px;
+  transform: rotate(-135deg);
+}

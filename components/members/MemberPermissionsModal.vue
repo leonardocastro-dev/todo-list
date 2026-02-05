@@ -21,8 +21,8 @@ interface Member {
   email: string
   username: string
   photoURL: string | null
-  permissions: Record<string, boolean> | null
-  joinedAt: any
+  permissions?: Record<string, boolean> | null
+  joinedAt?: any
 }
 
 const props = defineProps<{

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { LogOut, Lock, Menu, X } from 'lucide-vue-next'
+import { LogOut, Lock } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/composables/useAuth'
 
@@ -38,13 +38,14 @@ watch(() => route.fullPath, closeMobileMenu)
         </div>
         <span class="text-xl font-bold text-foreground">Fokuz</span>
       </NuxtLink>
-      <button
-        aria-label="Toggle menu"
+      <div
+        :class="{ 'nav-burguer lg:hidden': true, open: isMobileMenuOpen }"
         @click="toggleMobileMenu"
       >
-        <Menu v-if="!isMobileMenuOpen" class="h-6 w-6" />
-        <X v-else class="h-6 w-6" />
-      </button>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
     </header>
 
     <!-- Mobile Menu Overlay -->

@@ -9,9 +9,11 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "prettier": "pnpx prettier . --check",
-    "prettier:fix": "pnpx prettier . --write"
+    "prettier:fix": "pnpx prettier . --write",
+    "typecheck": "nuxt typecheck"
   },
   "dependencies": {
+    "@internationalized/date": "^3.8.0",
     "@nuxt/eslint": "1.12.1",
     "@nuxt/fonts": "0.11.4",
     "@nuxt/image": "1.10.0",

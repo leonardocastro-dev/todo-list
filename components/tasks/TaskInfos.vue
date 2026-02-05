@@ -15,7 +15,17 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Flag, Star, StarHalf, Check, Calendar, Clock, Users, ChevronDown } from 'lucide-vue-next'
+import {
+  Flag,
+  Star,
+  StarHalf,
+  Check,
+  Calendar,
+  Clock,
+  Users,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-vue-next'
 import type { WorkspaceMember } from '@/composables/useMembers'
 
 const props = defineProps<{
@@ -67,6 +77,39 @@ const formatDate = (date: Date) => {
   }).format(date)
 }
 
+const descriptionExpanded = ref(false)
+const descriptionRef = ref<HTMLElement | null>(null)
+const needsExpand = ref(false)
+
+const checkOverflow = () => {
+  nextTick(() => {
+    if (descriptionRef.value) {
+      needsExpand.value = descriptionRef.value.scrollHeight > 200
+    }
+  })
+}
+
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (open) {
+      descriptionExpanded.value = false
+      checkOverflow()
+    }
+  }
+)
+
+watch(
+  () => props.task.description,
+  () => {
+    checkOverflow()
+  }
+)
+
+const toggleDescription = () => {
+  descriptionExpanded.value = !descriptionExpanded.value
+}
+
 const handleClose = () => {
   emit('close')
 }
@@ -81,9 +124,11 @@ const handleClose = () => {
       }
     "
   >
-    <DialogContent class="sm:max-w-[500px]">
+    <DialogContent
+      class="sm:max-w-[500px] overflow-y-auto sm:max-h-[85vh] h-full flex flex-col"
+    >
       <DialogHeader>
-        <DialogTitle class="flex flex-col gap-2">
+        <DialogTitle class="flex items-start flex-col gap-2">
           <Badge
             v-if="isCompleted"
             variant="outline"
@@ -100,42 +145,43 @@ const handleClose = () => {
       </DialogHeader>
 
       <div class="space-y-4 pt-2">
-          <!-- Priority -->
-          <div class="space-y-1">
-            <h4 class="text-sm font-medium text-muted-foreground">Priority</h4>
-            <div class="flex items-center gap-2">
-              <component
-                :is="getPriorityIcon()"
-                class="h-4 w-4"
-                :class="`priority-${task.priority}`"
-              />
-              <Badge
-                variant="outline"
-                :class="`priority-badge-${task.priority}`"
-              >
-                {{ task.priority }}
-              </Badge>
-            </div>
+        <!-- Priority -->
+        <div class="space-y-1">
+          <h4 class="text-sm font-medium text-muted-foreground">Priority</h4>
+          <div class="flex items-center gap-2">
+            <component
+              :is="getPriorityIcon()"
+              class="h-4 w-4"
+              :class="`priority-${task.priority}`"
+            />
+            <Badge variant="outline" :class="`priority-badge-${task.priority}`">
+              {{ task.priority }}
+            </Badge>
           </div>
+        </div>
 
-          <!-- Created Date -->
-          <div class="space-y-1">
-            <h4 class="text-sm font-medium text-muted-foreground">Created</h4>
-            <div class="flex items-center gap-2 text-sm">
-              <Calendar class="h-4 w-4 text-muted-foreground" />
-              <span>{{ formatDate(new Date(task.createdAt || Date.now())) }}</span>
-            </div>
+        <!-- Created Date -->
+        <div class="space-y-1">
+          <h4 class="text-sm font-medium text-muted-foreground">Created</h4>
+          <div class="flex items-center gap-2 text-sm">
+            <Calendar class="h-4 w-4 text-muted-foreground" />
+            <span>{{
+              formatDate(new Date(task.createdAt || Date.now()))
+            }}</span>
           </div>
+        </div>
 
-          <!-- Due Date -->
-          <div class="space-y-1">
-            <h4 class="text-sm font-medium text-muted-foreground">Due Date</h4>
-            <div class="flex items-center gap-2 text-sm">
-              <Clock class="h-4 w-4 text-muted-foreground" />
-              <span v-if="task.dueDate">{{ formatDate(new Date(task.dueDate)) }}</span>
-              <span v-else>No due date</span>
-            </div>
+        <!-- Due Date -->
+        <div class="space-y-1">
+          <h4 class="text-sm font-medium text-muted-foreground">Due Date</h4>
+          <div class="flex items-center gap-2 text-sm">
+            <Clock class="h-4 w-4 text-muted-foreground" />
+            <span v-if="task.dueDate">{{
+              formatDate(new Date(task.dueDate))
+            }}</span>
+            <span v-else>No due date</span>
           </div>
+        </div>
 
         <!-- Assigned Members -->
         <div class="space-y-1">
@@ -149,7 +195,10 @@ const handleClose = () => {
                 <DropdownMenuTrigger as-child :disabled="!hasMultipleMembers">
                   <Button
                     variant="outline"
-                    :class="{ 'hover:bg-muted/80 cursor-pointer': hasMultipleMembers, 'cursor-default': !hasMultipleMembers }"
+                    :class="{
+                      'hover:bg-muted/80 cursor-pointer': hasMultipleMembers,
+                      'cursor-default': !hasMultipleMembers
+                    }"
                   >
                     <Avatar class="h-6 w-6">
                       <AvatarImage
@@ -158,12 +207,18 @@ const handleClose = () => {
                         :alt="firstMember.username || ''"
                       />
                       <AvatarFallback class="text-xs">
-                        {{ firstMember.username?.charAt(0).toUpperCase() || '?' }}
+                        {{
+                          firstMember.username?.charAt(0).toUpperCase() || '?'
+                        }}
                       </AvatarFallback>
                     </Avatar>
-                    <span class="text-sm">{{ firstMember.username || firstMember.email }}</span>
+                    <span class="text-sm">{{
+                      firstMember.username || firstMember.email
+                    }}</span>
                     <template v-if="hasMultipleMembers">
-                      <span class="text-xs text-muted-foreground">+{{ otherMembers.length }}</span>
+                      <span class="text-xs text-muted-foreground"
+                        >+{{ otherMembers.length }}</span
+                      >
                       <ChevronDown class="h-3 w-3 text-muted-foreground" />
                     </template>
                   </Button>
@@ -184,26 +239,52 @@ const handleClose = () => {
                         {{ member.username?.charAt(0).toUpperCase() || '?' }}
                       </AvatarFallback>
                     </Avatar>
-                    <span class="text-sm">{{ member.username || member.email }}</span>
+                    <span class="text-sm">{{
+                      member.username || member.email
+                    }}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <div v-else class="text-sm">
-              No members assigned
-            </div>
+            <div v-else class="text-sm">No members assigned</div>
           </div>
         </div>
 
         <!-- Description -->
-        <div class="space-y-1">
-          <h4 class="text-sm font-medium text-muted-foreground">Description</h4>
-          <p v-if="task.description" class="text-sm">
-            {{ task.description }}
-          </p>
-          <p v-else class="text-sm text-muted-foreground italic">
+        <div>
+          <hr class="border-muted" />
+          <div v-if="task.description" class="relative">
+            <div
+              ref="descriptionRef"
+              class="text-sm overflow-hidden transition-all duration-300 pt-4 break-all whitespace-pre-wrap"
+              :style="{ maxHeight: descriptionExpanded ? 'none' : '200px' }"
+            >
+              {{ task.description }}
+            </div>
+            <div
+              v-if="needsExpand && !descriptionExpanded"
+              class="pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent"
+            />
+          </div>
+          <p v-else class="text-sm text-muted-foreground italic pt-4">
             - No description provided
           </p>
+          <hr class="border-muted mt-4" />
+          <div
+            v-if="task.description && needsExpand"
+            class="flex justify-center pt-2"
+          >
+            <Button
+              variant="ghost"
+              size="sm"
+              class="text-xs text-muted-foreground gap-1"
+              @click="toggleDescription"
+            >
+              <ChevronDown v-if="!descriptionExpanded" class="h-3 w-3" />
+              <ChevronUp v-else class="h-3 w-3" />
+              {{ descriptionExpanded ? 'Recolher' : 'Expandir' }}
+            </Button>
+          </div>
         </div>
       </div>
 
