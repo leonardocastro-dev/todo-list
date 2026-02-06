@@ -202,8 +202,8 @@ const handleClose = () => {
                   >
                     <Avatar class="h-6 w-6">
                       <AvatarImage
-                        v-if="firstMember.photoURL"
-                        :src="firstMember.photoURL"
+                        v-if="firstMember.avatarUrl"
+                        :src="firstMember.avatarUrl"
                         :alt="firstMember.username || ''"
                       />
                       <AvatarFallback class="text-xs">
@@ -231,8 +231,8 @@ const handleClose = () => {
                   >
                     <Avatar class="h-6 w-6">
                       <AvatarImage
-                        v-if="member.photoURL"
-                        :src="member.photoURL"
+                        v-if="member.avatarUrl"
+                        :src="member.avatarUrl"
                         :alt="member.username || ''"
                       />
                       <AvatarFallback class="text-xs">

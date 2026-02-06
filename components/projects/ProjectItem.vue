@@ -116,8 +116,8 @@ const handleEdit = () => {
             class="h-8 w-8"
           >
             <AvatarImage
-              v-if="member.photoURL"
-              :src="member.photoURL"
+              v-if="member.avatarUrl"
+              :src="member.avatarUrl"
               :alt="member.username || ''"
             />
             <AvatarFallback class="text-xs">

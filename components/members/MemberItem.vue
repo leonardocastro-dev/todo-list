@@ -27,7 +27,7 @@ interface Member {
   uid: string
   email: string
   username: string
-  photoURL: string | null
+  avatarUrl: string | null
   permissions?: Record<string, boolean> | null
   joinedAt?: any
 }
@@ -152,8 +152,8 @@ const handleProjectAssigned = () => {
         class="hidden sm:flex h-10 w-10 shrink-0 rounded-full bg-primary/10 items-center justify-center overflow-hidden"
       >
         <img
-          v-if="member.photoURL"
-          :src="member.photoURL"
+          v-if="member.avatarUrl"
+          :src="member.avatarUrl"
           :alt="member.username"
           class="h-full w-full object-cover"
         />
@@ -176,8 +176,8 @@ const handleProjectAssigned = () => {
         class="flex sm:hidden h-9 w-9 shrink-0 rounded-full bg-primary/10 items-center justify-center overflow-hidden"
       >
         <img
-          v-if="member.photoURL"
-          :src="member.photoURL"
+          v-if="member.avatarUrl"
+          :src="member.avatarUrl"
           :alt="member.username"
           class="h-full w-full object-cover"
         />

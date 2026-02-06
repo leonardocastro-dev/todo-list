@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
     email: email || userData?.email || '',
     username:
       userData?.username || userData?.name || email?.split('@')[0] || '',
-    photoURL: userData?.avatarUrl || null,
+    avatarUrl: userData?.avatarUrl || null,
     permissions: {
       owner: true
     },

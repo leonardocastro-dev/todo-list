@@ -20,7 +20,7 @@ interface Member {
   uid: string
   email: string
   username: string
-  photoURL: string | null
+  avatarUrl: string | null
   permissions?: Record<string, boolean> | null
   joinedAt?: any
 }

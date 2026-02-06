@@ -6,7 +6,7 @@ export interface WorkspaceMember {
   uid: string
   email: string
   username: string
-  photoURL: string | null
+  avatarUrl: string | null
   permissions?: Record<string, boolean>
   joinedAt?: any
 }
@@ -72,7 +72,7 @@ export const useMembers = () => {
         uid: doc.id,
         email: doc.data().email,
         username: doc.data().username,
-        photoURL: doc.data().photoURL || null,
+        avatarUrl: doc.data().avatarUrl || null,
         permissions: doc.data().permissions || {},
         joinedAt: doc.data().joinedAt
       }))

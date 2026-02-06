@@ -11,7 +11,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore'
 
 export interface UserProfile {
   username: string
-  photoURL?: string
+  avatarUrl?: string
 }
 
 const user = ref<User | null>(null)
