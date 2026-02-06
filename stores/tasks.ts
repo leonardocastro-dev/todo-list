@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { toast } from 'vue-sonner'
+import { showErrorToast } from '@/utils/toast'
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore'
 import { useProjectStore } from './projects'
 import { useAuth } from '@/composables/useAuth'
@@ -21,6 +21,7 @@ export const useTaskStore = defineStore('tasks', {
     searchQuery: '',
     statusFilter: 'all',
     priorityFilter: 'all',
+    dueDateFilter: 'all',
     isLoading: true,
     isGuestMode: false
   }),
@@ -127,6 +128,20 @@ export const useTaskStore = defineStore('tasks', {
           task.priority !== state.priorityFilter
         ) {
           return false
+        }
+
+        if (state.dueDateFilter !== 'all') {
+          if (state.dueDateFilter === 'no-date') {
+            if (task.dueDate) return false
+          } else {
+            if (!task.dueDate) return false
+            const now = new Date()
+            now.setHours(0, 0, 0, 0)
+            const due = new Date(task.dueDate)
+            due.setHours(0, 0, 0, 0)
+            if (state.dueDateFilter === 'overdue' && due >= now) return false
+            if (state.dueDateFilter === 'on-time' && due < now) return false
+          }
         }
 
         if (state.searchQuery.trim() !== '') {
@@ -263,10 +278,7 @@ export const useTaskStore = defineStore('tasks', {
         }
       } catch (error) {
         console.error('Error loading tasks:', error)
-        toast.error('Failed to load tasks', {
-          style: { background: '#fda4af' },
-          duration: 3000
-        })
+        showErrorToast('Failed to load tasks')
       } finally {
         this.isLoading = false
       }
@@ -307,7 +319,7 @@ export const useTaskStore = defineStore('tasks', {
       memberIds?: string[]
     ) {
       if (!this.currentProjectId) {
-        toast.error('No project selected')
+        showErrorToast('No project selected')
         return
       }
 
@@ -332,11 +344,19 @@ export const useTaskStore = defineStore('tasks', {
           `localTasks_${projectId}`,
           JSON.stringify(this.tasksByProject[projectId])
         )
-        toast.message('Task added successfully', {
-          style: { background: '#6ee7b7' }
-        })
         return
       }
+
+      // Optimistic: create task with temporary ID and push immediately
+      const tempId = crypto.randomUUID()
+      const now = new Date().toISOString()
+      const optimisticTask: Task = {
+        ...task,
+        id: tempId,
+        projectId,
+        createdAt: now
+      }
+      this.tasksByProject[projectId].push(optimisticTask)
 
       try {
         const token = await this.getAuthToken()
@@ -360,16 +380,22 @@ export const useTaskStore = defineStore('tasks', {
           }
         )
 
+        // Replace optimistic task with server task (real ID)
         if (response.success && response.task) {
-          this.tasksByProject[projectId].push(response.task)
+          const idx = this.tasksByProject[projectId].findIndex(
+            (t) => t.id === tempId
+          )
+          if (idx !== -1) {
+            this.tasksByProject[projectId][idx] = response.task
+          }
         }
-
-        toast.message('Task added successfully', {
-          style: { background: '#6ee7b7' }
-        })
       } catch (error) {
         console.error('Error adding task:', error)
-        toast.error('Failed to add task')
+        // Rollback: remove the optimistic task
+        this.tasksByProject[projectId] = this.tasksByProject[projectId].filter(
+          (t) => t.id !== tempId
+        )
+        showErrorToast('Failed to add task')
       }
     },
 
@@ -397,6 +423,10 @@ export const useTaskStore = defineStore('tasks', {
         return
       }
 
+      // Optimistic: snapshot + apply immediately
+      const snapshot = { ...projectTasks[taskIndex] }
+      projectTasks[taskIndex] = { ...projectTasks[taskIndex], ...updatedTask }
+
       try {
         const workspaceId = this.getWorkspaceId()
         if (!workspaceId) return
@@ -404,7 +434,7 @@ export const useTaskStore = defineStore('tasks', {
         const token = await this.getAuthToken()
         if (!token) throw new Error('Not authenticated')
 
-        const response = await $fetch<{ success: boolean }>(
+        await $fetch<{ success: boolean }>(
           `/api/tasks/${id}`,
           {
             method: 'PATCH',
@@ -417,19 +447,14 @@ export const useTaskStore = defineStore('tasks', {
             }
           }
         )
-
-        if (response.success) {
-          projectTasks[taskIndex] = {
-            ...projectTasks[taskIndex],
-            ...updatedTask
-          }
-        }
       } catch (error) {
         console.error('Error updating task:', error)
-        toast.error('Failed to update task', {
-          style: { background: '#fda4af' },
-          duration: 3000
-        })
+        // Rollback: restore snapshot
+        const currentIndex = projectTasks.findIndex((t) => t.id === id)
+        if (currentIndex !== -1) {
+          projectTasks[currentIndex] = snapshot
+        }
+        showErrorToast('Failed to update task')
       }
     },
 
@@ -446,12 +471,17 @@ export const useTaskStore = defineStore('tasks', {
           `localTasks_${projectId}`,
           JSON.stringify(this.tasksByProject[projectId])
         )
-        toast.message('Task deleted successfully', {
-          style: { background: '#fda4af' },
-          duration: 3000
-        })
         return
       }
+
+      // Optimistic: save task + position, remove immediately
+      const projectTasks = this.tasksByProject[projectId] || []
+      const deletedIndex = projectTasks.findIndex((task) => task.id === id)
+      if (deletedIndex === -1) return
+      const deletedTask = { ...projectTasks[deletedIndex] }
+      this.tasksByProject[projectId] = projectTasks.filter(
+        (task) => task.id !== id
+      )
 
       try {
         const workspaceId = this.getWorkspaceId()
@@ -460,7 +490,7 @@ export const useTaskStore = defineStore('tasks', {
         const token = await this.getAuthToken()
         if (!token) throw new Error('Not authenticated')
 
-        const response = await $fetch<{ success: boolean }>(
+        await $fetch<{ success: boolean }>(
           `/api/tasks/${id}`,
           {
             method: 'DELETE',
@@ -471,22 +501,14 @@ export const useTaskStore = defineStore('tasks', {
             }
           }
         )
-
-        if (response.success) {
-          this.tasksByProject[projectId] = (
-            this.tasksByProject[projectId] || []
-          ).filter((task) => task.id !== id)
-          toast.message('Task deleted successfully', {
-            style: { background: '#fda4af' },
-            duration: 3000
-          })
-        }
       } catch (error) {
         console.error('Error deleting task:', error)
-        toast.error('Failed to delete task', {
-          style: { background: '#fda4af' },
-          duration: 3000
-        })
+        // Rollback: re-insert at original position
+        const currentTasks = this.tasksByProject[projectId] || []
+        const insertIndex = Math.min(deletedIndex, currentTasks.length)
+        currentTasks.splice(insertIndex, 0, deletedTask)
+        this.tasksByProject[projectId] = currentTasks
+        showErrorToast('Failed to delete task')
       }
     },
 
@@ -514,10 +536,7 @@ export const useTaskStore = defineStore('tasks', {
           await this.updateTask(id, { status }, userId)
         } catch {
           projectTasks[taskIndex].status = previousStatus
-          toast.error('Failed to update task status', {
-            style: { background: '#fda4af' },
-            duration: 3000
-          })
+          showErrorToast('Failed to update task status')
         }
       }
     },
@@ -567,6 +586,10 @@ export const useTaskStore = defineStore('tasks', {
 
     setPriorityFilter(priority: string | null) {
       this.priorityFilter = priority || 'all'
+    },
+
+    setDueDateFilter(filter: string | null) {
+      this.dueDateFilter = filter || 'all'
     }
   }
 })

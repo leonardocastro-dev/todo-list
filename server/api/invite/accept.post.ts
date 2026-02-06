@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
         userData?.name ||
         decoded.email?.split('@')[0] ||
         '',
-      photoURL: userData?.photoURL || null,
+      photoURL: userData?.avatarUrl || null,
       permissions: null,
       joinedAt: Timestamp.now()
     })

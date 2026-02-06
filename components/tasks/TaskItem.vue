@@ -19,7 +19,8 @@ import {
   StarHalf,
   Lock,
   Trash2,
-  PenLine
+  PenLine,
+  CircleAlert
 } from 'lucide-vue-next'
 import TaskForm from './TaskForm.vue'
 import TaskInfos from './TaskInfos.vue'
@@ -98,6 +99,15 @@ const getPriorityIcon = () => {
       return StarHalf
   }
 }
+
+const isOverdue = computed(() => {
+  if (!props.task.dueDate || localChecked.value) return false
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  const due = new Date(props.task.dueDate)
+  due.setHours(0, 0, 0, 0)
+  return due < now
+})
 
 const formatDueDate = (date: Date) => {
   return new Intl.DateTimeFormat('en-US', {
@@ -204,7 +214,8 @@ const formatDueDate = (date: Date) => {
                 <span class="ml-1">{{ task.priority }}</span>
               </div>
               <span>•</span>
-              <span v-if="task.dueDate">
+              <span v-if="task.dueDate" class="flex items-center gap-1" :class="isOverdue ? 'text-red-500' : ''">
+                <CircleAlert v-if="isOverdue" class="h-3.5 w-3.5" />
                 Due: {{ formatDueDate(new Date(task.dueDate)) }}
               </span>
               <span v-else class="text-muted-foreground/70">No due date</span>

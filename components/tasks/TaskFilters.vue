@@ -29,8 +29,8 @@ const taskStore = useTaskStore()
       />
     </div>
 
-    <div class="flex flex-col sm:flex-row gap-4">
-      <div class="flex-1">
+    <div class="flex flex-wrap gap-4">
+      <div class="w-full md:flex-1">
         <Label for="status-filter" class="mb-1 block text-sm font-medium"
           >Status</Label
         >
@@ -49,7 +49,7 @@ const taskStore = useTaskStore()
         </Tabs>
       </div>
 
-      <div class="w-full sm:w-40">
+      <div>
         <Label for="priority-filter" class="mb-1 block text-sm font-medium"
           >Priority</Label
         >
@@ -67,6 +67,28 @@ const taskStore = useTaskStore()
             <SelectItem value="urgent">Urgent</SelectItem>
             <SelectItem value="important">Important</SelectItem>
             <SelectItem value="normal">Normal</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label for="due-date-filter" class="mb-1 block text-sm font-medium"
+          >Due Date</Label
+        >
+        <Select
+          :model-value="taskStore.dueDateFilter"
+          @update:model-value="
+            (val) => taskStore.setDueDateFilter(String(val || 'all'))
+          "
+        >
+          <SelectTrigger id="due-date-filter">
+            <SelectValue placeholder="All Dates" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Dates</SelectItem>
+            <SelectItem value="overdue">Overdue</SelectItem>
+            <SelectItem value="on-time">On Time</SelectItem>
+            <SelectItem value="no-date">No Date</SelectItem>
           </SelectContent>
         </Select>
       </div>
