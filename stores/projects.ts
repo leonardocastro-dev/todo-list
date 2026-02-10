@@ -82,8 +82,10 @@ export const useProjectStore = defineStore('projects', {
     ) {
       // Skip if already loaded for this workspace (unless forced)
       if (!forceReload && this.loadedWorkspaceId === workspaceId) {
+        console.log('[DEBUG store] CACHE HIT - skipping load, current permissions:', JSON.stringify(this.memberPermissions))
         return
       }
+      console.log('[DEBUG store] Loading workspace:', workspaceId, 'userId:', userId)
 
       try {
         this.isLoading = true
@@ -112,8 +114,12 @@ export const useProjectStore = defineStore('projects', {
         const memberSnap = await getDoc(memberRef)
 
         if (memberSnap.exists()) {
-          this.memberPermissions = memberSnap.data().permissions || null
+          const rawPerms = memberSnap.data().permissions
+          console.log('[DEBUG store] memberSnap raw data:', JSON.stringify(memberSnap.data()))
+          console.log('[DEBUG store] permissions field:', JSON.stringify(rawPerms))
+          this.memberPermissions = rawPerms || null
         } else {
+          console.log('[DEBUG store] member doc does NOT exist for userId:', userId)
           this.memberPermissions = null
         }
 

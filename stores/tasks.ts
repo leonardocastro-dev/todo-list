@@ -434,19 +434,16 @@ export const useTaskStore = defineStore('tasks', {
         const token = await this.getAuthToken()
         if (!token) throw new Error('Not authenticated')
 
-        await $fetch<{ success: boolean }>(
-          `/api/tasks/${id}`,
-          {
-            method: 'PATCH',
-            headers: { Authorization: `Bearer ${token}` },
-            body: {
-              workspaceId,
-              projectId,
-              ...updatedTask,
-              memberIds
-            }
+        await $fetch<{ success: boolean }>(`/api/tasks/${id}`, {
+          method: 'PATCH',
+          headers: { Authorization: `Bearer ${token}` },
+          body: {
+            workspaceId,
+            projectId,
+            ...updatedTask,
+            memberIds
           }
-        )
+        })
       } catch (error) {
         console.error('Error updating task:', error)
         // Rollback: restore snapshot
@@ -490,17 +487,14 @@ export const useTaskStore = defineStore('tasks', {
         const token = await this.getAuthToken()
         if (!token) throw new Error('Not authenticated')
 
-        await $fetch<{ success: boolean }>(
-          `/api/tasks/${id}`,
-          {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` },
-            body: {
-              workspaceId,
-              projectId
-            }
+        await $fetch<{ success: boolean }>(`/api/tasks/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+          body: {
+            workspaceId,
+            projectId
           }
-        )
+        })
       } catch (error) {
         console.error('Error deleting task:', error)
         // Rollback: re-insert at original position

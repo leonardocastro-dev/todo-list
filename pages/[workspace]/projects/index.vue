@@ -22,11 +22,19 @@ const {
 const isAddingProject = ref(false)
 const editingProject = ref<Project | undefined>()
 const isReloading = ref(false)
+const isInitialLoading = ref(true)
 
 // Filter projects based on access-projects permission
 const visibleProjects = computed(() => {
   const allProjects = projectStore.projects
   const userPermissions = projectStore.memberPermissions
+
+  console.log('[DEBUG visibleProjects]', JSON.stringify({
+    allProjectsCount: allProjects.length,
+    userPermissions,
+    userId: user.value?.uid,
+    hasPermResult: hasPermission(userPermissions, PERMISSIONS.ACCESS_PROJECTS)
+  }))
 
   // If user has access-projects permission, show all projects
   if (hasPermission(userPermissions, PERMISSIONS.ACCESS_PROJECTS)) {
@@ -60,12 +68,19 @@ const closeForm = () => {
 
 onMounted(async () => {
   if (workspaceId.value) {
-    await projectStore.loadProjectsForWorkspace(
-      workspaceId.value,
-      user.value?.uid
-    )
-    await loadWorkspaceMembers(workspaceId.value)
-    await loadAssignments()
+    try {
+      await projectStore.loadProjectsForWorkspace(
+        workspaceId.value,
+        user.value?.uid
+      )
+      await loadWorkspaceMembers(workspaceId.value)
+      await loadAssignments()
+    } finally {
+      isInitialLoading.value = false
+      console.log(projectStore.projects)
+    }
+  } else {
+    isInitialLoading.value = false
   }
 })
 
@@ -130,6 +145,7 @@ const handleReload = async () => {
       :projects="visibleProjects"
       :workspace-members="members"
       :project-assignments-map="projectAssignmentsMap"
+      :is-loading="isInitialLoading"
       @edit="handleEdit"
     />
 

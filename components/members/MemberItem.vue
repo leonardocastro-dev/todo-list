@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { NuxtImg } from '#components'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -151,7 +152,7 @@ const handleProjectAssigned = () => {
       <div
         class="hidden sm:flex h-10 w-10 shrink-0 rounded-full bg-primary/10 items-center justify-center overflow-hidden"
       >
-        <img
+        <NuxtImg
           v-if="member.avatarUrl"
           :src="member.avatarUrl"
           :alt="member.username"
@@ -175,7 +176,7 @@ const handleProjectAssigned = () => {
       <div
         class="flex sm:hidden h-9 w-9 shrink-0 rounded-full bg-primary/10 items-center justify-center overflow-hidden"
       >
-        <img
+        <NuxtImg
           v-if="member.avatarUrl"
           :src="member.avatarUrl"
           :alt="member.username"

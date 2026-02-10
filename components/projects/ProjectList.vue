@@ -7,6 +7,7 @@ const props = defineProps<{
   projects: Project[]
   workspaceMembers: WorkspaceMember[]
   projectAssignmentsMap: Record<string, string[]>
+  isLoading: boolean
 }>()
 
 // Sort projects by updatedAt
@@ -19,14 +20,12 @@ const sortedProjects = computed(() => {
 const emit = defineEmits<{
   edit: [project: Project]
 }>()
-
-const projectStore = useProjectStore()
 </script>
 
 <template>
   <div>
     <div
-      v-if="projectStore.isLoading"
+      v-if="isLoading"
       class="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4"
     >
       <Skeleton class="aspect-[1.55] w-full rounded-xl" />

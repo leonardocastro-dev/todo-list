@@ -214,7 +214,11 @@ const formatDueDate = (date: Date) => {
                 <span class="ml-1">{{ task.priority }}</span>
               </div>
               <span>•</span>
-              <span v-if="task.dueDate" class="flex items-center gap-1" :class="isOverdue ? 'text-red-500' : ''">
+              <span
+                v-if="task.dueDate"
+                class="flex items-center gap-1"
+                :class="isOverdue ? 'text-red-500' : ''"
+              >
                 <CircleAlert v-if="isOverdue" class="h-3.5 w-3.5" />
                 Due: {{ formatDueDate(new Date(task.dueDate)) }}
               </span>

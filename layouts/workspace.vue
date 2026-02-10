@@ -19,6 +19,11 @@ const closeMobileMenu = () => {
   isMobileMenuOpen.value = false
 }
 
+const isWorkspaceSectionActive = (section: string) => {
+  const basePath = `/${workspaceSlug.value}/${section}`
+  return route.path === basePath || route.path.startsWith(`${basePath}/`)
+}
+
 // Close menu on route change
 watch(() => route.fullPath, closeMobileMenu)
 </script>
@@ -68,7 +73,7 @@ watch(() => route.fullPath, closeMobileMenu)
           <NuxtLink
             :to="`/${workspaceSlug}/projects`"
             class="flex items-center px-4 py-3 text-base font-medium text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
-            active-class="!text-primary !bg-accent"
+            :class="{ '!text-primary !bg-accent': isWorkspaceSectionActive('projects') }"
             @click="closeMobileMenu"
           >
             Projects
@@ -85,7 +90,7 @@ watch(() => route.fullPath, closeMobileMenu)
             v-else
             :to="`/${workspaceSlug}/members`"
             class="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-md transition-colors text-muted-foreground hover:text-primary hover:bg-accent"
-            active-class="!text-primary !bg-accent"
+            :class="{ '!text-primary !bg-accent': isWorkspaceSectionActive('members') }"
             @click="closeMobileMenu"
           >
             <span>Members</span>
@@ -182,7 +187,7 @@ watch(() => route.fullPath, closeMobileMenu)
         <NuxtLink
           :to="`/${workspaceSlug}/projects`"
           class="flex items-center px-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
-          active-class="!text-primary !bg-accent"
+          :class="{ '!text-primary !bg-accent': isWorkspaceSectionActive('projects') }"
         >
           Projects
         </NuxtLink>
@@ -198,7 +203,7 @@ watch(() => route.fullPath, closeMobileMenu)
           v-else
           :to="`/${workspaceSlug}/members`"
           class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors text-muted-foreground hover:text-primary hover:bg-accent"
-          active-class="!text-primary !bg-accent"
+          :class="{ '!text-primary !bg-accent': isWorkspaceSectionActive('members') }"
         >
           <span>Members</span>
         </NuxtLink>
