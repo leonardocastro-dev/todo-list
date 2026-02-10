@@ -38,6 +38,17 @@ const taskAssignmentsMap = ref<Record<string, string[]>>({})
 const isLoadingMembers = ref(false)
 const error = ref<string | null>(null)
 const loadedWorkspaceId = ref<string | null>(null)
+const loadedProjectAssignmentsKey = ref<string | null>(null)
+const loadedTaskAssignmentsKey = ref<string | null>(null)
+
+const buildProjectAssignmentsKey = (workspaceId: string, projectIds: string[]) =>
+  `${workspaceId}:${[...projectIds].sort().join(',')}`
+
+const buildTaskAssignmentsKey = (
+  workspaceId: string,
+  projectId: string,
+  taskIds: string[]
+) => `${workspaceId}:${projectId}:${[...taskIds].sort().join(',')}`
 
 export const useMembers = () => {
   const loadWorkspaceMembers = async (
@@ -118,11 +129,22 @@ export const useMembers = () => {
 
   const loadAllProjectAssignments = async (
     workspaceId: string,
-    projectIds: string[]
+    projectIds: string[],
+    forceReload = false
   ) => {
     if (!workspaceId || projectIds.length === 0) {
       projectAssignmentsMap.value = {}
       projectAssignmentsDataMap.value = {}
+      loadedProjectAssignmentsKey.value = null
+      return
+    }
+
+    const cacheKey = buildProjectAssignmentsKey(workspaceId, projectIds)
+    if (
+      !forceReload &&
+      loadedProjectAssignmentsKey.value === cacheKey &&
+      Object.keys(projectAssignmentsMap.value).length > 0
+    ) {
       return
     }
 
@@ -155,10 +177,12 @@ export const useMembers = () => {
 
       projectAssignmentsMap.value = assignments
       projectAssignmentsDataMap.value = assignmentsData
+      loadedProjectAssignmentsKey.value = cacheKey
     } catch (e) {
       console.error('Error loading project assignments:', e)
       projectAssignmentsMap.value = {}
       projectAssignmentsDataMap.value = {}
+      loadedProjectAssignmentsKey.value = null
     }
   }
 
@@ -200,10 +224,21 @@ export const useMembers = () => {
   const loadAllTaskAssignments = async (
     workspaceId: string,
     projectId: string,
-    taskIds: string[]
+    taskIds: string[],
+    forceReload = false
   ) => {
     if (!workspaceId || !projectId || taskIds.length === 0) {
       taskAssignmentsMap.value = {}
+      loadedTaskAssignmentsKey.value = null
+      return
+    }
+
+    const cacheKey = buildTaskAssignmentsKey(workspaceId, projectId, taskIds)
+    if (
+      !forceReload &&
+      loadedTaskAssignmentsKey.value === cacheKey &&
+      Object.keys(taskAssignmentsMap.value).length > 0
+    ) {
       return
     }
 
@@ -229,10 +264,17 @@ export const useMembers = () => {
       )
 
       taskAssignmentsMap.value = assignments
+      loadedTaskAssignmentsKey.value = cacheKey
     } catch (e) {
       console.error('Error loading task assignments:', e)
       taskAssignmentsMap.value = {}
+      loadedTaskAssignmentsKey.value = null
     }
+  }
+
+  const invalidateAssignmentsCache = () => {
+    loadedProjectAssignmentsKey.value = null
+    loadedTaskAssignmentsKey.value = null
   }
 
   const removeMemberLocally = (memberId: string) => {
@@ -253,6 +295,7 @@ export const useMembers = () => {
     loadAllProjectAssignments,
     loadTaskAssignees,
     loadAllTaskAssignments,
+    invalidateAssignmentsCache,
     removeMemberLocally
   }
 }

@@ -44,7 +44,8 @@ const { user } = useAuth()
 const {
   loadAllProjectAssignments,
   projectAssignmentsMap,
-  projectAssignmentsDataMap
+  projectAssignmentsDataMap,
+  invalidateAssignmentsCache
 } = useMembers()
 const projectStore = useProjectStore()
 
@@ -392,6 +393,7 @@ const saveAssignments = async () => {
     }
 
     await Promise.all(updatePromises)
+    invalidateAssignmentsCache()
 
     toast.success('Project assignments updated successfully', {
       style: { background: '#6ee7b7' },
