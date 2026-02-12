@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Plus, ArrowLeft, RefreshCw } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -13,12 +13,7 @@ import { useMembers } from '@/composables/useMembers'
 const route = useRoute()
 const router = useRouter()
 const { user } = useAuth()
-const {
-  members,
-  taskAssignmentsMap,
-  loadWorkspaceMembers,
-  loadAllTaskAssignments
-} = useMembers()
+const { members, loadWorkspaceMembers } = useMembers()
 
 const isAddingTask = ref(false)
 const isReloading = ref(false)
@@ -29,10 +24,6 @@ const handleReload = async () => {
   isReloading.value = true
   try {
     await taskStore.reloadTasks(user.value?.uid)
-    if (taskStore.tasks.length > 0) {
-      const taskIds = taskStore.tasks.map((t) => t.id)
-      await loadAllTaskAssignments(workspaceId, projectId, taskIds)
-    }
   } finally {
     isReloading.value = false
   }
@@ -44,18 +35,6 @@ const workspaceId = route.params.workspace as string
 const currentProject = computed(() => {
   return projectStore.projects.find((p) => p.id === projectId)
 })
-
-// Load task assignments when tasks change
-watch(
-  () => taskStore.tasks,
-  async (tasks) => {
-    if (tasks.length > 0 && workspaceId && projectId) {
-      const taskIds = tasks.map((t) => t.id)
-      await loadAllTaskAssignments(workspaceId, projectId, taskIds)
-    }
-  },
-  { immediate: true }
-)
 
 onMounted(async () => {
   await projectStore.loadProjectsForWorkspace(workspaceId, user.value?.uid)
@@ -143,7 +122,6 @@ onMounted(async () => {
       <TaskList
         :workspace-id="workspaceId"
         :workspace-members="members"
-        :task-assignments-map="taskAssignmentsMap"
       />
 
       <TaskForm

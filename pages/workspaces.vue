@@ -93,6 +93,9 @@ onMounted(async () => {
       <Skeleton class="h-[250px] rounded-lg" />
       <Skeleton class="h-[250px] rounded-lg" />
       <Skeleton class="h-[250px] rounded-lg" />
+      <Skeleton class="h-[250px] rounded-lg" />
+      <Skeleton class="h-[250px] rounded-lg" />
+      <Skeleton class="h-[250px] rounded-lg" />
     </div>
 
     <div

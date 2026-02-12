@@ -64,28 +64,22 @@ service cloud.firestore {
       match /projects/{projectId} {
         allow read: if isWorkspaceMember(workspaceId);
         allow write: if false;
-
-        // Tasks nested under projects
-        match /tasks/{taskId} {
-          allow read: if isWorkspaceMember(workspaceId);
-          allow write: if false;
-        }
-
-        // Task assignments nested under projects (new structure)
-        match /taskAssignments/{taskId}/users/{userId} {
-          allow read: if isWorkspaceMember(workspaceId);
-          allow write: if false;
-        }
       }
 
-      // Project assignments
-      match /projectAssignments/{projectId}/users/{userId} {
+      // Tasks at workspace level
+      match /tasks/{taskId} {
         allow read: if isWorkspaceMember(workspaceId);
         allow write: if false;
       }
 
-      // Legacy task assignments at workspace level (for migration period)
+      // Task assignments at workspace level
       match /taskAssignments/{taskId}/users/{userId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        allow write: if false;
+      }
+
+      // Project assignments
+      match /projectAssignments/{projectId}/users/{userId} {
         allow read: if isWorkspaceMember(workspaceId);
         allow write: if false;
       }

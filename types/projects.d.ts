@@ -7,4 +7,5 @@ declare interface Project {
   workspaceId?: string
   createdAt: string
   updatedAt: string
+  assignedUserIds?: string[] // Denormalized - for UI tracking only
 }

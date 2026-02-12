@@ -204,8 +204,6 @@ export const useMembers = () => {
         $firestore,
         'workspaces',
         workspaceId,
-        'projects',
-        projectId,
         'taskAssignments',
         taskId,
         'users'
@@ -252,8 +250,6 @@ export const useMembers = () => {
             $firestore,
             'workspaces',
             workspaceId,
-            'projects',
-            projectId,
             'taskAssignments',
             taskId,
             'users'

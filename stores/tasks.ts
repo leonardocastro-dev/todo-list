@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { showErrorToast } from '@/utils/toast'
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore'
+import { collection, getDocs, doc, getDoc, query, where } from 'firebase/firestore'
 import { useProjectStore } from './projects'
 import { useAuth } from '@/composables/useAuth'
 import { PERMISSIONS, hasAnyPermission } from '@/constants/permissions'
@@ -243,16 +243,10 @@ export const useTaskStore = defineStore('tasks', {
             ...taskPermissions
           }
 
-          // Query nested tasks collection
-          const tasksRef = collection(
-            $firestore,
-            'workspaces',
-            workspaceId,
-            'projects',
-            projectId,
-            'tasks'
-          )
-          const snapshot = await getDocs(tasksRef)
+          // Query tasks from workspace-level collection filtered by projectId
+          const tasksRef = collection($firestore, 'workspaces', workspaceId, 'tasks')
+          const q = query(tasksRef, where('projectId', '==', projectId))
+          const snapshot = await getDocs(q)
 
           if (!snapshot.empty) {
             loadedTasks = snapshot.docs.map((doc) => ({
@@ -354,7 +348,8 @@ export const useTaskStore = defineStore('tasks', {
         ...task,
         id: tempId,
         projectId,
-        createdAt: now
+        createdAt: now,
+        assigneeIds: memberIds || []
       }
       this.tasksByProject[projectId].push(optimisticTask)
 
@@ -425,7 +420,10 @@ export const useTaskStore = defineStore('tasks', {
 
       // Optimistic: snapshot + apply immediately
       const snapshot = { ...projectTasks[taskIndex] }
-      projectTasks[taskIndex] = { ...projectTasks[taskIndex], ...updatedTask }
+      const optimisticUpdate = memberIds
+        ? { ...updatedTask, assigneeIds: memberIds }
+        : updatedTask
+      projectTasks[taskIndex] = { ...projectTasks[taskIndex], ...optimisticUpdate }
 
       try {
         const workspaceId = this.getWorkspaceId()

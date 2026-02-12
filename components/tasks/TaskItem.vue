@@ -27,26 +27,60 @@ import TaskInfos from './TaskInfos.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useTaskStatusSync } from '@/composables/useTaskStatusSync'
 import type { WorkspaceMember } from '@/composables/useMembers'
+import { hasAnyPermission } from '@/constants/permissions'
+import { PERMISSIONS } from '@/constants/permissions'
 
 const props = defineProps<{
   task: Task
   workspaceId?: string
   workspaceMembers?: WorkspaceMember[]
-  assignedMemberIds?: string[]
+  projectName?: string
+  projectPermissions?: Record<string, boolean>
 }>()
 
 const taskStore = useTaskStore()
 const { user } = useAuth()
 const isEditing = ref(false)
 const showInfoModal = ref(false)
-const canEdit = computed(() => taskStore.canEditTasks)
-const canDelete = computed(() => taskStore.canDeleteTasks)
-const canToggleStatus = computed(() =>
-  taskStore.canToggleTaskStatus(
-    props.assignedMemberIds,
+
+// Use project-specific permissions if provided, otherwise fall back to taskStore
+const canEdit = computed(() => {
+  if (props.projectPermissions) {
+    return hasAnyPermission(props.projectPermissions, [
+      PERMISSIONS.MANAGE_TASKS,
+      PERMISSIONS.EDIT_TASKS
+    ])
+  }
+  return taskStore.canEditTasks
+})
+
+const canDelete = computed(() => {
+  if (props.projectPermissions) {
+    return hasAnyPermission(props.projectPermissions, [
+      PERMISSIONS.MANAGE_TASKS,
+      PERMISSIONS.DELETE_TASKS
+    ])
+  }
+  return taskStore.canDeleteTasks
+})
+
+const canToggleStatus = computed(() => {
+  if (props.projectPermissions) {
+    // Users with edit permissions or assigned to task can toggle
+    const hasEditPermission = hasAnyPermission(props.projectPermissions, [
+      PERMISSIONS.MANAGE_TASKS,
+      PERMISSIONS.EDIT_TASKS
+    ])
+    const isAssigned =
+      props.task.assigneeIds?.includes(user.value?.uid ?? '') ?? false
+    return hasEditPermission || isAssigned
+  }
+  return taskStore.canToggleTaskStatus(
+    props.task.assigneeIds,
     user.value?.uid ?? null
   )
-)
+})
+
 const hasAnyAction = computed(() => canEdit.value || canDelete.value)
 
 const { localChecked, toggle, syncFromExternal } = useTaskStatusSync({
@@ -72,16 +106,11 @@ watch(
 )
 
 const taskMembersWithData = computed(() => {
-  if (!props.workspaceMembers || props.workspaceMembers.length === 0) {
-    return []
-  }
-  if (!props.assignedMemberIds || props.assignedMemberIds.length === 0) {
-    return []
-  }
-
-  return props.workspaceMembers.filter((member) => {
-    return props.assignedMemberIds?.includes(member.uid)
-  })
+  if (!props.workspaceMembers?.length) return []
+  if (!props.task.assigneeIds?.length) return []
+  return props.workspaceMembers.filter((m) =>
+    props.task.assigneeIds?.includes(m.uid)
+  )
 })
 
 const displayedMembers = computed(() => taskMembersWithData.value.slice(0, 3))
@@ -213,6 +242,12 @@ const formatDueDate = (date: Date) => {
                 />
                 <span class="ml-1">{{ task.priority }}</span>
               </div>
+              <template v-if="projectName">
+                <span>•</span>
+                <span class="text-xs text-muted-foreground">
+                  {{ projectName }}
+                </span>
+              </template>
               <span>•</span>
               <span
                 v-if="task.dueDate"
@@ -276,7 +311,7 @@ const formatDueDate = (date: Date) => {
     :is-open="showInfoModal"
     :task="task"
     :workspace-members="workspaceMembers"
-    :assigned-member-ids="assignedMemberIds"
+    :assigned-member-ids="task.assigneeIds || []"
     @close="showInfoModal = false"
   />
 </template>

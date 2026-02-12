@@ -10,4 +10,6 @@ declare interface Task {
   priority: 'normal' | 'important' | 'urgent'
   dueDate?: string
   createdAt: string
+  updatedAt: string
+  assigneeIds?: string[]
 }

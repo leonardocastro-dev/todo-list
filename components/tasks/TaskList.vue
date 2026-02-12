@@ -9,7 +9,6 @@ import type { WorkspaceMember } from '@/composables/useMembers'
 defineProps<{
   workspaceId?: string
   workspaceMembers?: WorkspaceMember[]
-  taskAssignmentsMap?: Record<string, string[]>
 }>()
 
 const taskStore = useTaskStore()
@@ -38,7 +37,6 @@ const filteredTasks = computed(() => {
               </div>
               <Skeleton class="min-h-8 min-w-8 rounded-full" />
             </div>
-            <Skeleton class="h-4 w-2/3 mb-2" />
             <div class="flex items-center gap-2">
               <Skeleton class="h-4 w-16" />
               <Skeleton class="h-4 w-4 rounded-full" />
@@ -61,7 +59,6 @@ const filteredTasks = computed(() => {
       :task="task"
       :workspace-id="workspaceId"
       :workspace-members="workspaceMembers"
-      :assigned-member-ids="taskAssignmentsMap?.[task.id] || []"
     />
   </div>
 </template>

@@ -71,6 +71,14 @@ watch(() => route.fullPath, closeMobileMenu)
           class="flex flex-col flex-1 gap-2 px-4 py-4"
         >
           <NuxtLink
+            :to="`/${workspaceSlug}/tasks`"
+            class="flex items-center px-4 py-3 text-base font-medium text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
+            :class="{ '!text-primary !bg-accent': isWorkspaceSectionActive('tasks') }"
+            @click="closeMobileMenu"
+          >
+            Tasks
+          </NuxtLink>
+          <NuxtLink
             :to="`/${workspaceSlug}/projects`"
             class="flex items-center px-4 py-3 text-base font-medium text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
             :class="{ '!text-primary !bg-accent': isWorkspaceSectionActive('projects') }"
@@ -184,6 +192,13 @@ watch(() => route.fullPath, closeMobileMenu)
         aria-label="Main navigation"
         class="flex flex-col flex-1 gap-2 px-4 py-2"
       >
+        <NuxtLink
+          :to="`/${workspaceSlug}/tasks`"
+          class="flex items-center px-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
+          :class="{ '!text-primary !bg-accent': isWorkspaceSectionActive('tasks') }"
+        >
+          <span>Tasks</span>
+        </NuxtLink>
         <NuxtLink
           :to="`/${workspaceSlug}/projects`"
           class="flex items-center px-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"

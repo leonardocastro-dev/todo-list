@@ -59,12 +59,11 @@ export default defineEventHandler(async (event) => {
     dueDate: dueDate || null,
     projectId,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    assigneeIds: memberIds || []
   }
 
-  const taskRef = db.doc(
-    `workspaces/${workspaceId}/projects/${projectId}/tasks/${taskId}`
-  )
+  const taskRef = db.doc(`workspaces/${workspaceId}/tasks/${taskId}`)
   await taskRef.set(task)
 
   // Assign members to task if provided (validate memberIds first)

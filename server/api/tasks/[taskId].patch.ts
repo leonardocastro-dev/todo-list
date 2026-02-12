@@ -77,9 +77,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const taskRef = db.doc(
-    `workspaces/${workspaceId}/projects/${projectId}/tasks/${taskId}`
-  )
+  const taskRef = db.doc(`workspaces/${workspaceId}/tasks/${taskId}`)
   const taskDoc = await taskRef.get()
 
   if (!taskDoc.exists) {
