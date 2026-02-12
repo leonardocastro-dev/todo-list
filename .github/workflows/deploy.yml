@@ -1,0 +1,29 @@
+name: Deploy to VM
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          port: ${{ secrets.VM_SSH_PORT || 22 }}
+          script: |
+            set -e
+
+            cd /var/www/app   # <-- ajuste para seu caminho real
+
+            git fetch --all
+            git reset --hard origin/main
+
+            npm ci --omit=dev
+
+            pm2 reload ecosystem.config.js --env production || pm2 restart all
+            pm2 save
