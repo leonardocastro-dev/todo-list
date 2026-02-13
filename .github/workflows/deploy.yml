@@ -20,6 +20,8 @@ jobs:
 
             cd /home/deploy/workspace/fokuz
 
+            npm i -g pnpm
+
             git fetch --all
             git reset --hard origin/main
 
