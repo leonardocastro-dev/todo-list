@@ -151,8 +151,16 @@
   :root {
     --scrollbar-size: 10px;
     --scrollbar-track: color-mix(in oklab, var(--muted) 78%, transparent);
-    --scrollbar-thumb: color-mix(in oklab, var(--muted-foreground) 32%, transparent);
-    --scrollbar-thumb-hover: color-mix(in oklab, var(--primary) 55%, var(--muted-foreground));
+    --scrollbar-thumb: color-mix(
+      in oklab,
+      var(--muted-foreground) 32%,
+      transparent
+    );
+    --scrollbar-thumb-hover: color-mix(
+      in oklab,
+      var(--primary) 55%,
+      var(--muted-foreground)
+    );
   }
 
   body {

@@ -2,7 +2,7 @@ name: Deploy to VM
 
 on:
   push:
-    branches: ["main"]
+    branches: ['main']
 
 jobs:
   deploy:
@@ -31,7 +31,7 @@ jobs:
 
             pnpm install --frozen-lockfile
 
-            pnpm build
+            pnpm run deploy
 
             pm2 reload ecosystem.config.cjs --env production || pm2 start ecosystem.config.cjs --env production
             pm2 save

@@ -10,7 +10,9 @@
     "postinstall": "nuxt prepare",
     "prettier": "pnpx prettier . --check",
     "prettier:fix": "pnpx prettier . --write",
-    "typecheck": "nuxt typecheck"
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck",
+    "deploy": "pnpm run prettier:fix && pnpm run lint && pnpm run typecheck && nuxt build"
   },
   "dependencies": {
     "@internationalized/date": "^3.8.0",
