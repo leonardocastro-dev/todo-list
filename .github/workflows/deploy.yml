@@ -17,12 +17,10 @@ jobs:
           port: ${{ secrets.VM_SSH_PORT || 22 }}
           script: |
             set -e
-
             cd /home/deploy/workspace/fokuz
 
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-
             nvm use --lts
 
             corepack enable
@@ -37,5 +35,5 @@ jobs:
 
             pnpm build
 
-            pm2 reload ecosystem.config.cjs --env production || pm2 restart all
+            pm2 reload ecosystem.config.cjs --env production || pm2 start ecosystem.config.cjs --env production
             pm2 save
