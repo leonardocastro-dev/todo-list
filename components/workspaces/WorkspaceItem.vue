@@ -24,7 +24,7 @@ const workspaceStore = useWorkspaceStore()
 const { user } = useAuth()
 
 const goToWorkspace = () => {
-  router.push(`/${props.workspace.id}/projects`)
+  router.push(`/${props.workspace.id}/tasks`)
 }
 
 const deleteWorkspace = async () => {

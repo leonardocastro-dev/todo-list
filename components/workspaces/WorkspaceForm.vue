@@ -77,7 +77,7 @@ const handleSubmit = async () => {
       if (workspace) {
         resetForm()
         emit('close')
-        await router.push(`/${workspace.id}/projects`)
+        await router.push(`/${workspace.id}/tasks`)
       }
     }
   } catch (error) {

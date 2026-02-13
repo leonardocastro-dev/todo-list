@@ -75,7 +75,7 @@ const acceptInvite = async () => {
       duration: 3000
     })
 
-    router.push(`/${response.workspaceId}/projects`)
+    router.push(`/${response.workspaceId}/tasks`)
   } catch (err: any) {
     toast.error(err.data?.message || 'Failed to accept invitation', {
       style: { background: '#fda4af' },
