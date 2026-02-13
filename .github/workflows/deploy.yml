@@ -20,6 +20,8 @@ jobs:
 
             cd /home/deploy/workspace/fokuz
 
+            echo "PATH=$PATH"
+
             npm i -g pnpm
 
             git fetch --all
