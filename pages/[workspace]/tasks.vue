@@ -183,78 +183,94 @@ const emptyStateMessage = computed(() => {
       </p>
     </header>
 
-    <div
-      class="flex sm:justify-between flex-col sm:flex-row sm:items-center justify-center mb-6"
-    >
-      <div>
-        <h2 class="text-xl font-semibold">Workspace Tasks</h2>
-        <p class="text-sm text-muted-foreground mt-1">
-          {{ visibleTasks.length }}
-          {{ visibleTasks.length === 1 ? 'task' : 'tasks' }}
-          <span v-if="visibleTasks.length !== taskStore.workspaceTasks.length">
-            of {{ taskStore.workspaceTasks.length }}
-          </span>
-        </p>
-      </div>
-      <div class="flex sm:flex-row mt-3 sm:mt-0 items-center gap-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          :disabled="taskStore.isLoading || isReloading"
-          @click="handleReload"
-        >
-          <RefreshCw
-            class="h-4 w-4 mr-2"
-            :class="{ 'animate-spin': isReloading }"
-          />
-          Sync
-        </Button>
-
-        <Button
-          v-if="canCreateWorkspaceTasks"
-          class="flex items-center gap-1"
-          :disabled="projectStore.isLoading"
-          @click="isAddingTask = true"
-        >
-          <Plus class="h-5 w-5" />
-          <span>Add Task</span>
-        </Button>
-
-        <div
-          class="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-1.5"
-        >
-          <span
-            class="text-xs font-medium uppercase tracking-wide transition-colors"
-            :class="isAllScope ? 'text-muted-foreground' : 'text-foreground'"
+    <div class="space-y-4 mb-6">
+      <div
+        class="flex flex-col sm:w-fit w-full md:flex-row md:items-end gap-3 rounded-lg border border-border bg-muted/30 p-3"
+      >
+        <div class="w-full md:max-w-[240px]">
+          <p class="mb-1 text-sm font-medium">Scope</p>
+          <div
+            class="flex items-center justify-between md:justify-start gap-2 rounded-lg border border-border bg-background px-3 py-2 md:min-w-[220px]"
           >
-            Assigned
-          </span>
-          <Switch
-            aria-label="Toggle task scope"
-            :model-value="isAllScope"
-            @update:model-value="setScopeFromToggle"
-          />
-          <span
-            class="text-xs font-medium uppercase tracking-wide transition-colors"
-            :class="isAllScope ? 'text-foreground' : 'text-muted-foreground'"
-          >
-            All
-          </span>
+            <span
+              class="text-xs font-medium uppercase tracking-wide transition-colors"
+              :class="isAllScope ? 'text-muted-foreground' : 'text-foreground'"
+            >
+              Assigned
+            </span>
+            <Switch
+              aria-label="Toggle task scope"
+              :model-value="isAllScope"
+              @update:model-value="setScopeFromToggle"
+            />
+            <span
+              class="text-xs font-medium uppercase tracking-wide transition-colors"
+              :class="isAllScope ? 'text-foreground' : 'text-muted-foreground'"
+            >
+              All
+            </span>
+          </div>
         </div>
 
-        <Select
-          :model-value="projectLinkFilter"
-          @update:model-value="setProjectLinkFilter"
+        <div class="w-full md:max-w-[240px]">
+          <p class="mb-1 text-sm font-medium">Project Link</p>
+          <Select
+            :model-value="projectLinkFilter"
+            @update:model-value="setProjectLinkFilter"
+          >
+            <SelectTrigger class="w-full">
+              <SelectValue placeholder="All tasks" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All tasks</SelectItem>
+              <SelectItem value="with-project">With project</SelectItem>
+              <SelectItem value="without-project">Without project</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div
+        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+      >
+        <div>
+          <h2 class="text-xl font-semibold">Workspace Tasks</h2>
+          <p class="text-sm text-muted-foreground mt-1">
+            {{ visibleTasks.length }}
+            {{ visibleTasks.length === 1 ? 'task' : 'tasks' }}
+            <span
+              v-if="visibleTasks.length !== taskStore.workspaceTasks.length"
+            >
+              of {{ taskStore.workspaceTasks.length }}
+            </span>
+          </p>
+        </div>
+
+        <div
+          class="flex sm:flex-row mt-3 sm:mt-0 flex-row-reverse justify-end gap-2"
         >
-          <SelectTrigger class="w-[180px]">
-            <SelectValue placeholder="All tasks" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All tasks</SelectItem>
-            <SelectItem value="with-project">With project</SelectItem>
-            <SelectItem value="without-project">Without project</SelectItem>
-          </SelectContent>
-        </Select>
+          <Button
+            variant="ghost"
+            size="sm"
+            :disabled="taskStore.isLoading || isReloading"
+            @click="handleReload"
+          >
+            <RefreshCw
+              class="h-4 w-4 mr-2"
+              :class="{ 'animate-spin': isReloading }"
+            />
+            Sync
+          </Button>
+
+          <Button
+            v-if="canCreateWorkspaceTasks"
+            class="flex items-center gap-1"
+            :disabled="projectStore.isLoading"
+            @click="isAddingTask = true"
+          >
+            <Plus class="h-5 w-5" />
+            <span>Add Task</span>
+          </Button>
+        </div>
       </div>
     </div>
 
