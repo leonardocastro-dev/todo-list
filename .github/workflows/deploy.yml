@@ -20,9 +20,15 @@ jobs:
 
             cd /home/deploy/workspace/fokuz
 
-            echo "PATH=$PATH"
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
-            npm i -g pnpm
+            nvm use --lts
+
+            corepack enable
+            corepack prepare pnpm@latest --activate
+
+            pnpm -v
 
             git fetch --all
             git reset --hard origin/main
