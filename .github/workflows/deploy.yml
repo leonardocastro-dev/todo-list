@@ -5,7 +5,6 @@ on:
     branches: ['main']
 
 env:
-  DEPLOY_DIR: /home/deploy/workspace/fokuz
   SETUP_SCRIPT: |
     set -e
     export NVM_DIR="$HOME/.nvm"
@@ -16,10 +15,11 @@ env:
     cd /home/deploy/workspace/fokuz
 
 jobs:
-  deploy:
+  pull:
+    name: Pull latest code
     runs-on: ubuntu-latest
     steps:
-      - name: Pull latest code
+      - name: Pull
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VM_HOST }}
@@ -32,7 +32,12 @@ jobs:
             git fetch --all
             git reset --hard origin/main
 
-      - name: Install dependencies
+  install:
+    name: Install dependencies
+    needs: pull
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VM_HOST }}
@@ -43,7 +48,12 @@ jobs:
             ${{ env.SETUP_SCRIPT }}
             pnpm install --frozen-lockfile
 
-      - name: Run checks (formatting, lint, typecheck)
+  checks:
+    name: Run checks
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Formatting, Lint & Type check
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VM_HOST }}
@@ -59,6 +69,11 @@ jobs:
             echo "--- Type checking ---"
             pnpm run typecheck
 
+  build:
+    name: Build
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
       - name: Build
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -70,7 +85,12 @@ jobs:
             ${{ env.SETUP_SCRIPT }}
             pnpm run build
 
-      - name: Restart app
+  restart:
+    name: Restart app
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restart
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VM_HOST }}
