@@ -22,10 +22,10 @@ export default defineEventHandler(async (event) => {
     memberIds
   } = await readBody(event)
 
-  if (!workspaceId || !projectId) {
+  if (!workspaceId) {
     throw createError({
       statusCode: 400,
-      message: 'Workspace ID and Project ID are required'
+      message: 'Workspace ID is required'
     })
   }
 
@@ -39,13 +39,24 @@ export default defineEventHandler(async (event) => {
     PERMISSIONS.CREATE_TASKS
   ])
 
-  const hasAccess = await canAccessProject(workspaceId, projectId, uid)
+  const normalizedProjectId =
+    typeof projectId === 'string' && projectId.trim().length > 0
+      ? projectId.trim()
+      : undefined
 
-  if (!hasAccess) {
-    throw createError({
-      statusCode: 403,
-      message: 'You do not have access to this project'
-    })
+  if (normalizedProjectId) {
+    const hasAccess = await canAccessProject(
+      workspaceId,
+      normalizedProjectId,
+      uid
+    )
+
+    if (!hasAccess) {
+      throw createError({
+        statusCode: 403,
+        message: 'You do not have access to this project'
+      })
+    }
   }
 
   const taskId = String(Date.now())
@@ -55,9 +66,9 @@ export default defineEventHandler(async (event) => {
     title: title.trim(),
     description: description?.trim() || null,
     status: status || 'pending',
-    priority: priority || 'medium',
+    priority: priority || 'normal',
     dueDate: dueDate || null,
-    projectId,
+    ...(normalizedProjectId ? { projectId: normalizedProjectId } : {}),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     assigneeIds: memberIds || []
@@ -81,7 +92,13 @@ export default defineEventHandler(async (event) => {
     }
 
     if (valid.length > 0) {
-      await updateTaskMembers(workspaceId, projectId, taskId, valid, uid)
+      await updateTaskMembers(
+        workspaceId,
+        normalizedProjectId,
+        taskId,
+        valid,
+        uid
+      )
     }
   }
 

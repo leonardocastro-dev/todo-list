@@ -27,8 +27,7 @@ import TaskInfos from './TaskInfos.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useTaskStatusSync } from '@/composables/useTaskStatusSync'
 import type { WorkspaceMember } from '@/composables/useMembers'
-import { hasAnyPermission } from '@/constants/permissions'
-import { PERMISSIONS } from '@/constants/permissions'
+import { PERMISSIONS, hasAnyPermission } from '@/constants/permissions'
 
 const props = defineProps<{
   task: Task
@@ -36,6 +35,7 @@ const props = defineProps<{
   workspaceMembers?: WorkspaceMember[]
   projectName?: string
   projectPermissions?: Record<string, boolean>
+  workspacePermissions?: Record<string, boolean> | null
 }>()
 
 const taskStore = useTaskStore()
@@ -51,12 +51,24 @@ const canEdit = computed(() => {
       PERMISSIONS.EDIT_TASKS
     ])
   }
+  if (props.workspacePermissions) {
+    return hasAnyPermission(props.workspacePermissions, [
+      PERMISSIONS.MANAGE_TASKS,
+      PERMISSIONS.EDIT_TASKS
+    ])
+  }
   return taskStore.canEditTasks
 })
 
 const canDelete = computed(() => {
   if (props.projectPermissions) {
     return hasAnyPermission(props.projectPermissions, [
+      PERMISSIONS.MANAGE_TASKS,
+      PERMISSIONS.DELETE_TASKS
+    ])
+  }
+  if (props.workspacePermissions) {
+    return hasAnyPermission(props.workspacePermissions, [
       PERMISSIONS.MANAGE_TASKS,
       PERMISSIONS.DELETE_TASKS
     ])
@@ -68,6 +80,15 @@ const canToggleStatus = computed(() => {
   if (props.projectPermissions) {
     // Users with edit permissions or assigned to task can toggle
     const hasEditPermission = hasAnyPermission(props.projectPermissions, [
+      PERMISSIONS.MANAGE_TASKS,
+      PERMISSIONS.EDIT_TASKS
+    ])
+    const isAssigned =
+      props.task.assigneeIds?.includes(user.value?.uid ?? '') ?? false
+    return hasEditPermission || isAssigned
+  }
+  if (props.workspacePermissions) {
+    const hasEditPermission = hasAnyPermission(props.workspacePermissions, [
       PERMISSIONS.MANAGE_TASKS,
       PERMISSIONS.EDIT_TASKS
     ])
@@ -303,7 +324,7 @@ const formatDueDate = (date: Date) => {
     :edit-task="task"
     :user-id="user?.uid"
     :workspace-id="workspaceId"
-    :project-id="task.projectId"
+    :project-id="task.projectId || undefined"
     @close="isEditing = false"
   />
 

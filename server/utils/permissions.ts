@@ -369,7 +369,7 @@ export async function canToggleTaskStatus(
 
 export async function deleteTaskAssignments(
   workspaceId: string,
-  projectId: string,
+  projectId: string | undefined,
   taskId: string
 ): Promise<void> {
   const assignmentsRef = db.collection(
@@ -398,7 +398,7 @@ export async function deleteProjectAssignments(
 
 export async function updateTaskMembers(
   workspaceId: string,
-  projectId: string,
+  projectId: string | undefined,
   taskId: string,
   memberIds: string[],
   assignedBy?: string
@@ -442,8 +442,10 @@ export async function updateTaskMembers(
     updatedAt: new Date().toISOString()
   })
 
-  // Recalculate and update project assignedUserIds
-  await syncProjectAssignees(workspaceId, projectId)
+  // Recalculate and update project assignedUserIds when the task belongs to a project
+  if (projectId) {
+    await syncProjectAssignees(workspaceId, projectId)
+  }
 }
 
 async function syncProjectAssignees(
@@ -490,7 +492,9 @@ export async function cleanupWorkspaceAssignments(
   }
 
   // Delete all taskAssignments (at workspace level)
-  const taskAssignmentsRef = db.collection(`workspaces/${workspaceId}/taskAssignments`)
+  const taskAssignmentsRef = db.collection(
+    `workspaces/${workspaceId}/taskAssignments`
+  )
   const taskAssignmentsSnap = await taskAssignmentsRef.get()
 
   for (const taskDoc of taskAssignmentsSnap.docs) {
@@ -523,7 +527,9 @@ export async function cleanupMemberAssignments(
   }
 
   // Remove from all taskAssignments (at workspace level)
-  const taskAssignmentsRef = db.collection(`workspaces/${workspaceId}/taskAssignments`)
+  const taskAssignmentsRef = db.collection(
+    `workspaces/${workspaceId}/taskAssignments`
+  )
   const taskAssignmentsSnap = await taskAssignmentsRef.get()
 
   for (const taskDoc of taskAssignmentsSnap.docs) {

@@ -20,6 +20,18 @@ type TaskFilterState = {
   dueDateFilter: string
 }
 
+const NO_PROJECT_KEY = '__no_project__'
+
+const getTaskBucketKey = (
+  projectId?: string | null,
+  workspaceId?: string | null
+): string => {
+  if (!projectId || projectId.trim().length === 0) {
+    return workspaceId ? `${NO_PROJECT_KEY}:${workspaceId}` : NO_PROJECT_KEY
+  }
+  return projectId
+}
+
 const isTaskMatchingFilters = (
   task: Task,
   filters: TaskFilterState
@@ -176,13 +188,16 @@ export const useTaskStore = defineStore('tasks', {
     workspaceTasks(): Task[] {
       if (!this.currentWorkspaceId) return []
       const projectStore = useProjectStore()
-      const workspaceProjectIds = projectStore.projects
+      const workspaceTaskBuckets = projectStore.projects
         .filter((p) => p.workspaceId === this.currentWorkspaceId)
-        .map((p) => p.id)
+        .map((p) => getTaskBucketKey(p.id, this.currentWorkspaceId))
+      workspaceTaskBuckets.push(
+        getTaskBucketKey(undefined, this.currentWorkspaceId)
+      )
 
       let allTasks: Task[] = []
-      for (const projectId of workspaceProjectIds) {
-        const tasks = this.tasksByProject[projectId]
+      for (const bucketKey of workspaceTaskBuckets) {
+        const tasks = this.tasksByProject[bucketKey]
         if (tasks) allTasks = allTasks.concat(tasks)
       }
 
@@ -229,21 +244,45 @@ export const useTaskStore = defineStore('tasks', {
       return project?.workspaceId || this.currentWorkspaceId || undefined
     },
 
-    resolveProjectForTask(taskId: string): string | null {
+    resolveTaskBucket(taskId: string): string | null {
       // Fast path: try currentProjectId first
       if (this.currentProjectId) {
-        const tasks = this.tasksByProject[this.currentProjectId]
+        const currentProjectBucket = getTaskBucketKey(
+          this.currentProjectId,
+          this.currentWorkspaceId
+        )
+        const tasks = this.tasksByProject[currentProjectBucket]
         if (tasks?.some((t) => t.id === taskId)) {
-          return this.currentProjectId
+          return currentProjectBucket
         }
       }
+
+      const noProjectBucket = getTaskBucketKey(
+        undefined,
+        this.currentWorkspaceId
+      )
+      const noProjectTasks = this.tasksByProject[noProjectBucket]
+      if (noProjectTasks?.some((t) => t.id === taskId)) {
+        return noProjectBucket
+      }
+
       // Search all projects
-      for (const [projectId, tasks] of Object.entries(this.tasksByProject)) {
+      for (const [bucketKey, tasks] of Object.entries(this.tasksByProject)) {
         if (tasks.some((t) => t.id === taskId)) {
-          return projectId
+          return bucketKey
         }
       }
       return null
+    },
+
+    resolveTaskForUpdate(
+      taskId: string
+    ): { bucketKey: string; task: Task } | null {
+      const bucketKey = this.resolveTaskBucket(taskId)
+      if (!bucketKey) return null
+      const task = this.tasksByProject[bucketKey]?.find((t) => t.id === taskId)
+      if (!task) return null
+      return { bucketKey, task }
     },
 
     async setCurrentProject(
@@ -386,15 +425,31 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     clearWorkspaceCache(workspaceId: string) {
-      delete this.loadedWorkspaces[workspaceId]
+      const { [workspaceId]: _workspace, ...restLoadedWorkspaces } =
+        this.loadedWorkspaces
+      this.loadedWorkspaces = restLoadedWorkspaces
+
       const projectStore = useProjectStore()
       const workspaceProjectIds = projectStore.projects
         .filter((p) => p.workspaceId === workspaceId)
         .map((p) => p.id)
-      for (const projectId of workspaceProjectIds) {
-        delete this.tasksByProject[projectId]
-        delete this.loadedProjects[projectId]
-      }
+      const bucketKeys = workspaceProjectIds.map((projectId) =>
+        getTaskBucketKey(projectId)
+      )
+      const noProjectBucket = getTaskBucketKey(undefined, workspaceId)
+      bucketKeys.push(noProjectBucket)
+
+      this.tasksByProject = Object.fromEntries(
+        Object.entries(this.tasksByProject).filter(
+          ([bucketKey]) => !bucketKeys.includes(bucketKey)
+        )
+      )
+
+      this.loadedProjects = Object.fromEntries(
+        Object.entries(this.loadedProjects).filter(
+          ([bucketKey]) => !bucketKeys.includes(bucketKey)
+        )
+      )
     },
 
     async loadWorkspaceTasks(
@@ -423,10 +478,6 @@ export const useTaskStore = defineStore('tasks', {
         this.isLoading = true
 
         const accessibleProjectIds = projectStore.projects.map((p) => p.id)
-        if (accessibleProjectIds.length === 0) {
-          this.loadedWorkspaces[workspaceId] = scope
-          return
-        }
 
         const tasksRef = collection(
           $firestore,
@@ -448,24 +499,27 @@ export const useTaskStore = defineStore('tasks', {
         // Group tasks by projectId
         const grouped: Record<string, Task[]> = {}
         snapshot.docs.forEach((docSnap) => {
-          const data = docSnap.data()
-          if (!accessibleProjectIds.includes(data.projectId)) return
-          const task = { id: docSnap.id, ...data } as Task
-          if (!grouped[data.projectId]) grouped[data.projectId] = []
-          grouped[data.projectId].push(task)
+          const data = docSnap.data() as Omit<Task, 'id'>
+          const projectId = data.projectId
+          const hasProject = Boolean(projectId)
+          if (hasProject && !accessibleProjectIds.includes(projectId!)) return
+          const task: Task = { id: docSnap.id, ...data }
+          const bucketKey = getTaskBucketKey(projectId, workspaceId)
+          if (!grouped[bucketKey]) grouped[bucketKey] = []
+          grouped[bucketKey].push(task)
         })
 
         // Store in tasksByProject
-        for (const [projectId, projectTasks] of Object.entries(grouped)) {
+        for (const [bucketKey, projectTasks] of Object.entries(grouped)) {
           // For 'assigneds' scope, don't overwrite projects that already have full data
-          if (scope === 'assigneds' && this.loadedProjects[projectId]) continue
-          this.tasksByProject[projectId] = projectTasks
+          if (scope === 'assigneds' && this.loadedProjects[bucketKey]) continue
+          this.tasksByProject[bucketKey] = projectTasks
         }
 
         // For 'all' scope, mark projects as fully loaded
         if (scope === 'all') {
-          for (const projectId of Object.keys(grouped)) {
-            this.loadedProjects[projectId] = {
+          for (const bucketKey of Object.keys(grouped)) {
+            this.loadedProjects[bucketKey] = {
               workspaceId,
               loadedAt: Date.now()
             }
@@ -482,21 +536,28 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     async addTask(
-      task: Omit<Task, 'id' | 'projectId' | 'createdAt'>,
+      task: Pick<
+        Task,
+        | 'title'
+        | 'description'
+        | 'priority'
+        | 'status'
+        | 'dueDate'
+        | 'projectId'
+      >,
       userId: string | null = null,
       workspaceId?: string,
       memberIds?: string[]
     ) {
-      if (!this.currentProjectId) {
-        showErrorToast('No project selected')
-        return
-      }
-
-      const projectId = this.currentProjectId
+      const projectId = task.projectId
+      const bucketKey = getTaskBucketKey(
+        projectId,
+        workspaceId || this.currentWorkspaceId
+      )
 
       // Garante que o array existe
-      if (!this.tasksByProject[projectId]) {
-        this.tasksByProject[projectId] = []
+      if (!this.tasksByProject[bucketKey]) {
+        this.tasksByProject[bucketKey] = []
       }
 
       if (!userId || !workspaceId) {
@@ -506,12 +567,13 @@ export const useTaskStore = defineStore('tasks', {
           ...task,
           id: taskId,
           projectId,
-          createdAt: now
+          createdAt: now,
+          updatedAt: now
         }
-        this.tasksByProject[projectId].push(taskWithData)
+        this.tasksByProject[bucketKey].push(taskWithData)
         localStorage.setItem(
-          `localTasks_${projectId}`,
-          JSON.stringify(this.tasksByProject[projectId])
+          `localTasks_${bucketKey}`,
+          JSON.stringify(this.tasksByProject[bucketKey])
         )
         return
       }
@@ -524,9 +586,10 @@ export const useTaskStore = defineStore('tasks', {
         id: tempId,
         projectId,
         createdAt: now,
+        updatedAt: now,
         assigneeIds: memberIds || []
       }
-      this.tasksByProject[projectId].push(optimisticTask)
+      this.tasksByProject[bucketKey].push(optimisticTask)
 
       try {
         const token = await this.getAuthToken()
@@ -552,17 +615,32 @@ export const useTaskStore = defineStore('tasks', {
 
         // Replace optimistic task with server task (real ID)
         if (response.success && response.task) {
-          const idx = this.tasksByProject[projectId].findIndex(
+          const responseBucket = getTaskBucketKey(
+            response.task.projectId,
+            workspaceId || this.currentWorkspaceId
+          )
+          if (responseBucket !== bucketKey) {
+            this.tasksByProject[bucketKey] = this.tasksByProject[
+              bucketKey
+            ].filter((t) => t.id !== tempId)
+            if (!this.tasksByProject[responseBucket]) {
+              this.tasksByProject[responseBucket] = []
+            }
+            this.tasksByProject[responseBucket].push(response.task)
+            return
+          }
+
+          const idx = this.tasksByProject[bucketKey].findIndex(
             (t) => t.id === tempId
           )
           if (idx !== -1) {
-            this.tasksByProject[projectId][idx] = response.task
+            this.tasksByProject[bucketKey][idx] = response.task
           }
         }
       } catch (error) {
         console.error('Error adding task:', error)
         // Rollback: remove the optimistic task
-        this.tasksByProject[projectId] = this.tasksByProject[projectId].filter(
+        this.tasksByProject[bucketKey] = this.tasksByProject[bucketKey].filter(
           (t) => t.id !== tempId
         )
         showErrorToast('Failed to add task')
@@ -575,10 +653,11 @@ export const useTaskStore = defineStore('tasks', {
       userId: string | null = null,
       memberIds?: string[]
     ) {
-      const projectId = this.resolveProjectForTask(id)
-      if (!projectId) return
+      const taskData = this.resolveTaskForUpdate(id)
+      if (!taskData) return
+      const { bucketKey, task: existingTask } = taskData
 
-      const projectTasks = this.tasksByProject[projectId]
+      const projectTasks = this.tasksByProject[bucketKey]
       if (!projectTasks) return
 
       const taskIndex = projectTasks.findIndex((task) => task.id === id)
@@ -587,7 +666,7 @@ export const useTaskStore = defineStore('tasks', {
       if (!userId) {
         projectTasks[taskIndex] = { ...projectTasks[taskIndex], ...updatedTask }
         localStorage.setItem(
-          `localTasks_${projectId}`,
+          `localTasks_${bucketKey}`,
           JSON.stringify(projectTasks)
         )
         return
@@ -615,7 +694,7 @@ export const useTaskStore = defineStore('tasks', {
           headers: { Authorization: `Bearer ${token}` },
           body: {
             workspaceId,
-            projectId,
+            projectId: existingTask.projectId,
             ...updatedTask,
             memberIds
           }
@@ -632,26 +711,27 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     async deleteTask(id: string, userId: string | null = null) {
-      const projectId = this.resolveProjectForTask(id)
-      if (!projectId) return
+      const taskData = this.resolveTaskForUpdate(id)
+      if (!taskData) return
+      const { bucketKey, task: existingTask } = taskData
 
       if (!userId) {
-        this.tasksByProject[projectId] = (
-          this.tasksByProject[projectId] || []
+        this.tasksByProject[bucketKey] = (
+          this.tasksByProject[bucketKey] || []
         ).filter((task) => task.id !== id)
         localStorage.setItem(
-          `localTasks_${projectId}`,
-          JSON.stringify(this.tasksByProject[projectId])
+          `localTasks_${bucketKey}`,
+          JSON.stringify(this.tasksByProject[bucketKey])
         )
         return
       }
 
       // Optimistic: save task + position, remove immediately
-      const projectTasks = this.tasksByProject[projectId] || []
+      const projectTasks = this.tasksByProject[bucketKey] || []
       const deletedIndex = projectTasks.findIndex((task) => task.id === id)
       if (deletedIndex === -1) return
       const deletedTask = { ...projectTasks[deletedIndex] }
-      this.tasksByProject[projectId] = projectTasks.filter(
+      this.tasksByProject[bucketKey] = projectTasks.filter(
         (task) => task.id !== id
       )
 
@@ -667,16 +747,16 @@ export const useTaskStore = defineStore('tasks', {
           headers: { Authorization: `Bearer ${token}` },
           body: {
             workspaceId,
-            projectId
+            projectId: existingTask.projectId
           }
         })
       } catch (error) {
         console.error('Error deleting task:', error)
         // Rollback: re-insert at original position
-        const currentTasks = this.tasksByProject[projectId] || []
+        const currentTasks = this.tasksByProject[bucketKey] || []
         const insertIndex = Math.min(deletedIndex, currentTasks.length)
         currentTasks.splice(insertIndex, 0, deletedTask)
-        this.tasksByProject[projectId] = currentTasks
+        this.tasksByProject[bucketKey] = currentTasks
         showErrorToast('Failed to delete task')
       }
     },
@@ -686,10 +766,10 @@ export const useTaskStore = defineStore('tasks', {
       checked: boolean,
       userId: string | null = null
     ) {
-      const projectId = this.resolveProjectForTask(id)
-      if (!projectId) return
+      const bucketKey = this.resolveTaskBucket(id)
+      if (!bucketKey) return
 
-      const projectTasks = this.tasksByProject[projectId]
+      const projectTasks = this.tasksByProject[bucketKey]
       if (!projectTasks) return
 
       const status = checked ? 'completed' : 'pending'
@@ -712,10 +792,10 @@ export const useTaskStore = defineStore('tasks', {
 
     // Atualiza apenas o estado local (para UI otimista)
     updateLocalTaskStatus(id: string, status: 'pending' | 'completed') {
-      const projectId = this.resolveProjectForTask(id)
-      if (!projectId) return
+      const bucketKey = this.resolveTaskBucket(id)
+      if (!bucketKey) return
 
-      const projectTasks = this.tasksByProject[projectId]
+      const projectTasks = this.tasksByProject[bucketKey]
       if (!projectTasks) return
 
       const taskIndex = projectTasks.findIndex((task) => task.id === id)
@@ -724,10 +804,10 @@ export const useTaskStore = defineStore('tasks', {
       projectTasks[taskIndex].status = status
 
       // Atualiza localStorage se necessário
-      const localTasks = localStorage.getItem(`localTasks_${projectId}`)
+      const localTasks = localStorage.getItem(`localTasks_${bucketKey}`)
       if (localTasks) {
         localStorage.setItem(
-          `localTasks_${projectId}`,
+          `localTasks_${bucketKey}`,
           JSON.stringify(projectTasks)
         )
       }

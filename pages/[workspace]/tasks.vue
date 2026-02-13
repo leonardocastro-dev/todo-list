@@ -1,17 +1,26 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { RefreshCw } from 'lucide-vue-next'
+import { Plus, RefreshCw } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
 import TaskItem from '@/components/tasks/TaskItem.vue'
 import TaskFilters from '@/components/tasks/TaskFilters.vue'
+import TaskForm from '@/components/tasks/TaskForm.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useWorkspace } from '@/composables/useWorkspace'
 import { useMembers } from '@/composables/useMembers'
 import { useProjectPermissions } from '@/composables/useProjectPermissions'
+import { PERMISSIONS, hasAnyPermission } from '@/constants/permissions'
 
 definePageMeta({ layout: 'workspace' })
 
@@ -29,12 +38,23 @@ const isInitialLoading = ref(
   !(workspaceId.value && taskStore.loadedWorkspaces[workspaceId.value])
 )
 const isReloading = ref(false)
+const isAddingTask = ref(false)
+const projectLinkFilter = ref<'all' | 'with-project' | 'without-project'>('all')
 
 const scope = computed<'all' | 'assigneds'>(() =>
   route.query.scope === 'all' ? 'all' : 'assigneds'
 )
 const isAllScope = computed(() => scope.value === 'all')
 const filteredWorkspaceTasks = computed(() => taskStore.filteredWorkspaceTasks)
+const visibleTasks = computed(() => {
+  if (projectLinkFilter.value === 'all') return filteredWorkspaceTasks.value
+  return filteredWorkspaceTasks.value.filter((task) => {
+    const hasProject = Boolean(
+      task.projectId && task.projectId.trim().length > 0
+    )
+    return projectLinkFilter.value === 'with-project' ? hasProject : !hasProject
+  })
+})
 
 const setScope = (newScope: string | number) => {
   const scopeValue = String(newScope)
@@ -47,8 +67,29 @@ const setScopeFromToggle = (checked: boolean) => {
   setScope(checked ? 'all' : 'assigneds')
 }
 
+const setProjectLinkFilter = (newFilter: string | number) => {
+  const filterValue = String(newFilter)
+  if (
+    filterValue !== 'all' &&
+    filterValue !== 'with-project' &&
+    filterValue !== 'without-project'
+  ) {
+    return
+  }
+  projectLinkFilter.value = filterValue
+}
+
+const canCreateWorkspaceTasks = computed(() => {
+  if (projectStore.isGuestMode) return true
+  return hasAnyPermission(projectStore.memberPermissions, [
+    PERMISSIONS.MANAGE_TASKS,
+    PERMISSIONS.CREATE_TASKS
+  ])
+})
+
 // Get project name for a task
-const getProjectName = (projectId: string) => {
+const getProjectName = (projectId?: string) => {
+  if (!projectId) return 'No Project'
   const project = projectStore.projects.find((p) => p.id === projectId)
   return project?.title || 'Unknown Project'
 }
@@ -117,6 +158,12 @@ const handleReload = async () => {
 }
 
 const emptyStateMessage = computed(() => {
+  if (
+    filteredWorkspaceTasks.value.length > 0 &&
+    visibleTasks.value.length === 0
+  ) {
+    return 'No tasks match the selected project filter.'
+  }
   if (taskStore.workspaceTasks.length > 0) {
     return 'No tasks found. Try adjusting your filters.'
   }
@@ -142,13 +189,9 @@ const emptyStateMessage = computed(() => {
       <div>
         <h2 class="text-xl font-semibold">Workspace Tasks</h2>
         <p class="text-sm text-muted-foreground mt-1">
-          {{ filteredWorkspaceTasks.length }}
-          {{ filteredWorkspaceTasks.length === 1 ? 'task' : 'tasks' }}
-          <span
-            v-if="
-              filteredWorkspaceTasks.length !== taskStore.workspaceTasks.length
-            "
-          >
+          {{ visibleTasks.length }}
+          {{ visibleTasks.length === 1 ? 'task' : 'tasks' }}
+          <span v-if="visibleTasks.length !== taskStore.workspaceTasks.length">
             of {{ taskStore.workspaceTasks.length }}
           </span>
         </p>
@@ -165,6 +208,16 @@ const emptyStateMessage = computed(() => {
             :class="{ 'animate-spin': isReloading }"
           />
           Sync
+        </Button>
+
+        <Button
+          v-if="canCreateWorkspaceTasks"
+          class="flex items-center gap-1"
+          :disabled="projectStore.isLoading"
+          @click="isAddingTask = true"
+        >
+          <Plus class="h-5 w-5" />
+          <span>Add Task</span>
         </Button>
 
         <div
@@ -188,6 +241,20 @@ const emptyStateMessage = computed(() => {
             All
           </span>
         </div>
+
+        <Select
+          :model-value="projectLinkFilter"
+          @update:model-value="setProjectLinkFilter"
+        >
+          <SelectTrigger class="w-[180px]">
+            <SelectValue placeholder="All tasks" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All tasks</SelectItem>
+            <SelectItem value="with-project">With project</SelectItem>
+            <SelectItem value="without-project">Without project</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
 
@@ -225,21 +292,31 @@ const emptyStateMessage = computed(() => {
     </div>
 
     <!-- Empty State -->
-    <Alert v-else-if="filteredWorkspaceTasks.length === 0">
+    <Alert v-else-if="visibleTasks.length === 0">
       <AlertDescription>{{ emptyStateMessage }}</AlertDescription>
     </Alert>
 
     <!-- Task List -->
     <div v-else class="space-y-2">
       <TaskItem
-        v-for="task in filteredWorkspaceTasks"
+        v-for="task in visibleTasks"
         :key="task.id"
         :task="task"
         :workspace-id="workspaceId || undefined"
         :workspace-members="members"
         :project-name="getProjectName(task.projectId)"
-        :project-permissions="projectPermissionsMap[task.projectId]"
+        :project-permissions="
+          task.projectId ? projectPermissionsMap[task.projectId] : undefined
+        "
+        :workspace-permissions="projectStore.memberPermissions"
       />
     </div>
+
+    <TaskForm
+      :is-open="isAddingTask"
+      :user-id="user?.uid"
+      :workspace-id="workspaceId || undefined"
+      @close="isAddingTask = false"
+    />
   </div>
 </template>

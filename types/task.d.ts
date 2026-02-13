@@ -3,7 +3,7 @@ declare type Status = 'pending' | 'completed'
 
 declare interface Task {
   id: string
-  projectId: string
+  projectId?: string
   title: string
   description?: string
   status: 'pending' | 'completed'

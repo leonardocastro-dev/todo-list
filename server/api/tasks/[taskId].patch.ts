@@ -20,7 +20,6 @@ export default defineEventHandler(async (event) => {
 
   const {
     workspaceId,
-    projectId,
     title,
     description,
     status,
@@ -30,12 +29,25 @@ export default defineEventHandler(async (event) => {
     memberIds
   } = await readBody(event)
 
-  if (!workspaceId || !projectId) {
+  if (!workspaceId) {
     throw createError({
       statusCode: 400,
-      message: 'Workspace ID and Project ID are required'
+      message: 'Workspace ID is required'
     })
   }
+
+  const taskRef = db.doc(`workspaces/${workspaceId}/tasks/${taskId}`)
+  const taskDoc = await taskRef.get()
+
+  if (!taskDoc.exists) {
+    throw createError({ statusCode: 404, message: 'Task not found' })
+  }
+
+  const taskProjectId =
+    typeof taskDoc.data()?.projectId === 'string' &&
+    taskDoc.data()?.projectId.trim().length > 0
+      ? taskDoc.data()?.projectId
+      : undefined
 
   // Determine if this is a status-only update (toggle complete/incomplete)
   const isStatusOnlyUpdate =
@@ -50,7 +62,7 @@ export default defineEventHandler(async (event) => {
     // For status toggle, allow if user has edit permissions OR is assigned to the task
     const canToggle = await canToggleTaskStatus(
       workspaceId,
-      projectId,
+      taskProjectId || '',
       taskId,
       uid
     )
@@ -68,20 +80,14 @@ export default defineEventHandler(async (event) => {
     ])
   }
 
-  const hasAccess = await canAccessProject(workspaceId, projectId, uid)
-
-  if (!hasAccess) {
-    throw createError({
-      statusCode: 403,
-      message: 'You do not have access to this project'
-    })
-  }
-
-  const taskRef = db.doc(`workspaces/${workspaceId}/tasks/${taskId}`)
-  const taskDoc = await taskRef.get()
-
-  if (!taskDoc.exists) {
-    throw createError({ statusCode: 404, message: 'Task not found' })
+  if (taskProjectId) {
+    const hasAccess = await canAccessProject(workspaceId, taskProjectId, uid)
+    if (!hasAccess) {
+      throw createError({
+        statusCode: 403,
+        message: 'You do not have access to this project'
+      })
+    }
   }
 
   const updates: Record<string, unknown> = {
@@ -135,10 +141,10 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      await updateTaskMembers(workspaceId, projectId, taskId, valid, uid)
+      await updateTaskMembers(workspaceId, taskProjectId, taskId, valid, uid)
     } else {
       // Empty array means remove all members
-      await updateTaskMembers(workspaceId, projectId, taskId, [], uid)
+      await updateTaskMembers(workspaceId, taskProjectId, taskId, [], uid)
     }
   }
 

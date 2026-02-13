@@ -41,8 +41,10 @@ const loadedWorkspaceId = ref<string | null>(null)
 const loadedProjectAssignmentsKey = ref<string | null>(null)
 const loadedTaskAssignmentsKey = ref<string | null>(null)
 
-const buildProjectAssignmentsKey = (workspaceId: string, projectIds: string[]) =>
-  `${workspaceId}:${[...projectIds].sort().join(',')}`
+const buildProjectAssignmentsKey = (
+  workspaceId: string,
+  projectIds: string[]
+) => `${workspaceId}:${[...projectIds].sort().join(',')}`
 
 const buildTaskAssignmentsKey = (
   workspaceId: string,
@@ -186,12 +188,8 @@ export const useMembers = () => {
     }
   }
 
-  const loadTaskAssignees = async (
-    workspaceId: string,
-    projectId: string,
-    taskId: string
-  ) => {
-    if (!workspaceId || !projectId || !taskId) {
+  const loadTaskAssignees = async (workspaceId: string, taskId: string) => {
+    if (!workspaceId || !taskId) {
       selectedMemberIds.value = []
       return
     }

@@ -16,12 +16,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Task ID is required' })
   }
 
-  const { workspaceId, projectId } = await readBody(event)
+  const { workspaceId } = await readBody(event)
 
-  if (!workspaceId || !projectId) {
+  if (!workspaceId) {
     throw createError({
       statusCode: 400,
-      message: 'Workspace ID and Project ID are required'
+      message: 'Workspace ID is required'
     })
   }
 
@@ -31,15 +31,6 @@ export default defineEventHandler(async (event) => {
     PERMISSIONS.DELETE_TASKS
   ])
 
-  const hasAccess = await canAccessProject(workspaceId, projectId, uid)
-
-  if (!hasAccess) {
-    throw createError({
-      statusCode: 403,
-      message: 'You do not have access to this project'
-    })
-  }
-
   const taskRef = db.doc(`workspaces/${workspaceId}/tasks/${taskId}`)
   const taskDoc = await taskRef.get()
 
@@ -47,8 +38,24 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Task not found' })
   }
 
+  const taskProjectId =
+    typeof taskDoc.data()?.projectId === 'string' &&
+    taskDoc.data()?.projectId.trim().length > 0
+      ? taskDoc.data()?.projectId
+      : undefined
+
+  if (taskProjectId) {
+    const hasAccess = await canAccessProject(workspaceId, taskProjectId, uid)
+    if (!hasAccess) {
+      throw createError({
+        statusCode: 403,
+        message: 'You do not have access to this project'
+      })
+    }
+  }
+
   // Delete task assignments
-  await deleteTaskAssignments(workspaceId, projectId, taskId)
+  await deleteTaskAssignments(workspaceId, taskProjectId, taskId)
 
   // Delete the task
   await taskRef.delete()

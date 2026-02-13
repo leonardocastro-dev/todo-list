@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { DateValue } from '@internationalized/date'
 import { getLocalTimeZone, parseDate } from '@internationalized/date'
 import {
@@ -15,6 +15,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -26,6 +33,7 @@ import { Users, CalendarIcon } from 'lucide-vue-next'
 import { useMembers } from '@/composables/useMembers'
 
 type Priority = 'normal' | 'important' | 'urgent'
+const NO_PROJECT_VALUE = '__no_project__'
 
 const props = defineProps<{
   isOpen: boolean
@@ -40,6 +48,7 @@ const emit = defineEmits<{
 }>()
 
 const taskStore = useTaskStore()
+const projectStore = useProjectStore()
 const {
   members,
   selectedMemberIds,
@@ -54,6 +63,9 @@ const priority = ref<Priority>(
   (props.editTask?.priority as Priority) || 'normal'
 )
 const dueDate = ref<DateValue | undefined>(undefined)
+const selectedProjectId = ref(
+  props.projectId || props.editTask?.projectId || NO_PROJECT_VALUE
+)
 const titleError = ref('')
 
 const formatDisplayDate = (date: DateValue) => {
@@ -65,17 +77,19 @@ const formatDisplayDate = (date: DateValue) => {
 watch(
   () => props.isOpen,
   async (isOpen) => {
-    if (isOpen && props.workspaceId) {
+    if (!isOpen) return
+
+    if (!props.editTask) {
+      selectedProjectId.value = props.projectId || NO_PROJECT_VALUE
+    }
+
+    if (props.workspaceId) {
       await loadWorkspaceMembers(props.workspaceId)
-      if (props.editTask && props.projectId) {
-        await loadTaskAssignees(
-          props.workspaceId,
-          props.projectId,
-          props.editTask.id
-        )
-      } else {
-        selectedMemberIds.value = []
+      if (props.editTask) {
+        await loadTaskAssignees(props.workspaceId, props.editTask.id)
+        return
       }
+      selectedMemberIds.value = []
     }
   }
 )
@@ -94,9 +108,11 @@ watch(
       } else {
         dueDate.value = undefined
       }
+      selectedProjectId.value =
+        newTask.projectId || props.projectId || NO_PROJECT_VALUE
 
-      if (props.isOpen && props.workspaceId && props.projectId) {
-        await loadTaskAssignees(props.workspaceId, props.projectId, newTask.id)
+      if (props.isOpen && props.workspaceId) {
+        await loadTaskAssignees(props.workspaceId, newTask.id)
       }
     }
   },
@@ -128,6 +144,10 @@ const handleSubmit = () => {
   } else {
     taskStore.addTask(
       {
+        projectId:
+          selectedProjectId.value === NO_PROJECT_VALUE
+            ? undefined
+            : selectedProjectId.value,
         title: title.value,
         description: description.value,
         priority: priority.value,
@@ -149,9 +169,17 @@ const resetForm = () => {
   description.value = ''
   priority.value = 'normal'
   dueDate.value = undefined
+  selectedProjectId.value = props.projectId || NO_PROJECT_VALUE
   titleError.value = ''
   selectedMemberIds.value = []
 }
+
+const availableProjects = computed(() => {
+  if (!props.workspaceId) return []
+  return projectStore.projects.filter(
+    (p) => p.workspaceId === props.workspaceId
+  )
+})
 
 const handleClose = () => {
   resetForm()
@@ -254,6 +282,25 @@ const handleClose = () => {
               <Calendar v-model="dueDate" layout="month-and-year" />
             </PopoverContent>
           </Popover>
+        </div>
+
+        <div v-if="!editTask && !projectId" class="space-y-2">
+          <Label for="project" class="font-medium">Project (optional)</Label>
+          <Select v-model="selectedProjectId">
+            <SelectTrigger id="project">
+              <SelectValue placeholder="No project" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem :value="NO_PROJECT_VALUE">No project</SelectItem>
+              <SelectItem
+                v-for="project in availableProjects"
+                :key="project.id"
+                :value="project.id"
+              >
+                {{ project.title }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <!-- Assign Members Section -->
