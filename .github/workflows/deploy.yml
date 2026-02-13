@@ -4,11 +4,22 @@ on:
   push:
     branches: ['main']
 
+env:
+  DEPLOY_DIR: /home/deploy/workspace/fokuz
+  SETUP_SCRIPT: |
+    set -e
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+    nvm use --lts
+    corepack enable
+    corepack prepare pnpm@latest --activate
+    cd /home/deploy/workspace/fokuz
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
+      - name: Pull latest code
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VM_HOST }}
@@ -18,20 +29,55 @@ jobs:
           script: |
             set -e
             cd /home/deploy/workspace/fokuz
-
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-            nvm use --lts
-
-            corepack enable
-            corepack prepare pnpm@latest --activate
-
             git fetch --all
             git reset --hard origin/main
 
+      - name: Install dependencies
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          port: ${{ secrets.VM_SSH_PORT || 22 }}
+          script: |
+            ${{ env.SETUP_SCRIPT }}
             pnpm install --frozen-lockfile
 
-            pnpm run deploy
+      - name: Run checks (formatting, lint, typecheck)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          port: ${{ secrets.VM_SSH_PORT || 22 }}
+          script: |
+            ${{ env.SETUP_SCRIPT }}
+            echo "--- Checking formatting ---"
+            pnpm run prettier
+            echo "--- Linting ---"
+            pnpm run lint
+            echo "--- Type checking ---"
+            pnpm run typecheck
 
+      - name: Build
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          port: ${{ secrets.VM_SSH_PORT || 22 }}
+          script: |
+            ${{ env.SETUP_SCRIPT }}
+            pnpm run build
+
+      - name: Restart app
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          port: ${{ secrets.VM_SSH_PORT || 22 }}
+          script: |
+            ${{ env.SETUP_SCRIPT }}
             pm2 reload ecosystem.config.cjs --env production || pm2 start ecosystem.config.cjs --env production
             pm2 save

@@ -12,7 +12,7 @@
     "prettier:fix": "pnpx prettier . --write",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
-    "deploy": "pnpm run prettier:fix && pnpm run lint && pnpm run typecheck && nuxt build"
+    "deploy": "pnpm run prettier && pnpm run lint && pnpm run typecheck && nuxt build"
   },
   "dependencies": {
     "@internationalized/date": "^3.8.0",
