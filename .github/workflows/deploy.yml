@@ -28,7 +28,7 @@ jobs:
             corepack enable
             corepack prepare pnpm@latest --activate
 
-            pnpm -v
+            npm i -g pm2
 
             git fetch --all
             git reset --hard origin/main
