@@ -185,51 +185,6 @@ const emptyStateMessage = computed(() => {
 
     <div class="space-y-4 mb-6">
       <div
-        class="flex flex-col sm:w-fit w-full md:flex-row md:items-end gap-3 rounded-lg border border-border bg-muted/30 p-3"
-      >
-        <div class="w-full md:max-w-[240px]">
-          <p class="mb-1 text-sm font-medium">Scope</p>
-          <div
-            class="flex items-center justify-between md:justify-start gap-2 rounded-lg border border-border bg-background px-3 py-2 md:min-w-[220px]"
-          >
-            <span
-              class="text-xs font-medium uppercase tracking-wide transition-colors"
-              :class="isAllScope ? 'text-muted-foreground' : 'text-foreground'"
-            >
-              Assigned
-            </span>
-            <Switch
-              aria-label="Toggle task scope"
-              :model-value="isAllScope"
-              @update:model-value="setScopeFromToggle"
-            />
-            <span
-              class="text-xs font-medium uppercase tracking-wide transition-colors"
-              :class="isAllScope ? 'text-foreground' : 'text-muted-foreground'"
-            >
-              All
-            </span>
-          </div>
-        </div>
-
-        <div class="w-full md:max-w-[240px]">
-          <p class="mb-1 text-sm font-medium">Project Link</p>
-          <Select
-            :model-value="projectLinkFilter"
-            @update:model-value="setProjectLinkFilter"
-          >
-            <SelectTrigger class="w-full">
-              <SelectValue placeholder="All tasks" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All tasks</SelectItem>
-              <SelectItem value="with-project">With project</SelectItem>
-              <SelectItem value="without-project">Without project</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <div
         class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
       >
         <div>
@@ -270,6 +225,52 @@ const emptyStateMessage = computed(() => {
             <Plus class="h-5 w-5" />
             <span>Add Task</span>
           </Button>
+        </div>
+      </div>
+
+      <div
+        class="flex flex-col sm:w-fit w-full md:flex-row md:items-end gap-3 rounded-lg border border-border bg-muted/30 p-3"
+      >
+        <div class="w-full md:max-w-[240px]">
+          <p class="mb-1 text-sm font-medium">Scope</p>
+          <div
+            class="flex items-center justify-start gap-2 rounded-lg border border-border bg-background px-3 py-2 md:min-w-[220px]"
+          >
+            <span
+              class="text-xs font-medium uppercase tracking-wide transition-colors"
+              :class="isAllScope ? 'text-muted-foreground' : 'text-foreground'"
+            >
+              Assigned
+            </span>
+            <Switch
+              aria-label="Toggle task scope"
+              :model-value="isAllScope"
+              @update:model-value="setScopeFromToggle"
+            />
+            <span
+              class="text-xs font-medium uppercase tracking-wide transition-colors"
+              :class="isAllScope ? 'text-foreground' : 'text-muted-foreground'"
+            >
+              All
+            </span>
+          </div>
+        </div>
+
+        <div class="w-full md:max-w-[240px]">
+          <p class="mb-1 text-sm font-medium">Project Link</p>
+          <Select
+            :model-value="projectLinkFilter"
+            @update:model-value="setProjectLinkFilter"
+          >
+            <SelectTrigger class="w-full">
+              <SelectValue placeholder="All tasks" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All tasks</SelectItem>
+              <SelectItem value="with-project">With project</SelectItem>
+              <SelectItem value="without-project">Without project</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </div>
