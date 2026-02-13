@@ -18,12 +18,14 @@ jobs:
           script: |
             set -e
 
-            cd /var/www/app   # <-- ajuste para seu caminho real
+            cd /home/deploy/workspace/fokuz
 
             git fetch --all
             git reset --hard origin/main
 
-            npm ci --omit=dev
+            pnpm install --frozen-lockfile
 
-            pm2 reload ecosystem.config.js --env production || pm2 restart all
+            pnpm build
+
+            pm2 reload ecosystem.config.cjs --env production || pm2 restart all
             pm2 save

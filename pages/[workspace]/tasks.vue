@@ -2,14 +2,14 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { RefreshCw } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
 import TaskItem from '@/components/tasks/TaskItem.vue'
+import TaskFilters from '@/components/tasks/TaskFilters.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useWorkspace } from '@/composables/useWorkspace'
-import { useWorkspaceTasks } from '@/composables/useWorkspaceTasks'
 import { useMembers } from '@/composables/useMembers'
 import { useProjectPermissions } from '@/composables/useProjectPermissions'
 
@@ -20,20 +20,31 @@ const router = useRouter()
 const { user } = useAuth()
 const { workspaceId } = useWorkspace()
 const projectStore = useProjectStore()
-const { tasks, isLoading, error, loadWorkspaceTasks, clearCache } = useWorkspaceTasks()
+const taskStore = useTaskStore()
 const { members, loadWorkspaceMembers } = useMembers()
-const { projectPermissionsMap, loadProjectPermissions } = useProjectPermissions()
+const { projectPermissionsMap, loadProjectPermissions } =
+  useProjectPermissions()
 
-const isInitialLoading = ref(true)
+const isInitialLoading = ref(
+  !(workspaceId.value && taskStore.loadedWorkspaces[workspaceId.value])
+)
 const isReloading = ref(false)
 
-const scope = computed(() => (route.query.scope as string) || 'assigneds')
+const scope = computed<'all' | 'assigneds'>(() =>
+  route.query.scope === 'all' ? 'all' : 'assigneds'
+)
+const isAllScope = computed(() => scope.value === 'all')
+const filteredWorkspaceTasks = computed(() => taskStore.filteredWorkspaceTasks)
 
 const setScope = (newScope: string | number) => {
   const scopeValue = String(newScope)
-  if (scopeValue === 'assigneds' || scopeValue === 'all') {
-    router.push({ query: { scope: scopeValue } })
-  }
+  if (scopeValue !== 'assigneds' && scopeValue !== 'all') return
+  if (scopeValue === scope.value) return
+  router.push({ query: { ...route.query, scope: scopeValue } })
+}
+
+const setScopeFromToggle = (checked: boolean) => {
+  setScope(checked ? 'all' : 'assigneds')
 }
 
 // Get project name for a task
@@ -47,18 +58,28 @@ onMounted(async () => {
   if (workspaceId.value) {
     try {
       await Promise.all([
-        projectStore.loadProjectsForWorkspace(workspaceId.value, user.value?.uid),
+        projectStore.loadProjectsForWorkspace(
+          workspaceId.value,
+          user.value?.uid
+        ),
         loadWorkspaceMembers(workspaceId.value)
       ])
-      // Load tasks (will use cache if available)
-      await loadWorkspaceTasks(workspaceId.value, scope.value as 'all' | 'assigneds', user.value?.uid)
+      // Load tasks via taskStore (will use cache if available)
+      await taskStore.loadWorkspaceTasks(
+        workspaceId.value,
+        scope.value as 'all' | 'assigneds',
+        user.value?.uid
+      )
 
       // Load permissions for all projects
       const projectIds = projectStore.projects.map((p) => p.id)
       if (user.value?.uid && projectIds.length > 0) {
-        await loadProjectPermissions(workspaceId.value, projectIds, user.value.uid)
+        await loadProjectPermissions(
+          workspaceId.value,
+          projectIds,
+          user.value.uid
+        )
       }
-
     } finally {
       isInitialLoading.value = false
     }
@@ -67,10 +88,14 @@ onMounted(async () => {
   }
 })
 
-// When scope changes, load tasks (will use cache if available)
+// When scope changes, update taskStore
 watch(scope, async () => {
   if (workspaceId.value) {
-    await loadWorkspaceTasks(workspaceId.value, scope.value as 'all' | 'assigneds', user.value?.uid)
+    await taskStore.loadWorkspaceTasks(
+      workspaceId.value,
+      scope.value as 'all' | 'assigneds',
+      user.value?.uid
+    )
   }
 })
 
@@ -79,17 +104,22 @@ const handleReload = async () => {
   if (!workspaceId.value) return
   isReloading.value = true
   try {
-    // Clear ALL cache for this workspace (both 'all' and 'assigneds')
-    clearCache(workspaceId.value)
-
-    // Reload current scope with fresh data
-    await loadWorkspaceTasks(workspaceId.value, scope.value as 'all' | 'assigneds', user.value?.uid, true)
+    taskStore.clearWorkspaceCache(workspaceId.value)
+    await taskStore.loadWorkspaceTasks(
+      workspaceId.value,
+      scope.value as 'all' | 'assigneds',
+      user.value?.uid,
+      true
+    )
   } finally {
     isReloading.value = false
   }
 }
 
 const emptyStateMessage = computed(() => {
+  if (taskStore.workspaceTasks.length > 0) {
+    return 'No tasks found. Try adjusting your filters.'
+  }
   if (scope.value === 'assigneds') {
     return 'No tasks assigned to you yet.'
   }
@@ -101,7 +131,9 @@ const emptyStateMessage = computed(() => {
   <div class="max-w-6xl mx-auto">
     <header class="mb-8">
       <h1 class="text-3xl font-bold text-primary mb-2">Tasks</h1>
-      <p class="text-muted-foreground">View and manage tasks across all projects</p>
+      <p class="text-muted-foreground">
+        View and manage tasks across all projects
+      </p>
     </header>
 
     <div
@@ -110,15 +142,22 @@ const emptyStateMessage = computed(() => {
       <div>
         <h2 class="text-xl font-semibold">Workspace Tasks</h2>
         <p class="text-sm text-muted-foreground mt-1">
-          {{ tasks.length }}
-          {{ tasks.length === 1 ? 'task' : 'tasks' }}
+          {{ filteredWorkspaceTasks.length }}
+          {{ filteredWorkspaceTasks.length === 1 ? 'task' : 'tasks' }}
+          <span
+            v-if="
+              filteredWorkspaceTasks.length !== taskStore.workspaceTasks.length
+            "
+          >
+            of {{ taskStore.workspaceTasks.length }}
+          </span>
         </p>
       </div>
       <div class="flex sm:flex-row mt-3 sm:mt-0 items-center gap-3">
         <Button
           variant="ghost"
           size="sm"
-          :disabled="isLoading || isReloading"
+          :disabled="taskStore.isLoading || isReloading"
           @click="handleReload"
         >
           <RefreshCw
@@ -128,22 +167,34 @@ const emptyStateMessage = computed(() => {
           Sync
         </Button>
 
-        <Tabs :model-value="scope" @update:model-value="setScope">
-          <TabsList>
-            <TabsTrigger value="assigneds">Assigneds</TabsTrigger>
-            <TabsTrigger value="all">All</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div
+          class="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-1.5"
+        >
+          <span
+            class="text-xs font-medium uppercase tracking-wide transition-colors"
+            :class="isAllScope ? 'text-muted-foreground' : 'text-foreground'"
+          >
+            Assigned
+          </span>
+          <Switch
+            aria-label="Toggle task scope"
+            :model-value="isAllScope"
+            @update:model-value="setScopeFromToggle"
+          />
+          <span
+            class="text-xs font-medium uppercase tracking-wide transition-colors"
+            :class="isAllScope ? 'text-foreground' : 'text-muted-foreground'"
+          >
+            All
+          </span>
+        </div>
       </div>
     </div>
 
-    <!-- Error State -->
-    <Alert v-if="error" variant="destructive" class="mb-6">
-      <AlertDescription>{{ error }}</AlertDescription>
-    </Alert>
+    <TaskFilters />
 
     <!-- Loading State -->
-    <div v-if="isInitialLoading || isLoading" class="space-y-2">
+    <div v-if="isInitialLoading || taskStore.isLoading" class="space-y-2">
       <Card
         v-for="i in 6"
         :key="`skeleton-${i}`"
@@ -174,14 +225,14 @@ const emptyStateMessage = computed(() => {
     </div>
 
     <!-- Empty State -->
-    <Alert v-else-if="tasks.length === 0">
+    <Alert v-else-if="filteredWorkspaceTasks.length === 0">
       <AlertDescription>{{ emptyStateMessage }}</AlertDescription>
     </Alert>
 
     <!-- Task List -->
     <div v-else class="space-y-2">
       <TaskItem
-        v-for="task in tasks"
+        v-for="task in filteredWorkspaceTasks"
         :key="task.id"
         :task="task"
         :workspace-id="workspaceId || undefined"

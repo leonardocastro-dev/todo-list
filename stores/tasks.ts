@@ -1,9 +1,65 @@
 import { defineStore } from 'pinia'
 import { showErrorToast } from '@/utils/toast'
-import { collection, getDocs, doc, getDoc, query, where } from 'firebase/firestore'
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  query,
+  where,
+  orderBy
+} from 'firebase/firestore'
 import { useProjectStore } from './projects'
 import { useAuth } from '@/composables/useAuth'
 import { PERMISSIONS, hasAnyPermission } from '@/constants/permissions'
+
+type TaskFilterState = {
+  searchQuery: string
+  statusFilter: string
+  priorityFilter: string
+  dueDateFilter: string
+}
+
+const isTaskMatchingFilters = (
+  task: Task,
+  filters: TaskFilterState
+): boolean => {
+  if (filters.statusFilter !== 'all' && task.status !== filters.statusFilter) {
+    return false
+  }
+
+  if (
+    filters.priorityFilter !== 'all' &&
+    task.priority !== filters.priorityFilter
+  ) {
+    return false
+  }
+
+  if (filters.dueDateFilter !== 'all') {
+    if (filters.dueDateFilter === 'no-date') {
+      if (task.dueDate) return false
+    } else {
+      if (!task.dueDate) return false
+      const now = new Date()
+      now.setHours(0, 0, 0, 0)
+      const due = new Date(task.dueDate)
+      due.setHours(0, 0, 0, 0)
+      if (filters.dueDateFilter === 'overdue' && due >= now) return false
+      if (filters.dueDateFilter === 'on-time' && due < now) return false
+    }
+  }
+
+  if (filters.searchQuery.trim() !== '') {
+    const query = filters.searchQuery.toLowerCase()
+    return (
+      task.title.toLowerCase().includes(query) ||
+      task.description?.toLowerCase().includes(query) ||
+      false
+    )
+  }
+
+  return true
+}
 
 export const useTaskStore = defineStore('tasks', {
   state: () => ({
@@ -23,7 +79,10 @@ export const useTaskStore = defineStore('tasks', {
     priorityFilter: 'all',
     dueDateFilter: 'all',
     isLoading: true,
-    isGuestMode: false
+    isGuestMode: false,
+    workspaceScope: 'all' as string,
+    workspaceUserId: null as string | null,
+    loadedWorkspaces: {} as Record<string, string>
   }),
 
   getters: {
@@ -114,47 +173,42 @@ export const useTaskStore = defineStore('tasks', {
         return false
       }
     },
-    filteredTasks(state): Task[] {
-      return this.tasks.filter((task: Task) => {
-        if (
-          state.statusFilter !== 'all' &&
-          task.status !== state.statusFilter
-        ) {
-          return false
-        }
+    workspaceTasks(): Task[] {
+      if (!this.currentWorkspaceId) return []
+      const projectStore = useProjectStore()
+      const workspaceProjectIds = projectStore.projects
+        .filter((p) => p.workspaceId === this.currentWorkspaceId)
+        .map((p) => p.id)
 
-        if (
-          state.priorityFilter !== 'all' &&
-          task.priority !== state.priorityFilter
-        ) {
-          return false
-        }
+      let allTasks: Task[] = []
+      for (const projectId of workspaceProjectIds) {
+        const tasks = this.tasksByProject[projectId]
+        if (tasks) allTasks = allTasks.concat(tasks)
+      }
 
-        if (state.dueDateFilter !== 'all') {
-          if (state.dueDateFilter === 'no-date') {
-            if (task.dueDate) return false
-          } else {
-            if (!task.dueDate) return false
-            const now = new Date()
-            now.setHours(0, 0, 0, 0)
-            const due = new Date(task.dueDate)
-            due.setHours(0, 0, 0, 0)
-            if (state.dueDateFilter === 'overdue' && due >= now) return false
-            if (state.dueDateFilter === 'on-time' && due < now) return false
-          }
-        }
+      if (this.workspaceScope === 'assigneds' && this.workspaceUserId) {
+        allTasks = allTasks.filter((t) =>
+          t.assigneeIds?.includes(this.workspaceUserId!)
+        )
+      }
 
-        if (state.searchQuery.trim() !== '') {
-          const query = state.searchQuery.toLowerCase()
-          return (
-            task.title.toLowerCase().includes(query) ||
-            task.description?.toLowerCase().includes(query) ||
-            false
-          )
-        }
-
-        return true
+      allTasks.sort((a, b) => {
+        const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
+        const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
+        return bTime - aTime
       })
+
+      return allTasks
+    },
+    filteredWorkspaceTasks(state): Task[] {
+      return this.workspaceTasks.filter((task: Task) =>
+        isTaskMatchingFilters(task, state)
+      )
+    },
+    filteredTasks(state): Task[] {
+      return this.tasks.filter((task: Task) =>
+        isTaskMatchingFilters(task, state)
+      )
     }
   },
 
@@ -172,7 +226,24 @@ export const useTaskStore = defineStore('tasks', {
       const project = projectStore.projects.find(
         (p) => p.id === this.currentProjectId
       )
-      return project?.workspaceId
+      return project?.workspaceId || this.currentWorkspaceId || undefined
+    },
+
+    resolveProjectForTask(taskId: string): string | null {
+      // Fast path: try currentProjectId first
+      if (this.currentProjectId) {
+        const tasks = this.tasksByProject[this.currentProjectId]
+        if (tasks?.some((t) => t.id === taskId)) {
+          return this.currentProjectId
+        }
+      }
+      // Search all projects
+      for (const [projectId, tasks] of Object.entries(this.tasksByProject)) {
+        if (tasks.some((t) => t.id === taskId)) {
+          return projectId
+        }
+      }
+      return null
     },
 
     async setCurrentProject(
@@ -244,7 +315,12 @@ export const useTaskStore = defineStore('tasks', {
           }
 
           // Query tasks from workspace-level collection filtered by projectId
-          const tasksRef = collection($firestore, 'workspaces', workspaceId, 'tasks')
+          const tasksRef = collection(
+            $firestore,
+            'workspaces',
+            workspaceId,
+            'tasks'
+          )
           const q = query(tasksRef, where('projectId', '==', projectId))
           const snapshot = await getDocs(q)
 
@@ -302,8 +378,107 @@ export const useTaskStore = defineStore('tasks', {
       this.tasksByProject = {}
       this.loadedProjects = {}
       this.permissionsByProject = {}
+      this.loadedWorkspaces = {}
       this.currentProjectId = null
       this.currentWorkspaceId = null
+      this.workspaceScope = 'all'
+      this.workspaceUserId = null
+    },
+
+    clearWorkspaceCache(workspaceId: string) {
+      delete this.loadedWorkspaces[workspaceId]
+      const projectStore = useProjectStore()
+      const workspaceProjectIds = projectStore.projects
+        .filter((p) => p.workspaceId === workspaceId)
+        .map((p) => p.id)
+      for (const projectId of workspaceProjectIds) {
+        delete this.tasksByProject[projectId]
+        delete this.loadedProjects[projectId]
+      }
+    },
+
+    async loadWorkspaceTasks(
+      workspaceId: string,
+      scope: 'all' | 'assigneds',
+      userId: string | undefined,
+      forceReload = false
+    ) {
+      this.currentWorkspaceId = workspaceId
+      this.workspaceScope = scope
+      this.workspaceUserId = userId || null
+
+      // Cache: if already loaded 'all' for this workspace, getter filters client-side
+      if (!forceReload && this.loadedWorkspaces[workspaceId]) {
+        const loadedScope = this.loadedWorkspaces[workspaceId]
+        if (loadedScope === 'all' || loadedScope === scope) {
+          this.isLoading = false
+          return
+        }
+      }
+
+      const { $firestore } = useNuxtApp()
+      const projectStore = useProjectStore()
+
+      try {
+        this.isLoading = true
+
+        const accessibleProjectIds = projectStore.projects.map((p) => p.id)
+        if (accessibleProjectIds.length === 0) {
+          this.loadedWorkspaces[workspaceId] = scope
+          return
+        }
+
+        const tasksRef = collection(
+          $firestore,
+          `workspaces/${workspaceId}/tasks`
+        )
+        let q
+        if (scope === 'assigneds' && userId) {
+          q = query(
+            tasksRef,
+            where('assigneeIds', 'array-contains', userId),
+            orderBy('updatedAt', 'desc')
+          )
+        } else {
+          q = query(tasksRef, orderBy('updatedAt', 'desc'))
+        }
+
+        const snapshot = await getDocs(q)
+
+        // Group tasks by projectId
+        const grouped: Record<string, Task[]> = {}
+        snapshot.docs.forEach((docSnap) => {
+          const data = docSnap.data()
+          if (!accessibleProjectIds.includes(data.projectId)) return
+          const task = { id: docSnap.id, ...data } as Task
+          if (!grouped[data.projectId]) grouped[data.projectId] = []
+          grouped[data.projectId].push(task)
+        })
+
+        // Store in tasksByProject
+        for (const [projectId, projectTasks] of Object.entries(grouped)) {
+          // For 'assigneds' scope, don't overwrite projects that already have full data
+          if (scope === 'assigneds' && this.loadedProjects[projectId]) continue
+          this.tasksByProject[projectId] = projectTasks
+        }
+
+        // For 'all' scope, mark projects as fully loaded
+        if (scope === 'all') {
+          for (const projectId of Object.keys(grouped)) {
+            this.loadedProjects[projectId] = {
+              workspaceId,
+              loadedAt: Date.now()
+            }
+          }
+        }
+
+        this.loadedWorkspaces[workspaceId] = scope
+      } catch (error) {
+        console.error('Error loading workspace tasks:', error)
+        showErrorToast('Failed to load workspace tasks')
+      } finally {
+        this.isLoading = false
+      }
     },
 
     async addTask(
@@ -400,9 +575,9 @@ export const useTaskStore = defineStore('tasks', {
       userId: string | null = null,
       memberIds?: string[]
     ) {
-      if (!this.currentProjectId) return
+      const projectId = this.resolveProjectForTask(id)
+      if (!projectId) return
 
-      const projectId = this.currentProjectId
       const projectTasks = this.tasksByProject[projectId]
       if (!projectTasks) return
 
@@ -423,7 +598,10 @@ export const useTaskStore = defineStore('tasks', {
       const optimisticUpdate = memberIds
         ? { ...updatedTask, assigneeIds: memberIds }
         : updatedTask
-      projectTasks[taskIndex] = { ...projectTasks[taskIndex], ...optimisticUpdate }
+      projectTasks[taskIndex] = {
+        ...projectTasks[taskIndex],
+        ...optimisticUpdate
+      }
 
       try {
         const workspaceId = this.getWorkspaceId()
@@ -454,9 +632,8 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     async deleteTask(id: string, userId: string | null = null) {
-      if (!this.currentProjectId) return
-
-      const projectId = this.currentProjectId
+      const projectId = this.resolveProjectForTask(id)
+      if (!projectId) return
 
       if (!userId) {
         this.tasksByProject[projectId] = (
@@ -509,9 +686,9 @@ export const useTaskStore = defineStore('tasks', {
       checked: boolean,
       userId: string | null = null
     ) {
-      if (!this.currentProjectId) return
+      const projectId = this.resolveProjectForTask(id)
+      if (!projectId) return
 
-      const projectId = this.currentProjectId
       const projectTasks = this.tasksByProject[projectId]
       if (!projectTasks) return
 
@@ -535,9 +712,9 @@ export const useTaskStore = defineStore('tasks', {
 
     // Atualiza apenas o estado local (para UI otimista)
     updateLocalTaskStatus(id: string, status: 'pending' | 'completed') {
-      if (!this.currentProjectId) return
+      const projectId = this.resolveProjectForTask(id)
+      if (!projectId) return
 
-      const projectId = this.currentProjectId
       const projectTasks = this.tasksByProject[projectId]
       if (!projectTasks) return
 
