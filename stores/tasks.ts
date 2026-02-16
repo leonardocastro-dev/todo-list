@@ -531,6 +531,27 @@ export const useTaskStore = defineStore('tasks', {
       this.workspaceScope = scope
       this.workspaceUserId = userId || null
 
+      // Guest mode: carregar tasks do localStorage
+      if (!userId) {
+        this.isGuestMode = true
+        const projectStore = useProjectStore()
+        const localProjects = projectStore.projects.filter(
+          (p) => p.workspaceId === workspaceId
+        )
+        for (const project of localProjects) {
+          const bucketKey = getTaskBucketKey(project.id, workspaceId)
+          if (!this.tasksByProject[bucketKey]) {
+            const localTasks = localStorage.getItem(`localTasks_${project.id}`)
+            this.tasksByProject[bucketKey] = localTasks ? JSON.parse(localTasks) : []
+          }
+        }
+        this.loadedWorkspaces[workspaceId] = 'all'
+        this.isLoading = false
+        return
+      }
+
+      this.isGuestMode = false
+
       // Cache: if already loaded 'all' for this workspace, getter filters client-side
       if (!forceReload && this.loadedWorkspaces[workspaceId]) {
         const loadedScope = this.loadedWorkspaces[workspaceId]

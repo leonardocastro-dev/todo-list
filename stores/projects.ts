@@ -82,10 +82,8 @@ export const useProjectStore = defineStore('projects', {
     ) {
       // Skip if already loaded for this workspace (unless forced)
       if (!forceReload && this.loadedWorkspaceId === workspaceId) {
-        console.log('[DEBUG store] CACHE HIT - skipping load, current permissions:', JSON.stringify(this.memberPermissions))
         return
       }
-      console.log('[DEBUG store] Loading workspace:', workspaceId, 'userId:', userId)
 
       try {
         this.isLoading = true
@@ -94,7 +92,8 @@ export const useProjectStore = defineStore('projects', {
         if (!userId) {
           this.isGuestMode = true
           const localProjects = localStorage.getItem('localProjects')
-          this.projects = localProjects ? JSON.parse(localProjects) : []
+          const allProjects: Project[] = localProjects ? JSON.parse(localProjects) : []
+          this.projects = allProjects.filter(p => p.workspaceId === workspaceId)
           this.loadedWorkspaceId = workspaceId
           return
         }
@@ -114,12 +113,8 @@ export const useProjectStore = defineStore('projects', {
         const memberSnap = await getDoc(memberRef)
 
         if (memberSnap.exists()) {
-          const rawPerms = memberSnap.data().permissions
-          console.log('[DEBUG store] memberSnap raw data:', JSON.stringify(memberSnap.data()))
-          console.log('[DEBUG store] permissions field:', JSON.stringify(rawPerms))
-          this.memberPermissions = rawPerms || null
+          this.memberPermissions = memberSnap.data().permissions || null
         } else {
-          console.log('[DEBUG store] member doc does NOT exist for userId:', userId)
           this.memberPermissions = null
         }
 
@@ -169,6 +164,14 @@ export const useProjectStore = defineStore('projects', {
       this.loadedWorkspaceId = null
     },
 
+    // Save current workspace projects to localStorage without losing other workspaces
+    saveLocalProjects() {
+      const allLocal: Project[] = JSON.parse(localStorage.getItem('localProjects') || '[]')
+      const currentWorkspaceId = this.loadedWorkspaceId
+      const otherWorkspaceProjects = allLocal.filter(p => p.workspaceId !== currentWorkspaceId)
+      localStorage.setItem('localProjects', JSON.stringify([...otherWorkspaceProjects, ...this.projects]))
+    },
+
     async addProject(
       project: Project,
       userId: string | null = null,
@@ -184,7 +187,7 @@ export const useProjectStore = defineStore('projects', {
       this.projects.push(projectWithTimestamp)
 
       if (!userId || !workspaceId) {
-        localStorage.setItem('localProjects', JSON.stringify(this.projects))
+        this.saveLocalProjects()
         showSuccessToast('Project added successfully')
         return
       }
@@ -246,7 +249,7 @@ export const useProjectStore = defineStore('projects', {
       }
 
       if (!userId) {
-        localStorage.setItem('localProjects', JSON.stringify(this.projects))
+        this.saveLocalProjects()
         return
       }
 
@@ -296,7 +299,7 @@ export const useProjectStore = defineStore('projects', {
       this.projects = this.projects.filter((project) => project.id !== id)
 
       if (!userId || !projectToDelete.workspaceId) {
-        localStorage.setItem('localProjects', JSON.stringify(this.projects))
+        this.saveLocalProjects()
         localStorage.removeItem(`localTasks_${id}`)
         showSuccessToast('Project deleted successfully')
         return

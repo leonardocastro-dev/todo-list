@@ -17,16 +17,16 @@ const router = useRouter()
 watch(
   [() => user.value, () => loading.value],
   async ([newUser, isLoading]) => {
-    if (newUser?.uid && !isLoading && !workspaceStore.loaded) {
-      await workspaceStore.loadWorkspaces(newUser.uid)
+    if (!isLoading && !workspaceStore.loaded) {
+      await workspaceStore.loadWorkspaces(newUser?.uid || null)
     }
   },
   { immediate: true }
 )
 
 onMounted(async () => {
-  if (user.value?.uid && !loading.value) {
-    await workspaceStore.loadWorkspaces(user.value.uid)
+  if (!loading.value && !workspaceStore.loaded) {
+    await workspaceStore.loadWorkspaces(user.value?.uid || null)
   }
 })
 </script>

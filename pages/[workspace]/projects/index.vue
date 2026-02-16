@@ -27,14 +27,11 @@ const isInitialLoading = ref(true)
 // Filter projects based on access-projects permission
 const visibleProjects = computed(() => {
   const allProjects = projectStore.projects
-  const userPermissions = projectStore.memberPermissions
 
-  console.log('[DEBUG visibleProjects]', JSON.stringify({
-    allProjectsCount: allProjects.length,
-    userPermissions,
-    userId: user.value?.uid,
-    hasPermResult: hasPermission(userPermissions, PERMISSIONS.ACCESS_PROJECTS)
-  }))
+  // Guest mode: show all local projects
+  if (projectStore.isGuestMode) return allProjects
+
+  const userPermissions = projectStore.memberPermissions
 
   // If user has access-projects permission, show all projects
   if (hasPermission(userPermissions, PERMISSIONS.ACCESS_PROJECTS)) {
@@ -73,25 +70,30 @@ onMounted(async () => {
         workspaceId.value,
         user.value?.uid
       )
-      await loadWorkspaceMembers(workspaceId.value)
-      await loadAssignments()
+      if (user.value?.uid) {
+        await loadWorkspaceMembers(workspaceId.value)
+        await loadAssignments()
+      }
     } finally {
       isInitialLoading.value = false
-      console.log(projectStore.projects)
     }
   } else {
     isInitialLoading.value = false
   }
 })
 
-watch(() => projectStore.projects, loadAssignments, { deep: true })
+watch(() => projectStore.projects, () => {
+  if (user.value?.uid) loadAssignments()
+}, { deep: true })
 
 const handleReload = async () => {
   if (!workspaceId.value) return
   isReloading.value = true
   try {
     await projectStore.reloadProjects(workspaceId.value, user.value?.uid)
-    await loadAssignments()
+    if (user.value?.uid) {
+      await loadAssignments()
+    }
   } finally {
     isReloading.value = false
   }

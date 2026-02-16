@@ -74,13 +74,16 @@ onMounted(async () => {
   if (workspaceId.value) {
     taskStore.currentProjectId = null
     try {
-      await Promise.all([
+      const loadPromises: Promise<void>[] = [
         projectStore.loadProjectsForWorkspace(
           workspaceId.value,
           user.value?.uid
-        ),
-        loadWorkspaceMembers(workspaceId.value)
-      ])
+        )
+      ]
+      if (user.value?.uid) {
+        loadPromises.push(loadWorkspaceMembers(workspaceId.value))
+      }
+      await Promise.all(loadPromises)
       taskStore.setScopeFilter('assigneds', user.value?.uid)
       // Load tasks via taskStore (will use cache if available)
       await taskStore.loadWorkspaceTasks(

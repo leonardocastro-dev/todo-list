@@ -38,7 +38,9 @@ const currentProject = computed(() => {
 onMounted(async () => {
   taskStore.setScopeFilter('assigneds', user.value?.uid)
   await projectStore.loadProjectsForWorkspace(workspaceId, user.value?.uid)
-  await loadWorkspaceMembers(workspaceId)
+  if (user.value?.uid) {
+    await loadWorkspaceMembers(workspaceId)
+  }
   await taskStore.setCurrentProject(projectId, user.value?.uid, workspaceId)
 })
 
