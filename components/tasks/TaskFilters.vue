@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { computed, ref } from 'vue'
+import type { DateValue } from 'reka-ui'
+import { CalendarDate } from '@internationalized/date'
+import { SlidersHorizontal, ListTodo, Clock, CheckCircle2, CalendarIcon, ChevronDown } from 'lucide-vue-next'
+import Calendar from '@/components/ui/calendar/Calendar.vue'
 import {
   Select,
   SelectContent,
@@ -9,89 +13,285 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from '@/components/ui/popover'
+import { Badge } from '@/components/ui/badge'
+
+const props = withDefaults(
+  defineProps<{
+    projectLinkFilter?: 'all' | 'with-project' | 'without-project'
+  }>(),
+  {
+    projectLinkFilter: 'all'
+  }
+)
+
+const emit = defineEmits<{
+  'update:projectLinkFilter': [value: string]
+}>()
 
 const taskStore = useTaskStore()
+
+const isAllScope = computed(() => taskStore.scopeFilter === 'all')
+
+const statusItems = computed(() => [
+  {
+    value: 'all',
+    label: 'All Tasks',
+    icon: ListTodo,
+    iconBg: 'bg-blue-100 dark:bg-blue-900/30',
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    count: taskStore.totalTasks
+  },
+  {
+    value: 'pending',
+    label: 'Pending',
+    icon: Clock,
+    iconBg: 'bg-amber-100 dark:bg-amber-900/30',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+    count: taskStore.pendingTasks
+  },
+  {
+    value: 'completed',
+    label: 'Completed',
+    icon: CheckCircle2,
+    iconBg: 'bg-emerald-100 dark:bg-emerald-900/30',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    count: taskStore.completedTasks
+  }
+])
+
+const dueDatePopoverOpen = ref(false)
+const showingCalendar = ref(false)
+
+const customDateValue = computed<DateValue | undefined>(() => {
+  if (!taskStore.customDueDate) return undefined
+  const d = new Date(taskStore.customDueDate)
+  return new CalendarDate(d.getFullYear(), d.getMonth() + 1, d.getDate())
+})
+
+const dueDateLabel = computed(() => {
+  if (taskStore.dueDateFilter === 'custom' && taskStore.customDueDate) {
+    const d = new Date(taskStore.customDueDate)
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+  const labels: Record<string, string> = {
+    all: 'All Dates',
+    overdue: 'Overdue',
+    'on-time': 'On Time',
+    'no-date': 'No Date',
+  }
+  return labels[taskStore.dueDateFilter] || 'All Dates'
+})
+
+const onDueDatePopoverChange = (open: boolean) => {
+  dueDatePopoverOpen.value = open
+  if (open) {
+    showingCalendar.value = false
+  } else if (showingCalendar.value && !taskStore.customDueDate) {
+    taskStore.setDueDateFilter('all')
+  }
+}
+
+const selectDueDateOption = (value: string) => {
+  if (value === 'custom') {
+    showingCalendar.value = true
+    return
+  }
+  taskStore.setDueDateFilter(value)
+  dueDatePopoverOpen.value = false
+}
+
+const handleCalendarSelect = (date: DateValue) => {
+  const jsDate = new Date(date.year, date.month - 1, date.day)
+  taskStore.setCustomDueDate(jsDate.toISOString())
+  dueDatePopoverOpen.value = false
+}
+
+const activeFilterCount = computed(() => {
+  let count = 0
+  if (taskStore.priorityFilter !== 'all') count++
+  if (taskStore.dueDateFilter !== 'all') count++
+  if (taskStore.scopeFilter !== 'assigneds') count++
+  if (props.projectLinkFilter !== 'all') count++
+  return count
+})
 </script>
 
 <template>
   <div class="space-y-4 mb-6">
-    <div>
-      <Label for="search" class="sr-only">Search tasks</Label>
-      <Input
-        id="search"
-        type="text"
-        placeholder="Search tasks..."
-        :model-value="taskStore.searchQuery"
-        class="w-full"
-        @update:model-value="
-          (val) => taskStore.setSearchQuery(String(val || ''))
-        "
-      />
-    </div>
-
-    <div class="flex flex-wrap gap-4">
-      <div class="w-full md:flex-1">
-        <Label for="status-filter" class="mb-1 block text-sm font-medium"
-          >Status</Label
-        >
-        <Tabs
-          :model-value="taskStore.statusFilter"
+    <div class="flex items-center gap-2">
+      <div class="flex-1">
+        <Label for="search" class="sr-only">Search tasks</Label>
+        <Input
+          id="search"
+          type="text"
+          placeholder="Search tasks..."
+          :model-value="taskStore.searchQuery"
           class="w-full"
           @update:model-value="
-            (val) => taskStore.setStatusFilter(String(val || 'all'))
+            (val) => taskStore.setSearchQuery(String(val || ''))
           "
-        >
-          <TabsList class="grid grid-cols-3 w-full">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        />
       </div>
 
-      <div>
-        <Label for="priority-filter" class="mb-1 block text-sm font-medium"
-          >Priority</Label
-        >
-        <Select
-          :model-value="taskStore.priorityFilter"
-          @update:model-value="
-            (val) => taskStore.setPriorityFilter(String(val || 'all'))
-          "
-        >
-          <SelectTrigger id="priority-filter">
-            <SelectValue placeholder="All Priorities" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Priorities</SelectItem>
-            <SelectItem value="urgent">Urgent</SelectItem>
-            <SelectItem value="important">Important</SelectItem>
-            <SelectItem value="normal">Normal</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <Popover>
+        <PopoverTrigger as-child>
+          <Button variant="outline" size="default" class="gap-2 shrink-0">
+            <SlidersHorizontal class="h-4 w-4" />
+            <span>Filters</span>
+            <Badge
+              v-if="activeFilterCount > 0"
+              variant="secondary"
+              class="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+            >
+              {{ activeFilterCount }}
+            </Badge>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" class="max-h-[290px] overflow-auto w-72 space-y-4">
+          <div>
+            <Label for="scope-filter" class="mb-1 block text-sm font-medium">Scope</Label>
+            <div
+              class="flex items-center justify-start gap-2 rounded-lg border border-border bg-background px-3 py-2"
+            >
+              <span
+                class="text-xs font-medium uppercase tracking-wide transition-colors"
+                :class="isAllScope ? 'text-muted-foreground' : 'text-foreground'"
+              >
+                Assigned
+              </span>
+              <Switch
+                aria-label="Toggle task scope"
+                :model-value="isAllScope"
+                @update:model-value="(val: boolean) => taskStore.setScopeFilter(val ? 'all' : 'assigneds')"
+              />
+              <span
+                class="text-xs font-medium uppercase tracking-wide transition-colors"
+                :class="isAllScope ? 'text-foreground' : 'text-muted-foreground'"
+              >
+                All
+              </span>
+            </div>
+          </div>
 
-      <div>
-        <Label for="due-date-filter" class="mb-1 block text-sm font-medium"
-          >Due Date</Label
-        >
-        <Select
-          :model-value="taskStore.dueDateFilter"
-          @update:model-value="
-            (val) => taskStore.setDueDateFilter(String(val || 'all'))
-          "
-        >
-          <SelectTrigger id="due-date-filter">
-            <SelectValue placeholder="All Dates" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Dates</SelectItem>
-            <SelectItem value="overdue">Overdue</SelectItem>
-            <SelectItem value="on-time">On Time</SelectItem>
-            <SelectItem value="no-date">No Date</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+          <div>
+            <Label for="project-link-filter" class="mb-1 block text-sm font-medium">Project Link</Label>
+            <Select
+              :model-value="projectLinkFilter"
+              @update:model-value="
+                (val) => emit('update:projectLinkFilter', String(val || 'all'))
+              "
+            >
+              <SelectTrigger id="project-link-filter" class="w-full">
+                <SelectValue placeholder="All tasks" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All tasks</SelectItem>
+                <SelectItem value="with-project">With project</SelectItem>
+                <SelectItem value="without-project">Without project</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label
+              for="priority-filter"
+              class="mb-1 block text-sm font-medium"
+              >Priority</Label
+            >
+            <Select
+              :model-value="taskStore.priorityFilter"
+              @update:model-value="
+                (val) => taskStore.setPriorityFilter(String(val || 'all'))
+              "
+            >
+              <SelectTrigger id="priority-filter" class="w-full">
+                <SelectValue placeholder="All Priorities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priorities</SelectItem>
+                <SelectItem value="urgent">Urgent</SelectItem>
+                <SelectItem value="important">Important</SelectItem>
+                <SelectItem value="normal">Normal</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label class="mb-1 block text-sm font-medium">Due Date</Label>
+            <Popover :open="dueDatePopoverOpen" @update:open="onDueDatePopoverChange">
+              <PopoverTrigger as-child>
+                <button
+                  class="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <span class="flex items-center gap-2">
+                    <CalendarIcon class="h-4 w-4 text-muted-foreground" />
+                    {{ dueDateLabel }}
+                  </span>
+                  <ChevronDown class="h-4 w-4 opacity-50" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" class="w-auto p-0" :side-offset="4">
+                <div v-if="!showingCalendar" class="p-1 space-y-0.5">
+                  <button
+                    v-for="option in [
+                      { value: 'all', label: 'All Dates' },
+                      { value: 'overdue', label: 'Overdue' },
+                      { value: 'on-time', label: 'On Time' },
+                      { value: 'no-date', label: 'No Date' },
+                      { value: 'custom', label: 'Custom' }
+                    ]"
+                    :key="option.value"
+                    class="flex w-full items-center rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                    :class="taskStore.dueDateFilter === option.value ? 'bg-accent text-accent-foreground' : ''"
+                    @click="selectDueDateOption(option.value)"
+                  >
+                    {{ option.label }}
+                  </button>
+                </div>
+                <div v-if="showingCalendar">
+                  <Calendar
+                    :model-value="customDateValue"
+                    @update:model-value="(val: DateValue) => handleCalendarSelect(val)"
+                  />
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+      <button
+        v-for="item in statusItems"
+        :key="item.value"
+        class="flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors"
+        :class="taskStore.statusFilter === item.value
+          ? 'border-primary bg-primary/5'
+          : 'border-border bg-background hover:bg-muted/50'"
+        @click="taskStore.setStatusFilter(item.value)"
+      >
+        <div
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+          :class="item.iconBg"
+        >
+          <component :is="item.icon" class="h-5 w-5" :class="item.iconColor" />
+        </div>
+        <div class="min-w-0">
+          <p class="text-sm font-medium leading-tight">{{ item.label }}</p>
+          <p class="text-xs text-muted-foreground">
+            {{ item.count }} {{ item.count === 1 ? 'tarefa' : 'tarefas' }}
+          </p>
+        </div>
+      </button>
+    </div>
+
   </div>
 </template>

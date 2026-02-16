@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { Plus, ArrowLeft, RefreshCw } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import TaskStats from '@/components/tasks/TaskStats.vue'
 import TaskList from '@/components/tasks/TaskList.vue'
 import TaskFilters from '@/components/tasks/TaskFilters.vue'
 import TaskForm from '@/components/tasks/TaskForm.vue'
@@ -37,9 +36,17 @@ const currentProject = computed(() => {
 })
 
 onMounted(async () => {
+  taskStore.setScopeFilter('assigneds', user.value?.uid)
   await projectStore.loadProjectsForWorkspace(workspaceId, user.value?.uid)
   await loadWorkspaceMembers(workspaceId)
-  taskStore.setCurrentProject(projectId, user.value?.uid, workspaceId)
+  await taskStore.setCurrentProject(projectId, user.value?.uid, workspaceId)
+})
+
+// Quando scope muda para 'all', carrega todas as tasks do projeto se necessário
+watch(() => taskStore.scopeFilter, async (newScope) => {
+  if (newScope === 'all') {
+    await taskStore.setCurrentProject(projectId, user.value?.uid, workspaceId)
+  }
 })
 </script>
 
@@ -89,7 +96,16 @@ onMounted(async () => {
       <div
         class="flex sm:justify-between flex-col sm:flex-row sm:items-center justify-center mb-6"
       >
-        <h2 class="text-xl font-semibold">Project Tasks</h2>
+        <div>
+          <h2 class="text-xl font-semibold">Project Tasks</h2>
+          <p class="text-sm text-muted-foreground mt-1">
+            {{ taskStore.totalTasks }}
+            {{ taskStore.totalTasks === 1 ? 'task' : 'tasks' }}
+            <span v-if="taskStore.urgentTasks > 0" class="text-red-600 font-medium">
+              &middot; {{ taskStore.urgentTasks }} urgent pending
+            </span>
+          </p>
+        </div>
         <div
           class="flex sm:flex-row mt-3 sm:mt-0 flex-row-reverse justify-end gap-2"
         >
@@ -117,7 +133,6 @@ onMounted(async () => {
         </div>
       </div>
 
-      <TaskStats />
       <TaskFilters />
       <TaskList
         :workspace-id="workspaceId"

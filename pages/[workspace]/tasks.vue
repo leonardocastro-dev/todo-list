@@ -2,14 +2,6 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { Plus, RefreshCw } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
@@ -24,8 +16,6 @@ import { PERMISSIONS, hasAnyPermission } from '@/constants/permissions'
 
 definePageMeta({ layout: 'workspace' })
 
-const route = useRoute()
-const router = useRouter()
 const { user } = useAuth()
 const { workspaceId } = useWorkspace()
 const projectStore = useProjectStore()
@@ -41,10 +31,6 @@ const isReloading = ref(false)
 const isAddingTask = ref(false)
 const projectLinkFilter = ref<'all' | 'with-project' | 'without-project'>('all')
 
-const scope = computed<'all' | 'assigneds'>(() =>
-  route.query.scope === 'all' ? 'all' : 'assigneds'
-)
-const isAllScope = computed(() => scope.value === 'all')
 const filteredWorkspaceTasks = computed(() => taskStore.filteredWorkspaceTasks)
 const visibleTasks = computed(() => {
   if (projectLinkFilter.value === 'all') return filteredWorkspaceTasks.value
@@ -55,17 +41,6 @@ const visibleTasks = computed(() => {
     return projectLinkFilter.value === 'with-project' ? hasProject : !hasProject
   })
 })
-
-const setScope = (newScope: string | number) => {
-  const scopeValue = String(newScope)
-  if (scopeValue !== 'assigneds' && scopeValue !== 'all') return
-  if (scopeValue === scope.value) return
-  router.push({ query: { ...route.query, scope: scopeValue } })
-}
-
-const setScopeFromToggle = (checked: boolean) => {
-  setScope(checked ? 'all' : 'assigneds')
-}
 
 const setProjectLinkFilter = (newFilter: string | number) => {
   const filterValue = String(newFilter)
@@ -97,6 +72,7 @@ const getProjectName = (projectId?: string) => {
 // Load data on mount and when scope changes
 onMounted(async () => {
   if (workspaceId.value) {
+    taskStore.currentProjectId = null
     try {
       await Promise.all([
         projectStore.loadProjectsForWorkspace(
@@ -105,10 +81,11 @@ onMounted(async () => {
         ),
         loadWorkspaceMembers(workspaceId.value)
       ])
+      taskStore.setScopeFilter('assigneds', user.value?.uid)
       // Load tasks via taskStore (will use cache if available)
       await taskStore.loadWorkspaceTasks(
         workspaceId.value,
-        scope.value as 'all' | 'assigneds',
+        'assigneds',
         user.value?.uid
       )
 
@@ -129,12 +106,12 @@ onMounted(async () => {
   }
 })
 
-// When scope changes, update taskStore
-watch(scope, async () => {
-  if (workspaceId.value) {
+// When scope changes to 'all', load all tasks if needed
+watch(() => taskStore.scopeFilter, async (newScope) => {
+  if (workspaceId.value && newScope === 'all') {
     await taskStore.loadWorkspaceTasks(
       workspaceId.value,
-      scope.value as 'all' | 'assigneds',
+      'all',
       user.value?.uid
     )
   }
@@ -148,7 +125,7 @@ const handleReload = async () => {
     taskStore.clearWorkspaceCache(workspaceId.value)
     await taskStore.loadWorkspaceTasks(
       workspaceId.value,
-      scope.value as 'all' | 'assigneds',
+      taskStore.scopeFilter as 'all' | 'assigneds',
       user.value?.uid,
       true
     )
@@ -167,7 +144,7 @@ const emptyStateMessage = computed(() => {
   if (taskStore.workspaceTasks.length > 0) {
     return 'No tasks found. Try adjusting your filters.'
   }
-  if (scope.value === 'assigneds') {
+  if (taskStore.scopeFilter === 'assigneds') {
     return 'No tasks assigned to you yet.'
   }
   return 'No tasks in this workspace yet.'
@@ -192,10 +169,8 @@ const emptyStateMessage = computed(() => {
           <p class="text-sm text-muted-foreground mt-1">
             {{ visibleTasks.length }}
             {{ visibleTasks.length === 1 ? 'task' : 'tasks' }}
-            <span
-              v-if="visibleTasks.length !== taskStore.workspaceTasks.length"
-            >
-              of {{ taskStore.workspaceTasks.length }}
+            <span v-if="taskStore.urgentTasks > 0" class="text-red-600 font-medium">
+              &middot; {{ taskStore.urgentTasks }} urgent pending
             </span>
           </p>
         </div>
@@ -228,54 +203,12 @@ const emptyStateMessage = computed(() => {
         </div>
       </div>
 
-      <div
-        class="flex flex-col sm:w-fit w-full md:flex-row md:items-end gap-3 rounded-lg border border-border bg-muted/30 p-3"
-      >
-        <div class="w-full md:max-w-[240px]">
-          <p class="mb-1 text-sm font-medium">Scope</p>
-          <div
-            class="flex items-center justify-start gap-2 rounded-lg border border-border bg-background px-3 py-2 md:min-w-[220px]"
-          >
-            <span
-              class="text-xs font-medium uppercase tracking-wide transition-colors"
-              :class="isAllScope ? 'text-muted-foreground' : 'text-foreground'"
-            >
-              Assigned
-            </span>
-            <Switch
-              aria-label="Toggle task scope"
-              :model-value="isAllScope"
-              @update:model-value="setScopeFromToggle"
-            />
-            <span
-              class="text-xs font-medium uppercase tracking-wide transition-colors"
-              :class="isAllScope ? 'text-foreground' : 'text-muted-foreground'"
-            >
-              All
-            </span>
-          </div>
-        </div>
-
-        <div class="w-full md:max-w-[240px]">
-          <p class="mb-1 text-sm font-medium">Project Link</p>
-          <Select
-            :model-value="projectLinkFilter"
-            @update:model-value="setProjectLinkFilter"
-          >
-            <SelectTrigger class="w-full">
-              <SelectValue placeholder="All tasks" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All tasks</SelectItem>
-              <SelectItem value="with-project">With project</SelectItem>
-              <SelectItem value="without-project">Without project</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
     </div>
 
-    <TaskFilters />
+    <TaskFilters
+      :project-link-filter="projectLinkFilter"
+      @update:project-link-filter="setProjectLinkFilter"
+    />
 
     <!-- Loading State -->
     <div v-if="isInitialLoading || taskStore.isLoading" class="space-y-2">
