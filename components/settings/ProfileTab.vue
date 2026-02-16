@@ -5,7 +5,8 @@ import { doc, updateDoc } from 'firebase/firestore'
 import {
   ref as storageRef,
   uploadBytes,
-  getDownloadURL
+  getDownloadURL,
+  deleteObject
 } from 'firebase/storage'
 import {
   Card,
@@ -19,7 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { toast } from 'vue-sonner'
-import { Upload, Loader2 } from 'lucide-vue-next'
+import { Upload, Loader2, Trash2 } from 'lucide-vue-next'
 
 const props = defineProps<{
   username: string
@@ -36,6 +37,7 @@ const { user } = useAuth()
 const localUsername = ref(props.username)
 const isUpdatingProfile = ref(false)
 const isUploadingAvatar = ref(false)
+const isRemovingAvatar = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 // Sync with parent
@@ -131,6 +133,46 @@ const handleAvatarUpload = async (event: Event) => {
     isUploadingAvatar.value = false
   }
 }
+
+const removeAvatar = async () => {
+  if (!user.value || !props.avatarUrl) return
+
+  try {
+    isRemovingAvatar.value = true
+    const { $storage, $firestore } = useNuxtApp()
+
+    try {
+      const avatarRef = storageRef($storage, props.avatarUrl)
+      await deleteObject(avatarRef)
+    } catch (error: unknown) {
+      const storageError = error as { code?: string }
+      if (storageError.code !== 'storage/object-not-found') {
+        throw error
+      }
+    }
+
+    const publicRef = doc($firestore, 'users', user.value.uid)
+    await updateDoc(publicRef, { avatarUrl: '' })
+
+    emit('update:avatarUrl', '')
+
+    toast.success('Avatar removed successfully', {
+      style: { background: '#6ee7b7' },
+      duration: 3000
+    })
+  } catch (error) {
+    console.error('Error removing avatar:', error)
+    toast.error('Failed to remove avatar', {
+      style: { background: '#fda4af' },
+      duration: 3000
+    })
+  } finally {
+    isRemovingAvatar.value = false
+    if (fileInput.value) {
+      fileInput.value.value = ''
+    }
+  }
+}
 </script>
 
 <template>
@@ -152,7 +194,7 @@ const handleAvatarUpload = async (event: Event) => {
             </AvatarFallback>
           </Avatar>
           <div
-            v-if="isUploadingAvatar"
+            v-if="isUploadingAvatar || isRemovingAvatar"
             class="absolute flex items-center justify-center bg-muted bottom-0 right-0 h-8 w-8 rounded-full"
           >
             <Loader2 class="animate-spin text-primary" />
@@ -166,15 +208,26 @@ const handleAvatarUpload = async (event: Event) => {
             class="hidden"
             @change="handleAvatarUpload"
           />
-          <Button
-            variant="outline"
-            :disabled="isUploadingAvatar"
-            class="flex items-center gap-2"
-            @click="fileInput?.click()"
-          >
-            <Upload class="h-4 w-4" />
-            {{ isUploadingAvatar ? 'Uploading...' : 'Upload New Photo' }}
-          </Button>
+          <div class="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              :disabled="isUploadingAvatar || isRemovingAvatar"
+              class="flex items-center gap-2"
+              @click="fileInput?.click()"
+            >
+              <Upload class="h-4 w-4" />
+              {{ isUploadingAvatar ? 'Uploading...' : 'Upload New Photo' }}
+            </Button>
+            <Button
+              variant="outline"
+              :disabled="isUploadingAvatar || isRemovingAvatar || !avatarUrl"
+              class="flex items-center gap-2 border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive/20"
+              @click="removeAvatar"
+            >
+              <Trash2 class="h-4 w-4 text-destructive/50" />
+              {{ isRemovingAvatar ? 'Removing...' : 'Remove Photo' }}
+            </Button>
+          </div>
           <p class="text-sm text-muted-foreground mt-2">
             JPG, PNG or GIF. Max size 2MB.
           </p>

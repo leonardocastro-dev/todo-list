@@ -82,7 +82,7 @@ const benefits = [
       <!-- Additional Info -->
       <div class="mt-16 text-center animate-fade-in-up">
         <div
-          class="inline-flex items-center justify-center rounded-full bg-primary/10 px-6 py-3"
+          class="inline-flex items-center justify-center rounded-full bg-muted px-6 py-3"
         >
           <span class="text-sm font-medium text-primary">
             ✨ Thousands of users already trust Fokuz

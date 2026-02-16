@@ -150,7 +150,7 @@ const handleProjectAssigned = () => {
   >
     <div class="flex items-center gap-3 min-w-0">
       <div
-        class="hidden sm:flex h-10 w-10 shrink-0 rounded-full bg-primary/10 items-center justify-center overflow-hidden"
+        class="hidden sm:flex h-10 w-10 shrink-0 rounded-full bg-muted items-center justify-center overflow-hidden"
       >
         <NuxtImg
           v-if="member.avatarUrl"
@@ -174,7 +174,7 @@ const handleProjectAssigned = () => {
       class="flex items-center justify-between sm:justify-end gap-2 shrink-0"
     >
       <div
-        class="flex sm:hidden h-9 w-9 shrink-0 rounded-full bg-primary/10 items-center justify-center overflow-hidden"
+        class="flex sm:hidden h-9 w-9 shrink-0 rounded-full bg-muted items-center justify-center overflow-hidden"
       >
         <NuxtImg
           v-if="member.avatarUrl"

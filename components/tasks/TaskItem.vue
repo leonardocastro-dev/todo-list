@@ -295,7 +295,7 @@ const formatDueDate = (date: Date) => {
               <Avatar
                 v-for="member in displayedMembers"
                 :key="member.uid"
-                class="h-8 w-8 bg-primary/10"
+                class="h-8 w-8 bg-muted"
               >
                 <AvatarImage
                   v-if="member.avatarUrl"

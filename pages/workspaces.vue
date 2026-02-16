@@ -152,7 +152,7 @@ onMounted(async () => {
           class="flex flex-col items-center justify-center h-full min-h-[200px] text-center"
         >
           <div
-            class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4"
+            class="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4"
           >
             <svg
               class="w-6 h-6 text-primary"
