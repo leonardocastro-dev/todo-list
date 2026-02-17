@@ -117,7 +117,6 @@ const activeFilterCount = computed(() => {
   let count = 0
   if (taskStore.priorityFilter !== 'all') count++
   if (taskStore.dueDateFilter !== 'all') count++
-  if (taskStore.scopeFilter !== 'assigneds') count++
   if (props.projectLinkFilter !== 'all') count++
   return count
 })
@@ -140,6 +139,28 @@ const activeFilterCount = computed(() => {
         />
       </div>
 
+      <div
+        class="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 shrink-0"
+      >
+        <span
+          class="text-xs font-medium uppercase tracking-wide transition-colors"
+          :class="isAllScope ? 'text-muted-foreground' : 'text-foreground'"
+        >
+          Assigned
+        </span>
+        <Switch
+          aria-label="Toggle task scope"
+          :model-value="isAllScope"
+          @update:model-value="(val: boolean) => taskStore.setScopeFilter(val ? 'all' : 'assigneds')"
+        />
+        <span
+          class="text-xs font-medium uppercase tracking-wide transition-colors"
+          :class="isAllScope ? 'text-foreground' : 'text-muted-foreground'"
+        >
+          All
+        </span>
+      </div>
+
       <Popover>
         <PopoverTrigger as-child>
           <Button variant="outline" size="default" class="gap-2 shrink-0">
@@ -155,31 +176,6 @@ const activeFilterCount = computed(() => {
           </Button>
         </PopoverTrigger>
         <PopoverContent align="end" class="max-h-[290px] overflow-auto w-72 space-y-4">
-          <div>
-            <Label for="scope-filter" class="mb-1 block text-sm font-medium">Scope</Label>
-            <div
-              class="flex items-center justify-start gap-2 rounded-lg border border-border bg-background px-3 py-2"
-            >
-              <span
-                class="text-xs font-medium uppercase tracking-wide transition-colors"
-                :class="isAllScope ? 'text-muted-foreground' : 'text-foreground'"
-              >
-                Assigned
-              </span>
-              <Switch
-                aria-label="Toggle task scope"
-                :model-value="isAllScope"
-                @update:model-value="(val: boolean) => taskStore.setScopeFilter(val ? 'all' : 'assigneds')"
-              />
-              <span
-                class="text-xs font-medium uppercase tracking-wide transition-colors"
-                :class="isAllScope ? 'text-foreground' : 'text-muted-foreground'"
-              >
-                All
-              </span>
-            </div>
-          </div>
-
           <div>
             <Label for="project-link-filter" class="mb-1 block text-sm font-medium">Project Link</Label>
             <Select
