@@ -20,9 +20,13 @@ import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import * as z from 'zod'
 import { useAuth } from '@/composables/useAuth'
-import { watch } from 'vue'
+import { sendPasswordResetEmail } from 'firebase/auth'
+import { toast } from 'vue-sonner'
+import { ref, watch } from 'vue'
 
-const { user, login, loading } = useAuth()
+const { user, loading } = useAuth()
+const { $auth } = useNuxtApp()
+const sendingReset = ref(false)
 
 watch(
   [() => user.value, () => loading.value],
@@ -34,19 +38,48 @@ watch(
   { immediate: true }
 )
 
-const loginSchema = toTypedSchema(
+const forgotPasswordSchema = toTypedSchema(
   z.object({
-    email: z.string().min(1, 'Email is required').email('Invalid email'),
-    password: z.string().min(1, 'Password is required')
+    email: z.string().min(1, 'Email is required').email('Invalid email')
   })
 )
 
 const { isFieldDirty, handleSubmit } = useForm({
-  validationSchema: loginSchema
+  validationSchema: forgotPasswordSchema
 })
 
 const onSubmit = handleSubmit(async (data) => {
-  await login(data.email, data.password)
+  try {
+    sendingReset.value = true
+    await sendPasswordResetEmail($auth, data.email.trim())
+    toast.success('Password reset email sent. Check your inbox.', {
+      style: { background: '#6ee7b7' },
+      duration: 3000
+    })
+  } catch (e: any) {
+    if (e.code === 'auth/too-many-requests') {
+      toast.error('Too many requests. Please try again later.', {
+        style: { background: '#fda4af' },
+        duration: 3000
+      })
+    } else if (e.code === 'auth/network-request-failed') {
+      toast.error('Network error. Please check your connection.', {
+        style: { background: '#fda4af' },
+        duration: 3000
+      })
+    } else {
+      toast.error(
+        'Could not send password reset email. Please try again later.',
+        {
+          style: { background: '#fda4af' },
+          duration: 3000
+        }
+      )
+      console.error('Error sending password reset email:', e)
+    }
+  } finally {
+    sendingReset.value = false
+  }
 })
 </script>
 
@@ -55,9 +88,11 @@ const onSubmit = handleSubmit(async (data) => {
     <div class="max-w-md w-full">
       <Card>
         <CardHeader class="space-y-1">
-          <CardTitle class="text-2xl font-bold text-center">Login</CardTitle>
+          <CardTitle class="text-2xl font-bold text-center">
+            Forgot Password
+          </CardTitle>
           <CardDescription class="text-center">
-            Enter your email and password to access your account
+            Enter your email to receive a password reset link
           </CardDescription>
         </CardHeader>
 
@@ -75,52 +110,26 @@ const onSubmit = handleSubmit(async (data) => {
                     v-bind="componentField"
                     type="email"
                     placeholder="your@email.com"
-                    :disabled="loading"
+                    :disabled="loading || sendingReset"
                   />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             </FormField>
 
-            <FormField
-              v-slot="{ componentField }"
-              name="password"
-              :validate-on-blur="!isFieldDirty"
+            <Button
+              type="submit"
+              class="w-full"
+              :disabled="loading || sendingReset"
             >
-              <FormItem>
-                <div class="flex items-center justify-between">
-                  <FormLabel>Password</FormLabel>
-                  <Button
-                    type="button"
-                    variant="link"
-                    class="h-auto p-0 text-xs"
-                    :disabled="loading"
-                    @click="navigateTo('/forgot-password')"
-                  >
-                    Forgot password?
-                  </Button>
-                </div>
-                <FormControl>
-                  <Input
-                    v-bind="componentField"
-                    type="password"
-                    placeholder="******"
-                    :disabled="loading"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-
-            <Button type="submit" class="w-full" :disabled="loading">
-              {{ loading ? 'Loading...' : 'Login' }}
+              {{ sendingReset ? 'Sending...' : 'Send reset email' }}
             </Button>
           </form>
         </CardContent>
 
         <CardFooter class="flex justify-center">
-          <Button variant="link" @click="navigateTo('/workspaces')">
-            Continue as guest
+          <Button variant="link" @click="navigateTo('/login')">
+            Back to login
           </Button>
         </CardFooter>
       </Card>
