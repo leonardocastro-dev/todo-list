@@ -132,12 +132,12 @@ const handleClose = () => {
           <Badge
             v-if="isCompleted"
             variant="outline"
-            class="bg-emerald-100 text-emerald-700 border-emerald-300"
+            class="bg-emerald-100 text-emerald-600 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-400"
           >
             <Check class="h-3 w-3 mr-1" />
             Completed
           </Badge>
-          <Badge v-else variant="outline" class="bg-gray-100 text-gray-700">
+          <Badge v-else variant="outline" class="bg-amber-100 text-amber-600 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400">
             Pending
           </Badge>
           <span class="truncate">{{ task.title }}</span>

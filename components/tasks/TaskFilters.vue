@@ -350,7 +350,7 @@ const activeFilterCount = computed(() => {
       <button
         v-for="item in statusItems"
         :key="item.value"
-        class="flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors"
+        class="flex items-center gap-3 cursor-pointer rounded-lg border px-4 py-3 text-left transition-colors"
         :class="taskStore.statusFilter === item.value
           ? 'border-primary bg-primary/5'
           : 'border-border bg-background hover:bg-muted/50'"
