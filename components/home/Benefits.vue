@@ -1,57 +1,59 @@
 <script setup lang="ts">
 import { Card, CardContent } from '@/components/ui/card'
-import { Zap, Target, Smile } from 'lucide-vue-next'
+import { ShieldCheck, GitMerge, Workflow } from 'lucide-vue-next'
+import { useScrollReveal } from '@/composables/useScrollReveal'
+
+useScrollReveal()
 
 const benefits = [
   {
-    icon: Zap,
-    title: 'Maximum Productivity',
+    icon: ShieldCheck,
+    title: 'Server-enforced permissions',
     description:
-      'Organize your tasks efficiently and increase your productivity by up to 3x. Less time planning, more time executing.',
+      'Roles and permissions are validated server-side on every API call — not just hidden in the UI. Your data stays safe even if the frontend is bypassed.',
     gradient: 'from-accent to-primary'
   },
   {
-    icon: Target,
-    title: 'Complete Organization',
+    icon: GitMerge,
+    title: 'Structured, not chaotic',
     description:
-      'Keep all your tasks in one place. Visualize, prioritize, and manage everything without complications.',
+      'The three-tier Workspace → Project → Task model gives work the right context. No more flat lists where everything competes for attention.',
     gradient: 'from-primary to-primary-glow'
   },
   {
-    icon: Smile,
-    title: 'Simplicity',
+    icon: Workflow,
+    title: 'Works for guests too',
     description:
-      'Intuitive and easy-to-use interface. Start using it in seconds with no learning curve. Simplicity that works.',
+      'You can use Fokuz right now without creating an account. All your guest data migrates automatically when you eventually sign up.',
     gradient: 'from-primary-glow to-accent'
   }
 ]
 </script>
 
 <template>
-  <section id="about" class="py-20 md:py-32 bg-gradient-subtle">
+  <section id="benefits" class="py-20 md:py-32 bg-gradient-subtle">
     <div class="container mx-auto px-4 md:px-6">
       <!-- Section Header -->
-      <div class="text-center space-y-4 mb-16 animate-fade-in">
+      <div class="text-center space-y-4 mb-16 reveal">
         <h2 class="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-          Why use
+          Why
           <span class="bg-gradient-primary bg-clip-text text-transparent">
             Fokuz
           </span>
           ?
         </h2>
         <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
-          The perfect solution for those seeking productivity, organization, and
-          simplicity
+          The right balance of structure, flexibility, and simplicity for teams
+          that ship
         </p>
       </div>
 
       <!-- Benefits Grid -->
-      <div class="grid gap-8 md:grid-cols-3">
+      <div class="grid gap-8 md:grid-cols-3 reveal-stagger">
         <Card
           v-for="(benefit, index) in benefits"
           :key="index"
-          class="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg group animate-scale-in"
-          :style="{ animationDelay: `${index * 0.15}s` }"
+          class="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg group"
         >
           <div
             :class="`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${benefit.gradient}`"
@@ -77,17 +79,6 @@ const benefits = [
             </div>
           </CardContent>
         </Card>
-      </div>
-
-      <!-- Additional Info -->
-      <div class="mt-16 text-center animate-fade-in-up">
-        <div
-          class="inline-flex items-center justify-center rounded-full bg-muted px-6 py-3"
-        >
-          <span class="text-sm font-medium text-primary">
-            ✨ Thousands of users already trust Fokuz
-          </span>
-        </div>
       </div>
     </div>
   </section>

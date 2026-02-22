@@ -1,39 +1,26 @@
 <script setup lang="ts">
-import { Facebook, Twitter, Instagram, Linkedin, Github } from 'lucide-vue-next'
+import { Github } from 'lucide-vue-next'
 
 const currentYear = new Date().getFullYear()
 
 const footerLinks = {
   product: [
     { name: 'Features', href: '#features' },
-    { name: 'Pricing', href: '#pricing' },
-    { name: 'Security', href: '#security' }
+    { name: 'How it works', href: '#how-it-works' },
+    { name: 'Permissions', href: '#permissions' }
   ],
-  company: [
-    { name: 'About', href: '#about' },
-    { name: 'Blog', href: '#blog' },
-    { name: 'Careers', href: '#careers' }
-  ],
-  support: [
-    { name: 'Help Center', href: '#help' },
-    { name: 'Contact', href: '#contact' },
-    { name: 'Documentation', href: '#docs' }
+  getStarted: [
+    { name: 'Create account', href: '/register' },
+    { name: 'Login', href: '/login' },
+    { name: 'Try as guest', href: '/workspaces' }
   ]
 }
-
-const socialLinks = [
-  { icon: Facebook, href: '#', label: 'Facebook' },
-  { icon: Twitter, href: '#', label: 'Twitter' },
-  { icon: Instagram, href: '#', label: 'Instagram' },
-  { icon: Linkedin, href: '#', label: 'LinkedIn' },
-  { icon: Github, href: '#', label: 'GitHub' }
-]
 </script>
 
 <template>
-  <footer id="contact" class="border-t border-border bg-background">
+  <footer class="border-t border-border bg-background">
     <div class="container mx-auto px-4 md:px-6 py-12 md:py-16">
-      <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
+      <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
         <!-- Brand -->
         <div class="lg:col-span-2 space-y-4">
           <NuxtLink to="/" class="flex items-center space-x-2">
@@ -45,24 +32,21 @@ const socialLinks = [
             <span class="text-xl font-bold text-foreground">Fokuz</span>
           </NuxtLink>
           <p class="text-sm text-muted-foreground max-w-sm">
-            The simplest and most intuitive way to manage your tasks and boost
-            your productivity.
+            Workspace-based task management for collaborative teams. Three-tier
+            hierarchy, granular permissions, guest mode included.
           </p>
-          <!-- Social Links -->
-          <div class="flex space-x-4">
-            <a
-              v-for="social in socialLinks"
-              :key="social.label"
-              :href="social.href"
-              class="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
-              :aria-label="social.label"
-            >
-              <component :is="social.icon" class="h-5 w-5" />
-            </a>
-          </div>
+          <a
+            href="https://github.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+            aria-label="GitHub"
+          >
+            <Github class="h-5 w-5" />
+          </a>
         </div>
 
-        <!-- Links Columns -->
+        <!-- Product Links -->
         <div class="space-y-4">
           <h3 class="text-sm font-semibold text-foreground">Product</h3>
           <ul class="space-y-2">
@@ -77,30 +61,17 @@ const socialLinks = [
           </ul>
         </div>
 
+        <!-- Get started Links -->
         <div class="space-y-4">
-          <h3 class="text-sm font-semibold text-foreground">Company</h3>
+          <h3 class="text-sm font-semibold text-foreground">Get started</h3>
           <ul class="space-y-2">
-            <li v-for="link in footerLinks.company" :key="link.name">
-              <a
-                :href="link.href"
+            <li v-for="link in footerLinks.getStarted" :key="link.name">
+              <NuxtLink
+                :to="link.href"
                 class="text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 {{ link.name }}
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <div class="space-y-4">
-          <h3 class="text-sm font-semibold text-foreground">Support</h3>
-          <ul class="space-y-2">
-            <li v-for="link in footerLinks.support" :key="link.name">
-              <a
-                :href="link.href"
-                class="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {{ link.name }}
-              </a>
+              </NuxtLink>
             </li>
           </ul>
         </div>
@@ -111,22 +82,8 @@ const socialLinks = [
         class="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4"
       >
         <p class="text-sm text-muted-foreground">
-          © {{ currentYear }} Fokuz. All rights reserved.
+          © {{ currentYear }} Fokuz. Open source project.
         </p>
-        <div class="flex gap-6">
-          <a
-            href="#privacy"
-            class="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Privacy Policy
-          </a>
-          <a
-            href="#terms"
-            class="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Terms of Service
-          </a>
-        </div>
       </div>
     </div>
   </footer>

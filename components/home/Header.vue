@@ -1,21 +1,38 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Menu } from 'lucide-vue-next'
 
 const mobileMenuOpen = ref(false)
+const scrolled = ref(false)
 
 const navLinks = [
-  { name: 'Home', href: '/' },
   { name: 'Features', href: '#features' },
-  { name: 'About', href: '#about' },
-  { name: 'Contact', href: '#contact' }
+  { name: 'How it works', href: '#how-it-works' },
+  { name: 'Permissions', href: '#permissions' }
 ]
+
+function onScroll() {
+  scrolled.value = window.scrollY > 20
+}
+
+onMounted(() => {
+  window.addEventListener('scroll', onScroll, { passive: true })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', onScroll)
+})
 </script>
 
 <template>
   <header
-    class="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+    :class="[
+      'sticky top-0 z-50 w-full border-b transition-all duration-300',
+      scrolled
+        ? 'border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm'
+        : 'border-transparent bg-transparent'
+    ]"
   >
     <div
       class="container mx-auto flex h-16 items-center justify-between px-4 md:px-6"
@@ -32,14 +49,14 @@ const navLinks = [
 
       <!-- Desktop Navigation -->
       <nav class="hidden md:flex items-center space-x-8">
-        <NuxtLink
+        <a
           v-for="link in navLinks"
           :key="link.name"
-          :to="link.href"
+          :href="link.href"
           class="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           {{ link.name }}
-        </NuxtLink>
+        </a>
       </nav>
 
       <!-- Auth Buttons -->
@@ -77,15 +94,15 @@ const navLinks = [
       class="md:hidden border-t border-border bg-background animate-fade-in"
     >
       <nav class="container mx-auto flex flex-col space-y-4 px-4 py-6">
-        <NuxtLink
+        <a
           v-for="link in navLinks"
           :key="link.name"
-          :to="link.href"
+          :href="link.href"
           class="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           @click="mobileMenuOpen = false"
         >
           {{ link.name }}
-        </NuxtLink>
+        </a>
         <div class="flex flex-col space-y-2 pt-4 border-t border-border">
           <NuxtLink to="/login">
             <Button variant="ghost" size="sm" class="w-full"> Login </Button>

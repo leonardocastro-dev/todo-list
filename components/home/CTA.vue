@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
 import { ArrowRight } from 'lucide-vue-next'
+import { useScrollReveal } from '@/composables/useScrollReveal'
+
+useScrollReveal()
 </script>
 
 <template>
   <section class="py-20 md:py-32 bg-background">
     <div class="container mx-auto px-4 md:px-6">
       <div
-        class="relative overflow-hidden rounded-3xl bg-gradient-hero p-12 md:p-16 lg:p-20 shadow-lg animate-scale-in"
+        class="relative overflow-hidden rounded-3xl bg-gradient-hero p-12 md:p-16 lg:p-20 shadow-lg reveal"
       >
         <div
           class="absolute top-0 right-0 -mt-8 -mr-8 h-64 w-64 rounded-full bg-white/10 blur-3xl"
@@ -21,11 +24,11 @@ import { ArrowRight } from 'lucide-vue-next'
             <h2
               class="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl"
             >
-              Ready to organize your routine?
+              Ready to bring your team into focus?
             </h2>
             <p class="text-lg text-white/90 max-w-2xl mx-auto">
-              Transform your productivity with Fokuz. Create an account and
-              start organizing your projects today!
+              Create a free account and start organising your team's work in
+              minutes. Or jump straight in without signing up.
             </p>
           </div>
 
@@ -38,19 +41,19 @@ import { ArrowRight } from 'lucide-vue-next'
                 variant="secondary"
                 class="text-base font-semibold px-8 group shadow-lg hover:shadow-xl transition-all"
               >
-                Register
+                Create free account
                 <ArrowRight
                   class="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1"
                 />
               </Button>
             </NuxtLink>
-            <NuxtLink to="/login">
+            <NuxtLink to="/workspaces">
               <Button
                 size="lg"
                 variant="outline"
                 class="text-base font-semibold px-8 border-2 border-white text-white hover:bg-white hover:text-primary transition-all bg-transparent"
               >
-                Login
+                Try as guest — no signup
               </Button>
             </NuxtLink>
           </div>
@@ -76,7 +79,7 @@ import { ArrowRight } from 'lucide-vue-next'
                   clip-rule="evenodd"
                 />
               </svg>
-              Open Source
+              Open source
             </div>
             <div class="flex items-center gap-2">
               <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -86,7 +89,7 @@ import { ArrowRight } from 'lucide-vue-next'
                   clip-rule="evenodd"
                 />
               </svg>
-              Portfolio Project
+              Guest mode, no signup
             </div>
           </div>
         </div>
