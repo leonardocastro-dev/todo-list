@@ -109,16 +109,23 @@ onMounted(async () => {
   }
 })
 
-// When scope changes to 'all', load all tasks if needed
-watch(() => taskStore.scopeFilter, async (newScope) => {
-  if (workspaceId.value && newScope === 'all') {
-    await taskStore.loadWorkspaceTasks(
-      workspaceId.value,
-      'all',
-      user.value?.uid
-    )
+// When scope changes, load all tasks if needed (for 'all' or filtering by another member)
+watch(
+  [() => taskStore.scopeFilter, () => taskStore.scopeUserId],
+  async ([newScope, newUserId]) => {
+    if (!workspaceId.value) return
+    const needsAllData =
+      newScope === 'all' ||
+      (newScope === 'assigneds' && newUserId && newUserId !== user.value?.uid)
+    if (needsAllData) {
+      await taskStore.loadWorkspaceTasks(
+        workspaceId.value,
+        'all',
+        user.value?.uid
+      )
+    }
   }
-})
+)
 
 // Force reload when clicking Sync button
 const handleReload = async () => {

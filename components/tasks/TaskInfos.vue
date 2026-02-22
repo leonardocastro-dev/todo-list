@@ -154,7 +154,7 @@ const handleClose = () => {
               class="h-4 w-4"
               :class="`priority-${task.priority}`"
             />
-            <Badge variant="outline" :class="`priority-badge-${task.priority}`">
+            <Badge :class="`priority-badge-${task.priority}`">
               {{ task.priority }}
             </Badge>
           </div>
@@ -200,7 +200,7 @@ const handleClose = () => {
                       'cursor-default': !hasMultipleMembers
                     }"
                   >
-                    <Avatar class="h-6 w-6">
+                    <Avatar class="bg-muted h-6 w-6">
                       <AvatarImage
                         v-if="firstMember.avatarUrl"
                         :src="firstMember.avatarUrl"
@@ -229,7 +229,7 @@ const handleClose = () => {
                     :key="member.uid"
                     class="flex items-center gap-2"
                   >
-                    <Avatar class="h-6 w-6">
+                    <Avatar class="bg-muted h-6 w-6">
                       <AvatarImage
                         v-if="member.avatarUrl"
                         :src="member.avatarUrl"

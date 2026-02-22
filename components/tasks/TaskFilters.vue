@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import type { DateValue } from 'reka-ui'
 import { CalendarDate } from '@internationalized/date'
-import { SlidersHorizontal, ListTodo, Clock, CheckCircle2, CalendarIcon, ChevronDown } from 'lucide-vue-next'
+import { SlidersHorizontal, ListTodo, Clock, CheckCircle2, CalendarIcon, ChevronDown, Users, Check } from 'lucide-vue-next'
 import Calendar from '@/components/ui/calendar/Calendar.vue'
 import {
   Select,
@@ -11,16 +11,26 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from '@/components/ui/dropdown-menu'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger
 } from '@/components/ui/popover'
 import { Badge } from '@/components/ui/badge'
+import { useAuth } from '@/composables/useAuth'
+import { useMembers } from '@/composables/useMembers'
 
 const props = withDefaults(
   defineProps<{
@@ -36,8 +46,38 @@ const emit = defineEmits<{
 }>()
 
 const taskStore = useTaskStore()
+const { user } = useAuth()
+const { members } = useMembers()
 
-const isAllScope = computed(() => taskStore.scopeFilter === 'all')
+const sortedMembers = computed(() => {
+  const uid = user.value?.uid
+  return [...members.value].sort((a, b) => {
+    if (uid && a.uid === uid) return -1
+    if (uid && b.uid === uid) return 1
+    return (a.username || '').localeCompare(b.username || '')
+  })
+})
+
+const scopeLabel = computed(() => {
+  if (taskStore.scopeFilter === 'all') return 'All'
+  if (!taskStore.scopeUserId) return 'All'
+  if (taskStore.scopeUserId === user.value?.uid) return 'Me'
+  const member = members.value.find((m) => m.uid === taskStore.scopeUserId)
+  return member?.username || 'Member'
+})
+
+const selectedMember = computed(() => {
+  if (taskStore.scopeFilter === 'all' || !taskStore.scopeUserId) return null
+  return members.value.find((m) => m.uid === taskStore.scopeUserId) || null
+})
+
+const selectMember = (memberId: string | null) => {
+  if (memberId === null) {
+    taskStore.setScopeFilter('all')
+  } else {
+    taskStore.setScopeFilter('assigneds', memberId)
+  }
+}
 
 const statusItems = computed(() => [
   {
@@ -139,27 +179,69 @@ const activeFilterCount = computed(() => {
         />
       </div>
 
-      <div
-        class="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 shrink-0"
-      >
-        <span
-          class="text-xs font-medium uppercase tracking-wide transition-colors"
-          :class="isAllScope ? 'text-muted-foreground' : 'text-foreground'"
-        >
-          Assigned
-        </span>
-        <Switch
-          aria-label="Toggle task scope"
-          :model-value="isAllScope"
-          @update:model-value="(val: boolean) => taskStore.setScopeFilter(val ? 'all' : 'assigneds')"
-        />
-        <span
-          class="text-xs font-medium uppercase tracking-wide transition-colors"
-          :class="isAllScope ? 'text-foreground' : 'text-muted-foreground'"
-        >
-          All
-        </span>
-      </div>
+      <DropdownMenu v-if="members.length > 0">
+        <DropdownMenuTrigger as-child>
+          <Button variant="outline" size="default" class="gap-2 shrink-0">
+            <Avatar v-if="selectedMember" class="bg-muted h-5 w-5">
+              <AvatarImage
+                v-if="selectedMember.avatarUrl"
+                :src="selectedMember.avatarUrl"
+                :alt="selectedMember.username || ''"
+              />
+              <AvatarFallback class="text-[10px]">
+                {{ selectedMember.username?.charAt(0).toUpperCase() || '?' }}
+              </AvatarFallback>
+            </Avatar>
+            <Users v-else class="h-4 w-4" />
+            <span>{{ scopeLabel }}</span>
+            <ChevronDown class="h-4 w-4 opacity-50" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" class="w-52">
+          <DropdownMenuLabel>Filter by member</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            class="flex items-center gap-2 cursor-pointer"
+            @click="selectMember(null)"
+          >
+            <Users class="h-4 w-4 shrink-0" />
+            <span class="flex-1">All</span>
+            <Check
+              v-if="taskStore.scopeFilter === 'all'"
+              class="h-4 w-4 shrink-0"
+            />
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            v-for="member in sortedMembers"
+            :key="member.uid"
+            class="flex items-center gap-2 cursor-pointer"
+            @click="selectMember(member.uid)"
+          >
+            <Avatar class="bg-muted h-5 w-5 shrink-0">
+              <AvatarImage
+                v-if="member.avatarUrl"
+                :src="member.avatarUrl"
+                :alt="member.username || ''"
+              />
+              <AvatarFallback class="text-[10px]">
+                {{ member.username?.charAt(0).toUpperCase() || '?' }}
+              </AvatarFallback>
+            </Avatar>
+            <span class="flex-1 truncate">
+              {{ member.username || 'Unknown' }}
+              <span
+                v-if="user?.uid === member.uid"
+                class="text-muted-foreground text-xs"
+              >(you)</span>
+            </span>
+            <Check
+              v-if="taskStore.scopeFilter === 'assigneds' && taskStore.scopeUserId === member.uid"
+              class="h-4 w-4 shrink-0"
+            />
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <Popover>
         <PopoverTrigger as-child>

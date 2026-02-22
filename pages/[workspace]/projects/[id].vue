@@ -44,12 +44,18 @@ onMounted(async () => {
   await taskStore.setCurrentProject(projectId, user.value?.uid, workspaceId)
 })
 
-// Quando scope muda para 'all', carrega todas as tasks do projeto se necessário
-watch(() => taskStore.scopeFilter, async (newScope) => {
-  if (newScope === 'all') {
-    await taskStore.setCurrentProject(projectId, user.value?.uid, workspaceId)
+// When scope changes, reload tasks if needed (for 'all' or filtering by another member)
+watch(
+  [() => taskStore.scopeFilter, () => taskStore.scopeUserId],
+  async ([newScope, newUserId]) => {
+    const needsAllData =
+      newScope === 'all' ||
+      (newScope === 'assigneds' && newUserId && newUserId !== user.value?.uid)
+    if (needsAllData) {
+      await taskStore.setCurrentProject(projectId, user.value?.uid, workspaceId)
+    }
   }
-})
+)
 </script>
 
 <template>

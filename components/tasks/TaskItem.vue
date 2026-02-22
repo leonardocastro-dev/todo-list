@@ -195,9 +195,7 @@ const formatDueDate = (date: Date) => {
               >
                 {{ task.title }}
               </span>
-              <Badge
-                variant="outline"
-                :class="`${localChecked ? 'bg-gray-200' : `priority-badge-${task.priority}`}`"
+              <Badge :class="`${localChecked ? 'bg-gray-200' : `priority-badge-${task.priority}`}`"
               >
                 {{ task.priority }}
               </Badge>

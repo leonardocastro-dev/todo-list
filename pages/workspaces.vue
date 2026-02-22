@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { LogOut, Settings } from 'lucide-vue-next'
 
-const { user, loading, logout } = useAuth()
+const { user, userProfile, loading, logout } = useAuth()
 const workspaceStore = useWorkspaceStore()
 const isCreatingWorkspace = ref(false)
 const router = useRouter()
@@ -52,7 +52,7 @@ onMounted(async () => {
         class="flex lg:flex-row flex-col-reverse md:items-end items-start lg:items-center gap-3"
       >
         <div class="text-right">
-          <p class="text-sm text-muted-foreground">{{ user.email }}</p>
+          <p class="text-sm text-muted-foreground">{{ userProfile?.username || user.email }}</p>
         </div>
         <div class="flex gap-3">
           <Button
