@@ -46,13 +46,8 @@ watch(() => route.fullPath, closeMobileMenu)
       class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-background border-b z-40 flex items-center justify-between px-6 transition-shadow duration-200"
       :class="isMobileMenuOpen ? '' : 'shadow-sm'"
     >
-      <NuxtLink to="/workspaces" class="flex items-center space-x-2">
-        <div
-          class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary"
-        >
-          <span class="text-xl font-bold text-primary-foreground">FK</span>
-        </div>
-        <span class="text-xl font-bold text-foreground">Fokuz</span>
+      <NuxtLink to="/workspaces">
+        <img src="/logo-light.svg" alt="Fokuz" class="h-9" />
       </NuxtLink>
       <div
         :class="{ 'nav-burguer lg:hidden': true, open: isMobileMenuOpen }"
@@ -193,13 +188,8 @@ watch(() => route.fullPath, closeMobileMenu)
       class="hidden lg:flex w-64 bg-background border-r fixed h-screen flex-col"
     >
       <div class="p-6 pb-4">
-        <NuxtLink to="/workspaces" class="flex items-center space-x-2">
-          <div
-            class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-primary"
-          >
-            <span class="font-bold text-primary-foreground">FK</span>
-          </div>
-          <span class="font-bold text-foreground">Fokuz</span>
+        <NuxtLink to="/workspaces">
+          <img src="/logo-light.svg" alt="Fokuz" class="h-8" />
         </NuxtLink>
         <div v-if="workspace?.name" class="mt-4 px-1">
           <p class="text-xs text-muted-foreground uppercase tracking-wide font-medium">Workspace</p>

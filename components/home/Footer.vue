@@ -23,13 +23,8 @@ const footerLinks = {
       <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
         <!-- Brand -->
         <div class="lg:col-span-2 space-y-4">
-          <NuxtLink to="/" class="flex items-center space-x-2">
-            <div
-              class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary"
-            >
-              <span class="text-xl font-bold text-primary-foreground">FK</span>
-            </div>
-            <span class="text-xl font-bold text-foreground">Fokuz</span>
+          <NuxtLink to="/">
+            <img src="/logo-light.svg" alt="Fokuz" class="h-10" />
           </NuxtLink>
           <p class="text-sm text-muted-foreground max-w-sm">
             Workspace-based task management for collaborative teams. Three-tier

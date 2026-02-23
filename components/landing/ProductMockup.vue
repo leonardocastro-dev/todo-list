@@ -43,12 +43,7 @@ import { Search, Clock, Users, ChevronRight } from 'lucide-vue-next'
           >
             <!-- Logo + workspace -->
             <div class="p-4 pb-3">
-              <div class="flex items-center gap-2">
-                <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-primary shrink-0">
-                  <span class="text-xs font-bold text-primary-foreground">FK</span>
-                </div>
-                <span class="font-bold text-sm text-foreground">Fokuz</span>
-              </div>
+              <img src="/logo-light.svg" alt="Fokuz" class="h-7" />
               <div class="mt-3 px-1">
                 <p class="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Workspace</p>
                 <p class="text-xs font-semibold text-foreground mt-0.5">Acme Corp</p>
