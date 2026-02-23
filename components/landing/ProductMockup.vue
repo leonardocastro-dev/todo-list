@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search, Clock, Users } from 'lucide-vue-next'
+import { Search, Clock, Users, ChevronRight } from 'lucide-vue-next'
 </script>
 
 <template>
@@ -39,36 +39,69 @@ import { Search, Clock, Users } from 'lucide-vue-next'
         <div class="flex h-[420px] bg-background">
           <!-- Sidebar -->
           <div
-            class="w-52 flex-shrink-0 border-r border-border bg-sidebar flex flex-col p-3 gap-1"
+            class="w-52 flex-shrink-0 border-r border-border bg-background flex flex-col"
           >
-            <div class="px-2 py-1 mb-2">
-              <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Workspace</span>
-              <p class="text-sm font-bold text-foreground mt-0.5">Acme Corp</p>
-            </div>
-
-            <div class="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">Projects</div>
-
-            <div class="flex items-center gap-2 rounded-md bg-primary/10 px-2 py-1.5 cursor-pointer">
-              <span class="text-base">💻</span>
-              <span class="text-sm font-medium text-primary">Frontend</span>
-            </div>
-            <div class="flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer hover:bg-muted">
-              <span class="text-base">🔧</span>
-              <span class="text-sm text-muted-foreground">Backend</span>
-            </div>
-            <div class="flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer hover:bg-muted">
-              <span class="text-base">🎨</span>
-              <span class="text-sm text-muted-foreground">Design</span>
-            </div>
-
-            <div class="mt-auto pt-2 border-t border-border">
-              <div class="text-xs text-muted-foreground px-2 mb-1.5">Members</div>
-              <div class="flex -space-x-2 px-2">
-                <div class="h-6 w-6 rounded-full bg-gradient-primary flex items-center justify-center text-xs font-bold text-white ring-2 ring-background">A</div>
-                <div class="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold text-white ring-2 ring-background">B</div>
-                <div class="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-white ring-2 ring-background">C</div>
-                <div class="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground ring-2 ring-background">+2</div>
+            <!-- Logo + workspace -->
+            <div class="p-4 pb-3">
+              <div class="flex items-center gap-2">
+                <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-primary shrink-0">
+                  <span class="text-xs font-bold text-primary-foreground">FK</span>
+                </div>
+                <span class="font-bold text-sm text-foreground">Fokuz</span>
               </div>
+              <div class="mt-3 px-1">
+                <p class="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Workspace</p>
+                <p class="text-xs font-semibold text-foreground mt-0.5">Acme Corp</p>
+              </div>
+            </div>
+
+            <!-- Nav -->
+            <nav class="flex flex-col flex-1 gap-1 px-2 py-1">
+              <div class="flex items-center px-3 py-1.5 text-xs font-medium text-muted-foreground rounded-md">
+                Tasks
+              </div>
+
+              <!-- Projects with chevron (expanded) -->
+              <div>
+                <div class="flex items-center justify-between px-3 py-1.5 text-xs font-medium text-primary bg-accent rounded-md">
+                  <span>Projects</span>
+                  <div class="rounded p-0.5">
+                    <ChevronRight class="h-3.5 w-3.5 rotate-90" />
+                  </div>
+                </div>
+                <div class="mt-0.5 flex flex-col gap-0.5 pl-3">
+                  <div class="flex items-center gap-1.5 px-3 py-1 text-xs rounded-md text-primary bg-accent font-medium">
+                    <span class="leading-none">💻</span>
+                    <span>Frontend</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 px-3 py-1 text-xs rounded-md text-muted-foreground">
+                    <span class="leading-none">🔧</span>
+                    <span>Backend</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 px-3 py-1 text-xs rounded-md text-muted-foreground">
+                    <span class="leading-none">🎨</span>
+                    <span>Design</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center px-3 py-1.5 text-xs font-medium text-muted-foreground rounded-md">
+                Members
+              </div>
+
+              <div class="border-t border-border my-1" />
+
+              <div class="flex items-center px-3 py-1.5 text-xs font-medium text-muted-foreground rounded-md">
+                Workspaces
+              </div>
+              <div class="flex items-center px-3 py-1.5 text-xs font-medium text-muted-foreground rounded-md">
+                Settings
+              </div>
+            </nav>
+
+            <!-- User -->
+            <div class="p-3 border-t border-border">
+              <p class="text-xs text-muted-foreground truncate px-1">john@acme.com</p>
             </div>
           </div>
 
