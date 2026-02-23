@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
-import { ArrowRight } from 'lucide-vue-next'
+import { ArrowRight, Clock } from 'lucide-vue-next'
 </script>
 
 <template>
@@ -85,18 +85,21 @@ import { ArrowRight } from 'lucide-vue-next'
                 <span class="text-sm font-medium">Fix auth token refresh</span>
                 <span class="priority-badge-urgent text-[10px] px-1.5 py-0.5 rounded font-semibold">Urgent</span>
               </div>
-              <div class="flex items-center gap-3">
-                <span class="text-xs text-red-600">⏰ Overdue · Feb 18</span>
+              <div class="flex items-center justify-between">
+                <span class="flex items-center gap-1 text-xs text-red-500">
+                  <Clock class="h-3.5 w-3.5" />
+                  Overdue Feb 18
+                </span>
                 <div class="flex -space-x-1.5">
-                  <div class="h-5 w-5 rounded-full bg-gradient-primary flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">A</div>
-                  <div class="h-5 w-5 rounded-full bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">B</div>
+                  <div class="h-6 w-6 rounded-full bg-gradient-primary flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">A</div>
+                  <div class="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">B</div>
                 </div>
               </div>
             </div>
           </div>
 
           <div
-            class="rounded-xl border border-border bg-card p-4 shadow-md flex items-start gap-3 opacity-75"
+            class="rounded-xl border border-border bg-card p-4 shadow-md flex items-start gap-3"
           >
             <div class="mt-0.5 h-4 w-4 rounded-full bg-primary flex-shrink-0 flex items-center justify-center">
               <svg class="h-2.5 w-2.5 text-primary-foreground" fill="none" viewBox="0 0 12 12">
@@ -105,10 +108,13 @@ import { ArrowRight } from 'lucide-vue-next'
             </div>
             <div class="flex-1 space-y-1.5">
               <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-sm font-medium line-through text-muted-foreground">Design new onboarding flow</span>
+                <span class="text-sm font-medium line-through text-muted-foreground opacity-70">Design new onboarding flow</span>
                 <span class="priority-badge-important text-[10px] px-1.5 py-0.5 rounded font-semibold">Important</span>
               </div>
-              <span class="text-xs text-muted-foreground">Due Feb 20</span>
+              <span class="flex items-center gap-1 text-xs text-muted-foreground">
+                <Clock class="h-3.5 w-3.5" />
+                Due Feb 20
+              </span>
             </div>
           </div>
 
@@ -121,9 +127,12 @@ import { ArrowRight } from 'lucide-vue-next'
                 <span class="text-sm font-medium">Update API documentation</span>
                 <span class="priority-badge-normal text-[10px] px-1.5 py-0.5 rounded font-semibold">Normal</span>
               </div>
-              <div class="flex items-center gap-3">
-                <span class="text-xs text-muted-foreground">Due Mar 1</span>
-                <div class="h-5 w-5 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">C</div>
+              <div class="flex items-center justify-between">
+                <span class="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Clock class="h-3.5 w-3.5" />
+                  Due Mar 1
+                </span>
+                <div class="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">C</div>
               </div>
             </div>
           </div>

@@ -35,6 +35,7 @@ onMounted(async () => {
         statusMessage: 'Workspace not found'
       })
     }
+    workspaceStore.setCurrentWorkspace(workspace)
   }
 })
 </script>

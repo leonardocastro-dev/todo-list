@@ -1,15 +1,26 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { LogOut, Lock } from 'lucide-vue-next'
+import { LogOut, Lock, ChevronRight } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/composables/useAuth'
 
 const { user, userProfile, logout } = useAuth()
 const route = useRoute()
+const projectStore = useProjectStore()
+const { workspace } = useWorkspace()
 
 const workspaceSlug = computed(() => route.params.workspace as string)
 const isGuest = computed(() => !user.value)
 const isMobileMenuOpen = ref(false)
+const projectsExpanded = ref(false)
+
+watch(
+  () => route.path,
+  (path) => {
+    if (path.includes('/projects/')) projectsExpanded.value = true
+  },
+  { immediate: true }
+)
 
 const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
@@ -133,6 +144,10 @@ watch(() => route.fullPath, closeMobileMenu)
         </nav>
 
         <div class="p-4 border-t">
+          <div v-if="workspace?.name" class="mb-3 px-2">
+            <p class="text-xs text-muted-foreground uppercase tracking-wide font-medium">Workspace</p>
+            <p class="text-sm font-semibold text-foreground truncate mt-0.5">{{ workspace.name }}</p>
+          </div>
           <div v-if="user">
             <div class="mb-3 px-2">
               <p class="text-sm text-muted-foreground truncate">
@@ -177,15 +192,19 @@ watch(() => route.fullPath, closeMobileMenu)
     <aside
       class="hidden lg:flex w-64 bg-background border-r fixed h-screen flex-col"
     >
-      <div class="p-6">
+      <div class="p-6 pb-4">
         <NuxtLink to="/workspaces" class="flex items-center space-x-2">
           <div
-            class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary"
+            class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-primary"
           >
-            <span class="text-xl font-bold text-primary-foreground">FK</span>
+            <span class="font-bold text-primary-foreground">FK</span>
           </div>
-          <span class="text-xl font-bold text-foreground">Fokuz</span>
+          <span class="font-bold text-foreground">Fokuz</span>
         </NuxtLink>
+        <div v-if="workspace?.name" class="mt-4 px-1">
+          <p class="text-xs text-muted-foreground uppercase tracking-wide font-medium">Workspace</p>
+          <p class="text-sm font-semibold text-foreground truncate mt-0.5">{{ workspace.name }}</p>
+        </div>
       </div>
 
       <nav
@@ -199,13 +218,52 @@ watch(() => route.fullPath, closeMobileMenu)
         >
           <span>Tasks</span>
         </NuxtLink>
-        <NuxtLink
-          :to="`/${workspaceSlug}/projects`"
-          class="flex items-center px-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
-          :class="{ '!text-primary !bg-accent': isWorkspaceSectionActive('projects') }"
-        >
-          Projects
-        </NuxtLink>
+        <div>
+          <div
+            class="flex w-full items-center justify-between px-4 py-2 text-sm font-medium rounded-md transition-colors"
+            :class="
+              isWorkspaceSectionActive('projects')
+                ? 'text-primary bg-accent'
+                : 'text-muted-foreground hover:text-primary hover:bg-accent'
+            "
+          >
+            <NuxtLink
+              :to="`/${workspaceSlug}/projects`"
+              class="flex-1 text-left"
+            >
+              Projects
+            </NuxtLink>
+            <button
+              class="rounded cursor-pointer p-1 transition-colors hover:bg-primary/20"
+              @click="projectsExpanded = !projectsExpanded"
+            >
+              <ChevronRight
+                class="h-4 w-4 transition-transform duration-200 shrink-0"
+                :class="projectsExpanded ? 'rotate-90' : ''"
+              />
+            </button>
+          </div>
+          <div v-if="projectsExpanded" class="mt-1 flex flex-col gap-0.5 pl-4">
+            <NuxtLink
+              v-for="project in projectStore.sortedProjects"
+              :key="project.id"
+              :to="`/${workspaceSlug}/projects/${project.id}`"
+              class="flex items-center gap-2 px-4 py-1.5 text-sm rounded-md transition-colors text-muted-foreground hover:text-primary hover:bg-accent"
+              :class="{
+                '!text-primary !bg-accent': route.path === `/${workspaceSlug}/projects/${project.id}`
+              }"
+            >
+              <span v-if="project.emoji" class="text-base leading-none">{{ project.emoji }}</span>
+              <span class="truncate">{{ project.title }}</span>
+            </NuxtLink>
+            <span
+              v-if="!projectStore.sortedProjects.length"
+              class="px-4 py-1.5 text-xs text-muted-foreground/60 italic"
+            >
+              No projects yet
+            </span>
+          </div>
+        </div>
         <div
           v-if="isGuest"
           class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors text-muted-foreground/50 cursor-not-allowed opacity-60"

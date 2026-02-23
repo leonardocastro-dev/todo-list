@@ -13,14 +13,11 @@ import {
 } from '@/components/ui/dropdown-menu'
 import {
   Check,
-  Flag,
   ArrowRight,
-  Star,
-  StarHalf,
   Lock,
   Trash2,
   PenLine,
-  CircleAlert
+  Clock
 } from 'lucide-vue-next'
 import TaskForm from './TaskForm.vue'
 import TaskInfos from './TaskInfos.vue'
@@ -139,16 +136,6 @@ const extraMembersCount = computed(() =>
   Math.max(0, taskMembersWithData.value.length - 3)
 )
 
-const getPriorityIcon = () => {
-  switch (props.task.priority) {
-    case 'urgent':
-      return Flag
-    case 'important':
-      return Star
-    default:
-      return StarHalf
-  }
-}
 
 const isOverdue = computed(() => {
   if (!props.task.dueDate || localChecked.value) return false
@@ -170,7 +157,7 @@ const formatDueDate = (date: Date) => {
 
 <template>
   <Card
-    :class="`mb-3 ${localChecked ? 'opacity-70' : ''} hover:shadow-md transition-shadow cursor-pointer`"
+    class="mb-3 hover:shadow-md transition-shadow cursor-pointer"
     @click="showInfoModal = true"
   >
     <CardContent class="px-4">
@@ -180,7 +167,7 @@ const formatDueDate = (date: Date) => {
             :id="`task-${task.id}`"
             :model-value="localChecked"
             :disabled="!canToggleStatus"
-            class="mt-0.5 rounded-full"
+            class="mt-0.5 rounded-full data-[state=unchecked]:border-2 data-[state=unchecked]:border-muted-foreground"
             @update:model-value="
               (checked) => canToggleStatus && toggle(!!checked)
             "
@@ -192,7 +179,7 @@ const formatDueDate = (date: Date) => {
         <div class="flex-1 overflow-hidden">
           <div class="flex items-center gap-2 min-w-0 mb-1">
             <span
-              :class="`font-medium text-sm truncate ${localChecked ? 'line-through text-muted-foreground' : ''}`"
+              :class="`font-medium text-sm truncate ${localChecked ? 'line-through text-muted-foreground opacity-70' : ''}`"
             >
               {{ task.title }}
             </span>
@@ -204,30 +191,21 @@ const formatDueDate = (date: Date) => {
 
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 text-xs text-muted-foreground">
-              <div class="flex items-center">
-                <component
-                  :is="getPriorityIcon()"
-                  class="h-4 w-4"
-                  :class="`priority-${task.priority}`"
-                />
-                <span class="ml-1">{{ task.priority }}</span>
-              </div>
               <template v-if="projectName">
-                <span>•</span>
                 <span class="text-xs text-muted-foreground">
                   {{ projectName }}
                 </span>
+                <span>•</span>
               </template>
-              <span>•</span>
               <span
                 v-if="task.dueDate"
                 class="flex items-center gap-1"
                 :class="isOverdue ? 'text-red-500' : ''"
               >
-                <CircleAlert v-if="isOverdue" class="h-3.5 w-3.5" />
-                Due: {{ formatDueDate(new Date(task.dueDate)) }}
+                <Clock class="h-3.5 w-3.5" />
+                {{ isOverdue ? 'Overdue' : 'Due' }} {{ formatDueDate(new Date(task.dueDate)) }}
               </span>
-              <span v-else class="text-muted-foreground/70">No due date</span>
+              <span v-else>No due date</span>
             </div>
 
             <div
@@ -237,7 +215,7 @@ const formatDueDate = (date: Date) => {
               <Avatar
                 v-for="member in displayedMembers"
                 :key="member.uid"
-                class="h-8 w-8 bg-muted"
+                class="h-6 w-6 bg-muted"
               >
                 <AvatarImage
                   v-if="member.avatarUrl"

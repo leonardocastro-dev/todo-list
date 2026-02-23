@@ -64,7 +64,7 @@ const canCreateWorkspaceTasks = computed(() => {
 
 // Get project name for a task
 const getProjectName = (projectId?: string) => {
-  if (!projectId) return 'No Project'
+  if (!projectId) return undefined
   const project = projectStore.projects.find((p) => p.id === projectId)
   return project?.title || 'Unknown Project'
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search, CheckCircle2, Circle, Clock, Users } from 'lucide-vue-next'
+import { Search, Clock, Users } from 'lucide-vue-next'
 </script>
 
 <template>
@@ -64,10 +64,10 @@ import { Search, CheckCircle2, Circle, Clock, Users } from 'lucide-vue-next'
             <div class="mt-auto pt-2 border-t border-border">
               <div class="text-xs text-muted-foreground px-2 mb-1.5">Members</div>
               <div class="flex -space-x-2 px-2">
-                <div class="h-7 w-7 rounded-full bg-gradient-primary flex items-center justify-center text-xs font-bold text-white ring-2 ring-background">A</div>
-                <div class="h-7 w-7 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold text-white ring-2 ring-background">B</div>
-                <div class="h-7 w-7 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-white ring-2 ring-background">C</div>
-                <div class="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground ring-2 ring-background">+2</div>
+                <div class="h-6 w-6 rounded-full bg-gradient-primary flex items-center justify-center text-xs font-bold text-white ring-2 ring-background">A</div>
+                <div class="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold text-white ring-2 ring-background">B</div>
+                <div class="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-white ring-2 ring-background">C</div>
+                <div class="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground ring-2 ring-background">+2</div>
               </div>
             </div>
           </div>
@@ -100,55 +100,59 @@ import { Search, CheckCircle2, Circle, Clock, Users } from 'lucide-vue-next'
             <div class="flex-1 overflow-y-auto p-4 space-y-2.5">
               <!-- Task 1: urgent + overdue -->
               <div class="rounded-lg border border-border bg-card p-3 flex items-start gap-3 hover:border-primary/40 transition-colors">
-                <Circle class="h-4 w-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                <div class="mt-0.5 h-4 w-4 rounded-full border-2 border-muted-foreground flex-shrink-0" />
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
+                  <div class="flex items-center gap-2 flex-wrap mb-1">
                     <span class="text-sm font-medium">Fix auth token refresh bug</span>
                     <span class="priority-badge-urgent text-[10px] px-1.5 py-0.5 rounded font-semibold">Urgent</span>
                   </div>
-                  <div class="flex items-center gap-3 mt-1">
-                    <div class="flex items-center gap-1 text-red-600 text-xs">
-                      <Clock class="h-3 w-3" />
-                      Overdue · Feb 18
-                    </div>
+                  <div class="flex items-center justify-between">
+                    <span class="flex items-center gap-1 text-red-500 text-xs">
+                      <Clock class="h-3.5 w-3.5" />
+                      Overdue Feb 18
+                    </span>
                     <div class="flex -space-x-1.5">
-                      <div class="h-5 w-5 rounded-full bg-gradient-primary flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">A</div>
-                      <div class="h-5 w-5 rounded-full bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">B</div>
+                      <div class="h-6 w-6 rounded-full bg-gradient-primary flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">A</div>
+                      <div class="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">B</div>
                     </div>
                   </div>
                 </div>
               </div>
 
               <!-- Task 2: important + completed -->
-              <div class="rounded-lg border border-border bg-card p-3 flex items-start gap-3 opacity-70">
-                <CheckCircle2 class="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+              <div class="rounded-lg border border-border bg-card p-3 flex items-start gap-3">
+                <div class="mt-0.5 h-4 w-4 rounded-full bg-primary flex-shrink-0 flex items-center justify-center">
+                  <svg class="h-2.5 w-2.5 text-primary-foreground" fill="none" viewBox="0 0 12 12">
+                    <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-sm font-medium line-through text-muted-foreground">Design new onboarding flow</span>
+                  <div class="flex items-center gap-2 flex-wrap mb-1">
+                    <span class="text-sm font-medium line-through text-muted-foreground opacity-70">Design new onboarding flow</span>
                     <span class="priority-badge-important text-[10px] px-1.5 py-0.5 rounded font-semibold">Important</span>
                   </div>
-                  <div class="flex items-center gap-3 mt-1">
-                    <div class="flex items-center gap-1 text-muted-foreground text-xs">
-                      <Clock class="h-3 w-3" />
-                      Feb 20
-                    </div>
-                    <div class="h-5 w-5 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">C</div>
+                  <div class="flex items-center justify-between">
+                    <span class="flex items-center gap-1 text-muted-foreground text-xs">
+                      <Clock class="h-3.5 w-3.5" />
+                      Due Feb 20
+                    </span>
+                    <div class="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">C</div>
                   </div>
                 </div>
               </div>
 
               <!-- Task 3: normal -->
               <div class="rounded-lg border border-border bg-card p-3 flex items-start gap-3 hover:border-primary/40 transition-colors">
-                <Circle class="h-4 w-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                <div class="mt-0.5 h-4 w-4 rounded-full border-2 border-muted-foreground flex-shrink-0" />
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
+                  <div class="flex items-center gap-2 flex-wrap mb-1">
                     <span class="text-sm font-medium">Update README documentation</span>
                     <span class="priority-badge-normal text-[10px] px-1.5 py-0.5 rounded font-semibold">Normal</span>
                   </div>
-                  <div class="flex items-center gap-1 text-muted-foreground text-xs mt-1">
-                    <Clock class="h-3 w-3" />
-                    Mar 1
-                  </div>
+                  <span class="flex items-center gap-1 text-muted-foreground text-xs">
+                    <Clock class="h-3.5 w-3.5" />
+                    Due Mar 1
+                  </span>
                 </div>
               </div>
             </div>
