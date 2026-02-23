@@ -175,80 +175,31 @@ const formatDueDate = (date: Date) => {
   >
     <CardContent class="px-4">
       <div class="flex items-start gap-3">
-        <div class="pt-0.5" @click.stop>
+        <div @click.stop>
           <Checkbox
             :id="`task-${task.id}`"
             :model-value="localChecked"
             :disabled="!canToggleStatus"
-            class="mt-1"
+            class="mt-0.5 rounded-full"
             @update:model-value="
               (checked) => canToggleStatus && toggle(!!checked)
             "
-          />
+          >
+            <Check class="size-2.5" />
+          </Checkbox>
         </div>
 
         <div class="flex-1 overflow-hidden">
-          <div class="flex items-center justify-between gap-2 mb-1">
-            <div class="flex items-center gap-2 min-w-0">
-              <span
-                :class="`font-medium text-lg truncate ${localChecked ? 'line-through text-muted-foreground' : ''}`"
-              >
-                {{ task.title }}
-              </span>
-              <Badge :class="`${localChecked ? 'bg-gray-200' : `priority-badge-${task.priority}`}`"
-              >
-                {{ task.priority }}
-              </Badge>
-            </div>
-
-            <DropdownMenu v-if="hasAnyAction">
-              <DropdownMenuTrigger as-child>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  class="h-8 w-8 p-0"
-                  @click.stop
-                >
-                  <span class="sr-only">Open menu</span>
-                  <ArrowRight class="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  v-if="canEdit"
-                  class="flex items-center gap-2"
-                  @click="isEditing = true"
-                >
-                  <PenLine class="h-3 w-3" />
-                  Edit Task
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  v-else
-                  disabled
-                  class="flex items-center gap-2 opacity-50 cursor-not-allowed"
-                >
-                  <Lock class="h-3 w-3" />
-                  Edit Task
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  v-if="canDelete"
-                  class="flex items-center gap-2 text-destructive focus:text-destructive"
-                  @click="taskStore.deleteTask(task.id, user?.uid)"
-                >
-                  <Trash2 class="h-3 w-3 text-destructive/50" />
-                  Delete Task
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  v-else
-                  disabled
-                  class="flex items-center gap-2 opacity-50 cursor-not-allowed text-destructive/50"
-                >
-                  <Lock class="h-3 w-3 text-destructive/50" />
-                  Delete Task
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div class="flex items-center gap-2 min-w-0 mb-1">
+            <span
+              :class="`font-medium text-sm truncate ${localChecked ? 'line-through text-muted-foreground' : ''}`"
+            >
+              {{ task.title }}
+            </span>
+            <Badge :class="`priority-badge-${task.priority}`"
+            >
+              {{ task.priority }}
+            </Badge>
           </div>
 
           <div class="flex items-center justify-between">
@@ -277,13 +228,6 @@ const formatDueDate = (date: Date) => {
                 Due: {{ formatDueDate(new Date(task.dueDate)) }}
               </span>
               <span v-else class="text-muted-foreground/70">No due date</span>
-              <template v-if="localChecked">
-                <span>•</span>
-                <span class="flex items-center text-emerald-600">
-                  <Check class="h-3 w-3 mr-1" />
-                  Completed
-                </span>
-              </template>
             </div>
 
             <div
@@ -312,6 +256,55 @@ const formatDueDate = (date: Date) => {
             </div>
           </div>
         </div>
+
+        <DropdownMenu v-if="hasAnyAction">
+          <DropdownMenuTrigger as-child>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-8 w-8 p-0"
+              @click.stop
+            >
+              <span class="sr-only">Open menu</span>
+              <ArrowRight class="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              v-if="canEdit"
+              class="flex items-center gap-2"
+              @click="isEditing = true"
+            >
+              <PenLine class="h-3 w-3" />
+              Edit Task
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              v-else
+              disabled
+              class="flex items-center gap-2 opacity-50 cursor-not-allowed"
+            >
+              <Lock class="h-3 w-3" />
+              Edit Task
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              v-if="canDelete"
+              class="flex items-center gap-2 text-destructive focus:text-destructive"
+              @click="taskStore.deleteTask(task.id, user?.uid)"
+            >
+              <Trash2 class="h-3 w-3 text-destructive/50" />
+              Delete Task
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              v-else
+              disabled
+              class="flex items-center gap-2 opacity-50 cursor-not-allowed text-destructive/50"
+            >
+              <Lock class="h-3 w-3 text-destructive/50" />
+              Delete Task
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </CardContent>
   </Card>
