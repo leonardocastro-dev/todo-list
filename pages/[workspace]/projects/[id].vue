@@ -59,48 +59,53 @@ watch(
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto">
-    <header class="mb-8">
-      <div class="flex items-center gap-4 mb-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          class="flex items-center gap-1"
-          @click="router.push(`/${workspaceId}/projects`)"
-        >
-          <ArrowLeft class="h-4 w-4" />
-          <span>Back to Projects</span>
-        </Button>
-      </div>
-
-      <div
-        v-if="projectStore.isLoading"
-        class="flex justify-between items-start"
-      >
-        <div class="flex-1">
-          <Skeleton class="h-9 max-w-64 mb-2" />
-          <Skeleton class="h-6 max-w-96 mb-3" />
+  <div>
+    <div class="max-w-6xl mx-auto">
+      <header class="pb-6">
+        <div class="flex items-center gap-4 mb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            class="flex items-center gap-1"
+            @click="router.push(`/${workspaceId}/projects`)"
+          >
+            <ArrowLeft class="h-4 w-4" />
+            <span>Back to Projects</span>
+          </Button>
         </div>
-      </div>
 
-      <div v-else-if="currentProject">
-        <h1 class="text-3xl font-bold text-primary mb-2">
-          {{ currentProject.title }}
-        </h1>
-        <p v-if="currentProject.description" class="text-muted-foreground mb-3">
-          {{ currentProject.description }}
-        </p>
-      </div>
+        <div
+          v-if="projectStore.isLoading"
+          class="flex justify-between items-start"
+        >
+          <div class="flex-1">
+            <Skeleton class="h-9 max-w-64 mb-2" />
+            <Skeleton class="h-6 max-w-96 mb-3" />
+          </div>
+        </div>
 
-      <div v-else class="text-center py-8">
-        <p class="text-muted-foreground">Project not found</p>
-        <Button class="mt-4" @click="router.push(`/${workspaceId}/projects`)">
-          Go to Projects
-        </Button>
-      </div>
-    </header>
+        <div v-else-if="currentProject">
+          <h1 class="text-2xl font-bold text-primary mb-2 flex items-center gap-2">
+            <span v-if="currentProject.emoji">{{ currentProject.emoji }}</span>
+            {{ currentProject.title }}
+          </h1>
+          <p v-if="currentProject.description" class="text-muted-foreground">
+            {{ currentProject.description }}
+          </p>
+        </div>
 
-    <div v-if="currentProject || projectStore.isLoading">
+        <div v-else class="text-center py-8">
+          <p class="text-muted-foreground">Project not found</p>
+          <Button class="mt-4" @click="router.push(`/${workspaceId}/projects`)">
+            Go to Projects
+          </Button>
+        </div>
+      </header>
+    </div>
+
+    <div class="-mx-6 border-b border-border mb-6" />
+
+    <div v-if="currentProject || projectStore.isLoading" class="max-w-6xl mx-auto">
       <div
         class="flex sm:justify-between flex-col sm:flex-row sm:items-center justify-center mb-6"
       >
@@ -142,6 +147,7 @@ watch(
       </div>
 
       <TaskFilters />
+      <div class="-mx-6 border-b border-border mb-6" />
       <TaskList
         :workspace-id="workspaceId"
         :workspace-members="members"

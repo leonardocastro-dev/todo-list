@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search, Clock, Users, ChevronRight } from 'lucide-vue-next'
+import { Search, Clock, Users, ChevronRight, Plus, ListTodo, CheckCircle2, RefreshCw } from 'lucide-vue-next'
 </script>
 
 <template>
@@ -31,7 +31,7 @@ import { Search, Clock, Users, ChevronRight } from 'lucide-vue-next'
           <div
             class="flex-1 bg-background/80 rounded-md px-3 py-1 text-xs text-muted-foreground text-center mx-8"
           >
-            fokuz.app/my-workspace/projects/frontend
+            fokuz.leocastro.me/my-workspace/projects/frontend
           </div>
         </div>
 
@@ -102,30 +102,79 @@ import { Search, Clock, Users, ChevronRight } from 'lucide-vue-next'
 
           <!-- Main content -->
           <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Filter bar -->
-            <div class="flex items-center gap-2 border-b border-border px-4 py-3 flex-wrap">
-              <div class="flex items-center gap-1.5 bg-muted rounded-md px-3 py-1.5 flex-1 max-w-56">
-                <Search class="h-3.5 w-3.5 text-muted-foreground" />
-                <span class="text-xs text-muted-foreground">Search tasks…</span>
-              </div>
-              <div class="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground cursor-pointer">
-                <Users class="h-3.5 w-3.5" />
-                Members
-              </div>
-              <div class="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground cursor-pointer">
-                Filters
-              </div>
+            <!-- Project header -->
+            <div class="px-4 pt-3 pb-2.5 border-b border-border">
+              <h1 class="text-sm font-bold text-primary flex items-center gap-1.5">
+                <span>💻</span> Frontend
+              </h1>
+              <p class="text-[11px] text-muted-foreground mt-0.5">Frontend development tasks and features</p>
             </div>
 
-            <!-- Stats -->
-            <div class="flex items-center gap-4 px-4 py-3 border-b border-border text-sm">
-              <span class="font-medium">All <span class="text-muted-foreground ml-1">8</span></span>
-              <span class="text-muted-foreground">Pending <span class="ml-1">5</span></span>
-              <span class="text-muted-foreground">Completed <span class="ml-1">3</span></span>
+            <div class="px-4 py-2.5 space-y-2 border-b border-border">
+              <!-- Section header -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-xs font-semibold">Project Tasks</p>
+                  <p class="text-[10px] text-muted-foreground">8 tasks · <span class="text-red-500">2 urgent pending</span></p>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button class="flex items-center gap-1 text-[10px] px-2 py-1 rounded border border-border text-muted-foreground">
+                    <RefreshCw class="h-2.5 w-2.5" /> Sync
+                  </button>
+                  <button class="flex items-center gap-1 text-[10px] px-2 py-1 rounded bg-primary text-primary-foreground">
+                    <Plus class="h-2.5 w-2.5" /> Add Task
+                  </button>
+                </div>
+              </div>
+
+              <!-- Filter bar -->
+              <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5 bg-muted rounded-md px-2.5 py-1.5 flex-1">
+                  <Search class="h-3 w-3 text-muted-foreground shrink-0" />
+                  <span class="text-[11px] text-muted-foreground">Search tasks…</span>
+                </div>
+                <div class="flex items-center gap-1 rounded-md border border-border px-2 py-1.5 text-[11px] text-muted-foreground">
+                  <Users class="h-3 w-3" /> Members
+                </div>
+                <div class="flex items-center gap-1 rounded-md border border-border px-2 py-1.5 text-[11px] text-muted-foreground">
+                  Filters
+                </div>
+              </div>
+
+              <!-- Status cards -->
+              <div class="grid grid-cols-3 gap-2">
+                <div class="flex items-center gap-2 rounded-lg border border-primary bg-primary/5 px-2.5 py-2">
+                  <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-100 dark:bg-blue-900/30">
+                    <ListTodo class="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p class="text-[11px] font-medium leading-tight">All Tasks</p>
+                    <p class="text-[10px] text-muted-foreground">8 tarefas</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-2">
+                  <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-amber-100 dark:bg-amber-900/30">
+                    <Clock class="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p class="text-[11px] font-medium leading-tight">Pending</p>
+                    <p class="text-[10px] text-muted-foreground">5 tarefas</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-2">
+                  <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-emerald-100 dark:bg-emerald-900/30">
+                    <CheckCircle2 class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <p class="text-[11px] font-medium leading-tight">Completed</p>
+                    <p class="text-[10px] text-muted-foreground">3 tarefas</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Task list -->
-            <div class="flex-1 overflow-y-auto p-4 space-y-2.5">
+            <div class="flex-1 overflow-y-auto p-3 space-y-2">
               <!-- Task 1: urgent + overdue -->
               <div class="rounded-lg border border-border bg-card p-3 flex items-start gap-3 hover:border-primary/40 transition-colors">
                 <div class="mt-0.5 h-4 w-4 rounded-full border-2 border-muted-foreground flex-shrink-0" />
@@ -166,21 +215,6 @@ import { Search, Clock, Users, ChevronRight } from 'lucide-vue-next'
                     </span>
                     <div class="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">C</div>
                   </div>
-                </div>
-              </div>
-
-              <!-- Task 3: normal -->
-              <div class="rounded-lg border border-border bg-card p-3 flex items-start gap-3 hover:border-primary/40 transition-colors">
-                <div class="mt-0.5 h-4 w-4 rounded-full border-2 border-muted-foreground flex-shrink-0" />
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap mb-1">
-                    <span class="text-sm font-medium">Update README documentation</span>
-                    <span class="priority-badge-normal text-[10px] px-1.5 py-0.5 rounded font-semibold">Normal</span>
-                  </div>
-                  <span class="flex items-center gap-1 text-muted-foreground text-xs">
-                    <Clock class="h-3.5 w-3.5" />
-                    Due Mar 1
-                  </span>
                 </div>
               </div>
             </div>

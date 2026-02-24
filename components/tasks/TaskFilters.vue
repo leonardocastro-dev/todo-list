@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import type { DateValue } from 'reka-ui'
 import { CalendarDate } from '@internationalized/date'
-import { SlidersHorizontal, ListTodo, Clock, CheckCircle2, CalendarIcon, ChevronDown, Users, Check } from 'lucide-vue-next'
+import { SlidersHorizontal, ListTodo, Clock, CheckCircle2, CalendarIcon, ChevronDown, Users, Check, Search } from 'lucide-vue-next'
 import Calendar from '@/components/ui/calendar/Calendar.vue'
 import {
   Select,
@@ -165,14 +165,15 @@ const activeFilterCount = computed(() => {
 <template>
   <div class="space-y-4 mb-6">
     <div class="flex items-center gap-2">
-      <div class="flex-1">
+      <div class="flex-1 relative">
         <Label for="search" class="sr-only">Search tasks</Label>
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
         <Input
           id="search"
           type="text"
           placeholder="Search tasks..."
           :model-value="taskStore.searchQuery"
-          class="w-full"
+          class="w-full pl-9 bg-muted border-transparent focus-visible:border-input"
           @update:model-value="
             (val) => taskStore.setSearchQuery(String(val || ''))
           "
