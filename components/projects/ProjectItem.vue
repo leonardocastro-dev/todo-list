@@ -113,7 +113,8 @@ const handleEdit = () => {
           <Avatar
             v-for="member in displayedMembers"
             :key="member.uid"
-            class="h-8 w-8 bg-muted"
+            :uid="member.uid"
+            class="h-8 w-8"
           >
             <AvatarImage
               v-if="member.avatarUrl"

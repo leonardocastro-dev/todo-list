@@ -200,7 +200,7 @@ const handleClose = () => {
                       'cursor-default': !hasMultipleMembers
                     }"
                   >
-                    <Avatar class="bg-muted h-6 w-6">
+                    <Avatar :uid="firstMember.uid" class="h-6 w-6">
                       <AvatarImage
                         v-if="firstMember.avatarUrl"
                         :src="firstMember.avatarUrl"
@@ -229,7 +229,7 @@ const handleClose = () => {
                     :key="member.uid"
                     class="flex items-center gap-2"
                   >
-                    <Avatar class="bg-muted h-6 w-6">
+                    <Avatar :uid="member.uid" class="h-6 w-6">
                       <AvatarImage
                         v-if="member.avatarUrl"
                         :src="member.avatarUrl"

@@ -48,7 +48,7 @@ const handlePermissionsUpdated = async () => {
 <template>
   <div class="max-w-6xl mx-auto">
     <header class="mb-8">
-      <h1 class="text-3xl font-bold text-primary mb-2">Members</h1>
+      <h1 class="text-2xl font-bold text-primary mb-2">Members</h1>
       <p class="text-muted-foreground">
         Manage workspace members and invitations
       </p>

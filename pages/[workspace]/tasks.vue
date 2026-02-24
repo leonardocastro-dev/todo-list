@@ -164,7 +164,7 @@ const emptyStateMessage = computed(() => {
 <template>
   <div class="max-w-6xl mx-auto">
     <header class="mb-8">
-      <h1 class="text-3xl font-bold text-primary mb-2">Tasks</h1>
+      <h1 class="text-2xl font-bold text-primary mb-2">Tasks</h1>
       <p class="text-muted-foreground">
         View and manage tasks across all projects
       </p>

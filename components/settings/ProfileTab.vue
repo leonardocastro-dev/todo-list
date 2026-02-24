@@ -187,9 +187,9 @@ const removeAvatar = async () => {
       <!-- Avatar Upload -->
       <div class="flex flex-col sm:flex-row gap-6">
         <div class="relative">
-          <Avatar class="h-24 w-24">
+          <Avatar :uid="user?.uid" class="h-24 w-24">
             <AvatarImage :src="avatarUrl" alt="Profile picture" />
-            <AvatarFallback class="text-2xl text-muted-foreground">
+            <AvatarFallback class="text-2xl">
               {{ localUsername.charAt(0).toUpperCase() || 'U' }}
             </AvatarFallback>
           </Avatar>

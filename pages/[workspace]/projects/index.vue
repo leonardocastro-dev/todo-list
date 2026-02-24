@@ -103,7 +103,7 @@ const handleReload = async () => {
 <template>
   <div class="max-w-6xl mx-auto">
     <header class="mb-8">
-      <h1 class="text-3xl font-bold text-primary mb-2">Projects</h1>
+      <h1 class="text-2xl font-bold text-primary mb-2">Projects</h1>
       <p class="text-muted-foreground">Manage your projects and tasks</p>
     </header>
 

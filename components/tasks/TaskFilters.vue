@@ -183,7 +183,7 @@ const activeFilterCount = computed(() => {
       <DropdownMenu v-if="members.length > 0">
         <DropdownMenuTrigger as-child>
           <Button variant="outline" size="default" class="gap-2 shrink-0">
-            <Avatar v-if="selectedMember" class="bg-muted h-5 w-5">
+            <Avatar v-if="selectedMember" :key="selectedMember.uid" :uid="selectedMember.uid" class="h-6 w-6">
               <AvatarImage
                 v-if="selectedMember.avatarUrl"
                 :src="selectedMember.avatarUrl"
@@ -205,7 +205,7 @@ const activeFilterCount = computed(() => {
             class="flex items-center gap-2 cursor-pointer"
             @click="selectMember(null)"
           >
-            <Users class="h-4 w-4 shrink-0" />
+            <Users class="h-6 w-6 shrink-0" />
             <span class="flex-1">All</span>
             <Check
               v-if="taskStore.scopeFilter === 'all'"
@@ -219,7 +219,7 @@ const activeFilterCount = computed(() => {
             class="flex items-center gap-2 cursor-pointer"
             @click="selectMember(member.uid)"
           >
-            <Avatar class="bg-muted h-5 w-5 shrink-0">
+            <Avatar :uid="member.uid" class="h-6 w-6 shrink-0">
               <AvatarImage
                 v-if="member.avatarUrl"
                 :src="member.avatarUrl"
