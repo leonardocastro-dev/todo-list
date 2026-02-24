@@ -24,7 +24,7 @@ const steps = [
 <template>
   <section
     id="how-it-works"
-    class="py-20 md:py-32 bg-gradient-subtle"
+    class="py-20 md:py-28 bg-gradient-subtle"
   >
     <div class="container mx-auto px-4 md:px-6">
       <div class="text-center space-y-4 mb-16 reveal">

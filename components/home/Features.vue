@@ -53,7 +53,7 @@ const features = [
 </script>
 
 <template>
-  <section id="features" class="py-20 md:py-32 bg-background">
+  <section id="features" class="bg-background">
     <div class="container mx-auto px-4 md:px-6">
       <!-- Section Header -->
       <div class="text-center space-y-4 mb-16 reveal">

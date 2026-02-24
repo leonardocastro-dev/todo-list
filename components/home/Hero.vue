@@ -6,7 +6,7 @@ import { ArrowRight, Clock } from 'lucide-vue-next'
 <template>
   <section
     id="home"
-    class="relative overflow-hidden bg-gradient-subtle py-20 md:py-32"
+    class="relative overflow-hidden bg-gradient-subtle py-20 md:py-28"
   >
     <div class="container mx-auto px-4 md:px-6">
       <div class="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
@@ -70,9 +70,9 @@ import { ArrowRight, Clock } from 'lucide-vue-next'
           </div>
         </div>
 
-        <!-- Right: task pill cluster -->
+        <!-- Right: task pill cluster (desktop only, mobile shown in ProductMockup) -->
         <div
-          class="relative flex flex-col gap-3 lg:pl-8"
+          class="relative hidden lg:flex flex-col gap-3 lg:pl-8"
           aria-hidden="true"
         >
           <!-- Task pills -->

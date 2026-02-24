@@ -3,7 +3,7 @@ import { Search, Clock, Users, ChevronRight, Plus, ListTodo, CheckCircle2, Refre
 </script>
 
 <template>
-  <section class="py-20 md:py-32 bg-background overflow-hidden">
+  <section class="py-20 md:py-28 bg-background overflow-hidden">
     <div class="container mx-auto px-4 md:px-6">
       <div class="text-center space-y-4 mb-14 reveal">
         <h2 class="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
@@ -14,9 +14,73 @@ import { Search, Clock, Users, ChevronRight, Plus, ListTodo, CheckCircle2, Refre
         </p>
       </div>
 
-      <!-- Browser chrome wrapper -->
+      <!-- Mobile: task cards (same as Hero desktop, hidden on lg+) -->
+      <div class="relative lg:hidden flex flex-col gap-3 reveal" aria-hidden="true">
+        <div class="rounded-xl border border-border bg-card p-4 shadow-md flex items-start gap-3 hover:border-primary/40 transition-colors">
+          <div class="mt-0.5 h-4 w-4 rounded-full border-2 border-muted-foreground flex-shrink-0" />
+          <div class="flex-1 space-y-1.5">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-medium">Fix auth token refresh</span>
+              <span class="priority-badge-urgent text-[10px] px-1.5 py-0.5 rounded font-semibold">Urgent</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="flex items-center gap-1 text-xs text-red-500">
+                <Clock class="h-3.5 w-3.5" />
+                Overdue Feb 18
+              </span>
+              <div class="flex -space-x-1.5">
+                <div class="h-6 w-6 rounded-full bg-gradient-primary flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">A</div>
+                <div class="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">B</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-border bg-card p-4 shadow-md flex items-start gap-3">
+          <div class="mt-0.5 h-4 w-4 rounded-full bg-primary flex-shrink-0 flex items-center justify-center">
+            <svg class="h-2.5 w-2.5 text-primary-foreground" fill="none" viewBox="0 0 12 12">
+              <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <div class="flex-1 space-y-1.5">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-medium line-through text-muted-foreground opacity-70">Design new onboarding flow</span>
+              <span class="priority-badge-important text-[10px] px-1.5 py-0.5 rounded font-semibold">Important</span>
+            </div>
+            <span class="flex items-center gap-1 text-xs text-muted-foreground">
+              <Clock class="h-3.5 w-3.5" />
+              Due Feb 20
+            </span>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-border bg-card p-4 shadow-md flex items-start gap-3 hover:border-primary/40 transition-colors">
+          <div class="mt-0.5 h-4 w-4 rounded-full border-2 border-muted-foreground flex-shrink-0" />
+          <div class="flex-1 space-y-1.5">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-medium">Update API documentation</span>
+              <span class="priority-badge-normal text-[10px] px-1.5 py-0.5 rounded font-semibold">Normal</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="flex items-center gap-1 text-xs text-muted-foreground">
+                <Clock class="h-3.5 w-3.5" />
+                Due Mar 1
+              </span>
+              <div class="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">C</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Decorative blur -->
+        <div
+          class="absolute -bottom-8 -right-8 h-48 w-48 rounded-full opacity-20"
+          style="background: var(--gradient-primary); filter: blur(48px)"
+        />
+      </div>
+
+      <!-- Desktop: Browser chrome wrapper -->
       <div
-        class="float-animation mx-auto max-w-4xl rounded-2xl border border-border shadow-2xl overflow-hidden"
+        class="float-animation mx-auto max-w-4xl rounded-2xl border border-border shadow-2xl overflow-hidden hidden md:block"
         aria-hidden="true"
       >
         <!-- Title bar -->

@@ -7,7 +7,7 @@ useScrollReveal()
 </script>
 
 <template>
-  <section class="py-20 md:py-32 bg-background">
+  <section class="py-20 md:py-28 bg-background">
     <div class="container mx-auto px-4 md:px-6">
       <div
         class="relative overflow-hidden rounded-3xl bg-gradient-hero p-12 md:p-16 lg:p-20 shadow-lg reveal"

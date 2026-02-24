@@ -43,7 +43,7 @@ const roles = [
 </script>
 
 <template>
-  <section id="permissions" class="py-20 md:py-32 bg-background">
+  <section id="permissions" class="py-20 md:py-28 bg-background">
     <div class="container mx-auto px-4 md:px-6">
       <div class="text-center space-y-4 mb-16 reveal">
         <h2 class="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">

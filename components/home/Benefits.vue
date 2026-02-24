@@ -31,7 +31,7 @@ const benefits = [
 </script>
 
 <template>
-  <section id="benefits" class="py-20 md:py-32 bg-gradient-subtle">
+  <section id="benefits" class="pb-20 md:pb-28 bg-gradient-subtle">
     <div class="container mx-auto px-4 md:px-6">
       <!-- Section Header -->
       <div class="text-center space-y-4 mb-16 reveal">

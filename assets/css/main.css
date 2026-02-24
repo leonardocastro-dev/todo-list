@@ -137,8 +137,8 @@
   );
   --gradient-subtle: linear-gradient(
     180deg,
-    hsl(0, 0%, 100%) 0%,
-    hsl(280, 20%, 98%) 100%
+    hsl(280, 10%, 12%) 0%,
+    hsl(280, 18%, 17%) 100%
   );
   --primary-glow: hsl(290, 85%, 60%);
 }
