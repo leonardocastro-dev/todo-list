@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search, Clock, Users, ChevronRight, Plus, ListTodo, CheckCircle2, RefreshCw } from 'lucide-vue-next'
+import { Search, Clock, Users, ChevronRight, Plus, ListTodo, CheckCircle2, RefreshCw, Flag, Layers, Filter } from 'lucide-vue-next'
 </script>
 
 <template>
@@ -7,75 +7,90 @@ import { Search, Clock, Users, ChevronRight, Plus, ListTodo, CheckCircle2, Refre
     <div class="container mx-auto px-4 md:px-6">
       <div class="text-center space-y-4 mb-14 reveal">
         <h2 class="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-          See it in action
+          <span class="md:hidden">Your work, organized</span>
+          <span class="hidden md:inline">See it in action</span>
         </h2>
         <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
           A real look at the interface your team will actually use
         </p>
       </div>
 
-      <!-- Mobile: task cards (same as Hero desktop, hidden on lg+) -->
-      <div class="relative lg:hidden flex flex-col gap-3 reveal" aria-hidden="true">
-        <div class="rounded-xl border border-border bg-card p-4 shadow-md flex items-start gap-3 hover:border-primary/40 transition-colors">
-          <div class="mt-0.5 h-4 w-4 rounded-full border-2 border-muted-foreground flex-shrink-0" />
-          <div class="flex-1 space-y-1.5">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-sm font-medium">Fix auth token refresh</span>
+      <!-- Mobile: bento grid (hidden on md+) -->
+      <div class="md:hidden grid grid-cols-2 gap-3 reveal-stagger" aria-hidden="true">
+        <!-- Featured: Priority — full width -->
+        <div class="col-span-2 rounded-2xl border border-primary/30 bg-primary/5 p-5 flex items-center gap-4 shadow-lg" style="box-shadow: 0 0 32px -8px color-mix(in oklab, var(--primary-glow) 25%, transparent)">
+          <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-primary shadow-md">
+            <Flag class="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <p class="text-sm font-bold">Priority levels</p>
+            <p class="text-xs text-muted-foreground mt-0.5 leading-snug">Urgent, important, and normal — always visible at a glance</p>
+            <div class="flex gap-1.5 mt-2">
               <span class="priority-badge-urgent text-[10px] px-1.5 py-0.5 rounded font-semibold">Urgent</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="flex items-center gap-1 text-xs text-red-500">
-                <Clock class="h-3.5 w-3.5" />
-                Overdue Feb 18
-              </span>
-              <div class="flex -space-x-1.5">
-                <div class="h-6 w-6 rounded-full bg-gradient-primary flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">A</div>
-                <div class="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">B</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="rounded-xl border border-border bg-card p-4 shadow-md flex items-start gap-3">
-          <div class="mt-0.5 h-4 w-4 rounded-full bg-primary flex-shrink-0 flex items-center justify-center">
-            <svg class="h-2.5 w-2.5 text-primary-foreground" fill="none" viewBox="0 0 12 12">
-              <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-          </div>
-          <div class="flex-1 space-y-1.5">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-sm font-medium line-through text-muted-foreground opacity-70">Design new onboarding flow</span>
               <span class="priority-badge-important text-[10px] px-1.5 py-0.5 rounded font-semibold">Important</span>
-            </div>
-            <span class="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock class="h-3.5 w-3.5" />
-              Due Feb 20
-            </span>
-          </div>
-        </div>
-
-        <div class="rounded-xl border border-border bg-card p-4 shadow-md flex items-start gap-3 hover:border-primary/40 transition-colors">
-          <div class="mt-0.5 h-4 w-4 rounded-full border-2 border-muted-foreground flex-shrink-0" />
-          <div class="flex-1 space-y-1.5">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-sm font-medium">Update API documentation</span>
               <span class="priority-badge-normal text-[10px] px-1.5 py-0.5 rounded font-semibold">Normal</span>
             </div>
-            <div class="flex items-center justify-between">
-              <span class="flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock class="h-3.5 w-3.5" />
-                Due Mar 1
-              </span>
-              <div class="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-background">C</div>
-            </div>
           </div>
         </div>
 
-        <!-- Decorative blur -->
-        <div
-          class="absolute -bottom-8 -right-8 h-48 w-48 rounded-full opacity-20"
-          style="background: var(--gradient-primary); filter: blur(48px)"
-        />
+        <!-- Due dates -->
+        <div class="rounded-2xl border border-border bg-card p-4 space-y-3 hover:border-primary/30 transition-colors">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/30 shadow-sm">
+            <Clock class="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div>
+            <p class="text-sm font-semibold">Due dates</p>
+            <p class="text-xs text-muted-foreground mt-0.5 leading-snug">Deadlines and overdue alerts</p>
+          </div>
+        </div>
+
+        <!-- Assignees -->
+        <div class="rounded-2xl border border-border bg-card p-4 space-y-3 hover:border-primary/30 transition-colors">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/30 shadow-sm">
+            <Users class="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div>
+            <p class="text-sm font-semibold">Assignees</p>
+            <p class="text-xs text-muted-foreground mt-0.5 leading-snug">Multi-member task ownership</p>
+          </div>
+        </div>
+
+        <!-- Featured: Progress — full width -->
+        <div class="col-span-2 rounded-2xl border border-border bg-card p-5 flex items-center gap-4 hover:border-primary/30 transition-colors">
+          <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/30 shadow-sm">
+            <CheckCircle2 class="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <div class="flex-1">
+            <p class="text-sm font-bold">Track progress</p>
+            <p class="text-xs text-muted-foreground mt-0.5 leading-snug">See what's pending and done across your whole team</p>
+            <div class="mt-2.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div class="h-full w-[62%] rounded-full bg-gradient-primary" />
+            </div>
+            <p class="text-[10px] text-muted-foreground mt-1">5 of 8 tasks completed</p>
+          </div>
+        </div>
+
+        <!-- Projects -->
+        <div class="rounded-2xl border border-border bg-card p-4 space-y-3 hover:border-primary/30 transition-colors">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/30 shadow-sm">
+            <Layers class="h-5 w-5 text-violet-600 dark:text-violet-400" />
+          </div>
+          <div>
+            <p class="text-sm font-semibold">Projects</p>
+            <p class="text-xs text-muted-foreground mt-0.5 leading-snug">Organized by context</p>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="rounded-2xl border border-border bg-card p-4 space-y-3 hover:border-primary/30 transition-colors">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 shadow-sm">
+            <Filter class="h-5 w-5 text-slate-600 dark:text-slate-400" />
+          </div>
+          <div>
+            <p class="text-sm font-semibold">Filters</p>
+            <p class="text-xs text-muted-foreground mt-0.5 leading-snug">Search by status, priority, date</p>
+          </div>
+        </div>
       </div>
 
       <!-- Desktop: Browser chrome wrapper -->

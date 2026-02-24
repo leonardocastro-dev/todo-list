@@ -70,9 +70,9 @@ import { ArrowRight, Clock } from 'lucide-vue-next'
           </div>
         </div>
 
-        <!-- Right: task pill cluster (desktop only, mobile shown in ProductMockup) -->
+        <!-- Right: task pill cluster -->
         <div
-          class="relative hidden lg:flex flex-col gap-3 lg:pl-8"
+          class="relative flex flex-col gap-3 lg:pl-8"
           aria-hidden="true"
         >
           <!-- Task pills -->
