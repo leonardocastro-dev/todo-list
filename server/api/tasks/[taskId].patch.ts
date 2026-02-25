@@ -5,7 +5,8 @@ import {
   updateTaskMembers,
   validateWorkspaceMemberIds,
   requirePermission,
-  canToggleTaskStatus
+  canToggleTaskStatus,
+  updateProjectTaskCounters
 } from '@/server/utils/permissions'
 import { PERMISSIONS } from '@/constants/permissions'
 
@@ -125,6 +126,19 @@ export default defineEventHandler(async (event) => {
   }
 
   await taskRef.update(updates)
+
+  // Update project task counters if status changed
+  if (status !== undefined) {
+    const oldStatus = taskDoc.data()?.status
+    if (oldStatus !== status) {
+      await updateProjectTaskCounters(
+        workspaceId,
+        taskProjectId,
+        0,
+        status === 'completed' ? 1 : -1
+      )
+    }
+  }
 
   // Update task member assignments if provided (validate memberIds first)
   if (memberIds !== undefined && Array.isArray(memberIds)) {

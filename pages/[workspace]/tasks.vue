@@ -216,6 +216,7 @@ const emptyStateMessage = computed(() => {
     </div>
 
     <TaskFilters
+      show-project-link-filter
       :project-link-filter="projectLinkFilter"
       @update:project-link-filter="setProjectLinkFilter"
     />

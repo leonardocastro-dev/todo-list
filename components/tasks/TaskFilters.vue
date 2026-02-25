@@ -35,9 +35,11 @@ import { useMembers } from '@/composables/useMembers'
 const props = withDefaults(
   defineProps<{
     projectLinkFilter?: 'all' | 'with-project' | 'without-project'
+    showProjectLinkFilter?: boolean
   }>(),
   {
-    projectLinkFilter: 'all'
+    projectLinkFilter: 'all',
+    showProjectLinkFilter: false
   }
 )
 
@@ -157,7 +159,7 @@ const activeFilterCount = computed(() => {
   let count = 0
   if (taskStore.priorityFilter !== 'all') count++
   if (taskStore.dueDateFilter !== 'all') count++
-  if (props.projectLinkFilter !== 'all') count++
+  if (props.showProjectLinkFilter && props.projectLinkFilter !== 'all') count++
   return count
 })
 </script>
@@ -259,7 +261,7 @@ const activeFilterCount = computed(() => {
           </Button>
         </PopoverTrigger>
         <PopoverContent align="end" class="max-h-[290px] overflow-auto w-72 space-y-4">
-          <div>
+          <div v-if="showProjectLinkFilter">
             <Label for="project-link-filter" class="mb-1 block text-sm font-medium">Project Link</Label>
             <Select
               :model-value="projectLinkFilter"

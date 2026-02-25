@@ -313,7 +313,6 @@ const formatDueDate = (date: Date) => {
   </Teleport>
 
   <TaskForm
-    v-if="isEditing"
     :is-open="isEditing"
     :edit-task="task"
     :user-id="user?.uid"

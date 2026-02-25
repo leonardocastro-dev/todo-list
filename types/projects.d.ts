@@ -8,4 +8,6 @@ declare interface Project {
   createdAt: string
   updatedAt: string
   assignedUserIds?: string[] // Denormalized - for UI tracking only
+  taskCount?: number
+  completedTaskCount?: number
 }

@@ -1,5 +1,6 @@
 import type { H3Event } from 'h3'
 import { createError, getHeader } from 'h3'
+import { FieldValue } from 'firebase-admin/firestore'
 import { auth, db } from './firebase-admin'
 
 export interface MemberPermissions {
@@ -564,4 +565,53 @@ export async function validateWorkspaceMemberIds(
   }
 
   return { valid, invalid }
+}
+
+// Project Task Counters
+
+export async function updateProjectTaskCounters(
+  workspaceId: string,
+  projectId: string | undefined,
+  taskCountDelta: number,
+  completedCountDelta: number
+): Promise<void> {
+  if (!projectId) return
+  const projectRef = db.doc(`workspaces/${workspaceId}/projects/${projectId}`)
+  const projectSnap = await projectRef.get()
+  if (!projectSnap.exists) return
+
+  const data = projectSnap.data()
+
+  // Backfill: if counters don't exist yet, calculate from scratch
+  if (data?.taskCount === undefined || data?.taskCount === null) {
+    const tasksRef = db.collection(`workspaces/${workspaceId}/tasks`)
+    const tasksSnap = await tasksRef
+      .where('projectId', '==', projectId)
+      .get()
+
+    let totalCount = 0
+    let completedCount = 0
+    tasksSnap.docs.forEach((doc) => {
+      totalCount++
+      if (doc.data().status === 'completed') completedCount++
+    })
+
+    await projectRef.update({
+      taskCount: totalCount,
+      completedTaskCount: completedCount
+    })
+    return
+  }
+
+  // Fast path: use atomic increment
+  const updates: Record<string, unknown> = {}
+  if (taskCountDelta !== 0) {
+    updates.taskCount = FieldValue.increment(taskCountDelta)
+  }
+  if (completedCountDelta !== 0) {
+    updates.completedTaskCount = FieldValue.increment(completedCountDelta)
+  }
+  if (Object.keys(updates).length > 0) {
+    await projectRef.update(updates)
+  }
 }

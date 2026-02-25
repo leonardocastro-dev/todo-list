@@ -3,7 +3,8 @@ import {
   verifyAuth,
   canAccessProject,
   deleteTaskAssignments,
-  requirePermission
+  requirePermission,
+  updateProjectTaskCounters
 } from '@/server/utils/permissions'
 import { PERMISSIONS } from '@/constants/permissions'
 
@@ -59,6 +60,14 @@ export default defineEventHandler(async (event) => {
 
   // Delete the task
   await taskRef.delete()
+
+  const taskStatus = taskDoc.data()?.status
+  await updateProjectTaskCounters(
+    workspaceId,
+    taskProjectId,
+    -1,
+    taskStatus === 'completed' ? -1 : 0
+  )
 
   return { success: true }
 })

@@ -258,6 +258,20 @@ export const useTaskStore = defineStore('tasks', {
       return project?.workspaceId || this.currentWorkspaceId || undefined
     },
 
+    updateProjectCounters(
+      projectId: string | undefined,
+      taskCountDelta: number,
+      completedCountDelta: number
+    ) {
+      if (!projectId) return
+      const projectStore = useProjectStore()
+      const project = projectStore.projects.find((p) => p.id === projectId)
+      if (!project) return
+      project.taskCount = (project.taskCount || 0) + taskCountDelta
+      project.completedTaskCount =
+        (project.completedTaskCount || 0) + completedCountDelta
+    },
+
     resolveTaskBucket(taskId: string): string | null {
       // Fast path: try currentProjectId first
       if (this.currentProjectId) {
@@ -662,10 +676,17 @@ export const useTaskStore = defineStore('tasks', {
           updatedAt: now
         }
         this.tasksByProject[bucketKey].push(taskWithData)
+        this.updateProjectCounters(
+          projectId,
+          1,
+          taskWithData.status === 'completed' ? 1 : 0
+        )
         localStorage.setItem(
           `localTasks_${bucketKey}`,
           JSON.stringify(this.tasksByProject[bucketKey])
         )
+        const projectStore = useProjectStore()
+        projectStore.saveLocalProjects()
         return
       }
 
@@ -681,6 +702,11 @@ export const useTaskStore = defineStore('tasks', {
         assigneeIds: memberIds || []
       }
       this.tasksByProject[bucketKey].push(optimisticTask)
+      this.updateProjectCounters(
+        projectId,
+        1,
+        optimisticTask.status === 'completed' ? 1 : 0
+      )
 
       try {
         const token = await this.getAuthToken()
@@ -734,6 +760,11 @@ export const useTaskStore = defineStore('tasks', {
         this.tasksByProject[bucketKey] = this.tasksByProject[bucketKey].filter(
           (t) => t.id !== tempId
         )
+        this.updateProjectCounters(
+          projectId,
+          -1,
+          optimisticTask.status === 'completed' ? -1 : 0
+        )
         showErrorToast('Failed to add task')
       }
     },
@@ -755,7 +786,17 @@ export const useTaskStore = defineStore('tasks', {
       if (taskIndex === -1) return
 
       if (!userId) {
+        const oldStatus = projectTasks[taskIndex].status
         projectTasks[taskIndex] = { ...projectTasks[taskIndex], ...updatedTask }
+        if (updatedTask.status && updatedTask.status !== oldStatus) {
+          this.updateProjectCounters(
+            projectTasks[taskIndex].projectId,
+            0,
+            updatedTask.status === 'completed' ? 1 : -1
+          )
+          const projectStore = useProjectStore()
+          projectStore.saveLocalProjects()
+        }
         localStorage.setItem(
           `localTasks_${bucketKey}`,
           JSON.stringify(projectTasks)
@@ -771,6 +812,16 @@ export const useTaskStore = defineStore('tasks', {
       projectTasks[taskIndex] = {
         ...projectTasks[taskIndex],
         ...optimisticUpdate
+      }
+
+      const statusChanged =
+        updatedTask.status !== undefined &&
+        updatedTask.status !== snapshot.status
+      const completedDelta = statusChanged
+        ? (updatedTask.status === 'completed' ? 1 : -1)
+        : 0
+      if (completedDelta !== 0) {
+        this.updateProjectCounters(existingTask.projectId, 0, completedDelta)
       }
 
       try {
@@ -797,6 +848,13 @@ export const useTaskStore = defineStore('tasks', {
         if (currentIndex !== -1) {
           projectTasks[currentIndex] = snapshot
         }
+        if (completedDelta !== 0) {
+          this.updateProjectCounters(
+            existingTask.projectId,
+            0,
+            -completedDelta
+          )
+        }
         showErrorToast('Failed to update task')
       }
     },
@@ -807,9 +865,21 @@ export const useTaskStore = defineStore('tasks', {
       const { bucketKey, task: existingTask } = taskData
 
       if (!userId) {
+        const deletedForCounter = (
+          this.tasksByProject[bucketKey] || []
+        ).find((task) => task.id === id)
         this.tasksByProject[bucketKey] = (
           this.tasksByProject[bucketKey] || []
         ).filter((task) => task.id !== id)
+        if (deletedForCounter) {
+          this.updateProjectCounters(
+            existingTask.projectId,
+            -1,
+            deletedForCounter.status === 'completed' ? -1 : 0
+          )
+          const projectStore = useProjectStore()
+          projectStore.saveLocalProjects()
+        }
         localStorage.setItem(
           `localTasks_${bucketKey}`,
           JSON.stringify(this.tasksByProject[bucketKey])
@@ -824,6 +894,11 @@ export const useTaskStore = defineStore('tasks', {
       const deletedTask = { ...projectTasks[deletedIndex] }
       this.tasksByProject[bucketKey] = projectTasks.filter(
         (task) => task.id !== id
+      )
+      this.updateProjectCounters(
+        existingTask.projectId,
+        -1,
+        deletedTask.status === 'completed' ? -1 : 0
       )
 
       try {
@@ -848,6 +923,11 @@ export const useTaskStore = defineStore('tasks', {
         const insertIndex = Math.min(deletedIndex, currentTasks.length)
         currentTasks.splice(insertIndex, 0, deletedTask)
         this.tasksByProject[bucketKey] = currentTasks
+        this.updateProjectCounters(
+          existingTask.projectId,
+          1,
+          deletedTask.status === 'completed' ? 1 : 0
+        )
         showErrorToast('Failed to delete task')
       }
     },
@@ -869,13 +949,24 @@ export const useTaskStore = defineStore('tasks', {
       if (taskIndex === -1) return
 
       const previousStatus = projectTasks[taskIndex].status
+      if (previousStatus === status) return
       projectTasks[taskIndex].status = status
+      this.updateProjectCounters(
+        projectTasks[taskIndex].projectId,
+        0,
+        status === 'completed' ? 1 : -1
+      )
 
       if (userId) {
         try {
           await this.updateTask(id, { status }, userId)
         } catch {
           projectTasks[taskIndex].status = previousStatus
+          this.updateProjectCounters(
+            projectTasks[taskIndex].projectId,
+            0,
+            status === 'completed' ? -1 : 1
+          )
           showErrorToast('Failed to update task status')
         }
       }
@@ -892,7 +983,16 @@ export const useTaskStore = defineStore('tasks', {
       const taskIndex = projectTasks.findIndex((task) => task.id === id)
       if (taskIndex === -1) return
 
+      const previousStatus = projectTasks[taskIndex].status
       projectTasks[taskIndex].status = status
+
+      if (status !== previousStatus) {
+        this.updateProjectCounters(
+          projectTasks[taskIndex].projectId,
+          0,
+          status === 'completed' ? 1 : -1
+        )
+      }
 
       // Atualiza localStorage se necessário
       const localTasks = localStorage.getItem(`localTasks_${bucketKey}`)

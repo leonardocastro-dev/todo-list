@@ -127,7 +127,8 @@ watch(
 
 watch(
   () => props.task.description,
-  () => {
+  (desc) => {
+    needsExpand.value = !!desc
     checkOverflow()
   }
 )
@@ -356,7 +357,7 @@ const handleClose = () => {
         v-if="task.description"
         class="relative rounded-xl bg-muted/50 p-4"
       >
-        <p class="font-medium mb-2">Descrição da Task</p>
+        <p class="font-medium mb-2">Task Description</p>
         <div
           ref="descriptionRef"
           class="text-sm text-muted-foreground overflow-hidden transition-all duration-300 break-all whitespace-pre-wrap"

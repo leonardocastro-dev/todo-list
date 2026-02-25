@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import {
   MoreHorizontal,
-  Calendar,
   Lock,
   Trash2,
   PenLine
@@ -55,14 +54,6 @@ const extraMembersCount = computed(() =>
   Math.max(0, projectMembersWithData.value.length - 3)
 )
 
-const formatDate = (date: string) => {
-  const d = new Date(date)
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `Date: ${year}.${month}.${day}`
-}
-
 const goToProject = () => {
   const workspaceId = route.params.workspace as string
   router.push(`/${workspaceId}/projects/${props.project.id}`)
@@ -71,6 +62,14 @@ const goToProject = () => {
 const handleEdit = () => {
   emit('edit', props.project)
 }
+
+const taskCount = computed(() => props.project.taskCount || 0)
+const completedTaskCount = computed(() => props.project.completedTaskCount || 0)
+const completionPercentage = computed(() =>
+  taskCount.value > 0
+    ? Math.round((completedTaskCount.value / taskCount.value) * 100)
+    : 0
+)
 </script>
 
 <template>
@@ -99,37 +98,45 @@ const handleEdit = () => {
         </p>
       </div>
 
-      <div
-        class="mt-auto flex items-center justify-between w-full gap-4 text-xs text-muted-foreground"
-      >
-        <div class="flex items-center gap-1">
-          <Calendar class="h-3 w-3" />
-          <span>{{ formatDate(project.updatedAt) }}</span>
-        </div>
-        <div
-          v-if="projectMembersWithData.length > 0"
-          class="flex -space-x-2 *:data-[slot=avatar]:ring-background *:data-[slot=avatar]:ring-2"
-        >
-          <Avatar
-            v-for="member in displayedMembers"
-            :key="member.uid"
-            :uid="member.uid"
-            class="h-8 w-8"
-          >
-            <AvatarImage
-              v-if="member.avatarUrl"
-              :src="member.avatarUrl"
-              :alt="member.username || ''"
+      <div class="mt-auto space-y-3">
+        <div v-if="taskCount > 0">
+          <div class="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+            <div
+              class="h-full rounded-full bg-primary transition-all duration-300"
+              :style="{ width: `${completionPercentage}%` }"
             />
-            <AvatarFallback class="text-xs">
-              {{ member.username?.charAt(0).toUpperCase() || '?' }}
-            </AvatarFallback>
-          </Avatar>
-          <Avatar v-if="extraMembersCount > 0" class="h-8 w-8">
-            <AvatarFallback class="text-xs bg-muted">
-              +{{ extraMembersCount }}
-            </AvatarFallback>
-          </Avatar>
+          </div>
+          <p class="text-[10px] text-muted-foreground mt-1">
+            {{ completedTaskCount }} of {{ taskCount }} tasks completed
+          </p>
+        </div>
+
+        <div class="flex items-center justify-between w-full gap-4 text-xs text-muted-foreground">
+          <div
+            v-if="projectMembersWithData.length > 0"
+            class="flex -space-x-2 *:data-[slot=avatar]:ring-background *:data-[slot=avatar]:ring-2"
+          >
+            <Avatar
+              v-for="member in displayedMembers"
+              :key="member.uid"
+              :uid="member.uid"
+              class="h-8 w-8"
+            >
+              <AvatarImage
+                v-if="member.avatarUrl"
+                :src="member.avatarUrl"
+                :alt="member.username || ''"
+              />
+              <AvatarFallback class="text-xs">
+                {{ member.username?.charAt(0).toUpperCase() || '?' }}
+              </AvatarFallback>
+            </Avatar>
+            <Avatar v-if="extraMembersCount > 0" class="h-8 w-8">
+              <AvatarFallback class="text-xs bg-muted">
+                +{{ extraMembersCount }}
+              </AvatarFallback>
+            </Avatar>
+          </div>
         </div>
       </div>
 

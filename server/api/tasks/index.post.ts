@@ -4,7 +4,8 @@ import {
   canAccessProject,
   updateTaskMembers,
   validateWorkspaceMemberIds,
-  requirePermission
+  requirePermission,
+  updateProjectTaskCounters
 } from '@/server/utils/permissions'
 import { PERMISSIONS } from '@/constants/permissions'
 
@@ -76,6 +77,13 @@ export default defineEventHandler(async (event) => {
 
   const taskRef = db.doc(`workspaces/${workspaceId}/tasks/${taskId}`)
   await taskRef.set(task)
+
+  await updateProjectTaskCounters(
+    workspaceId,
+    normalizedProjectId,
+    1,
+    task.status === 'completed' ? 1 : 0
+  )
 
   // Assign members to task if provided (validate memberIds first)
   if (memberIds && Array.isArray(memberIds) && memberIds.length > 0) {

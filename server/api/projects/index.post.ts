@@ -53,6 +53,8 @@ export default defineEventHandler(async (event) => {
     description: description?.trim() || null,
     emoji: emoji || null,
     workspaceId,
+    taskCount: 0,
+    completedTaskCount: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }
