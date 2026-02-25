@@ -2,7 +2,18 @@
 import { computed, ref } from 'vue'
 import type { DateValue } from 'reka-ui'
 import { CalendarDate } from '@internationalized/date'
-import { SlidersHorizontal, ListTodo, Clock, CheckCircle2, CalendarIcon, ChevronDown, Users, Check, Search } from 'lucide-vue-next'
+import {
+  SlidersHorizontal,
+  ListTodo,
+  Clock,
+  CheckCircle2,
+  CircleDashed,
+  CalendarIcon,
+  ChevronDown,
+  Users,
+  Check,
+  Search
+} from 'lucide-vue-next'
 import Calendar from '@/components/ui/calendar/Calendar.vue'
 import {
   Select,
@@ -93,10 +104,18 @@ const statusItems = computed(() => [
   {
     value: 'pending',
     label: 'Pending',
-    icon: Clock,
+    icon: CircleDashed,
     iconBg: 'bg-amber-100 dark:bg-amber-900/30',
     iconColor: 'text-amber-600 dark:text-amber-400',
     count: taskStore.pendingTasks
+  },
+  {
+    value: 'inProgress',
+    label: 'In Progress',
+    icon: Clock,
+    iconBg: 'bg-blue-100 dark:bg-blue-900/30',
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    count: taskStore.inProgressTasks
   },
   {
     value: 'completed',
@@ -120,13 +139,17 @@ const customDateValue = computed<DateValue | undefined>(() => {
 const dueDateLabel = computed(() => {
   if (taskStore.dueDateFilter === 'custom' && taskStore.customDueDate) {
     const d = new Date(taskStore.customDueDate)
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    return d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
   }
   const labels: Record<string, string> = {
     all: 'All Dates',
     overdue: 'Overdue',
     'on-time': 'On Time',
-    'no-date': 'No Date',
+    'no-date': 'No Date'
   }
   return labels[taskStore.dueDateFilter] || 'All Dates'
 })
@@ -169,7 +192,9 @@ const activeFilterCount = computed(() => {
     <div class="flex items-center gap-2">
       <div class="flex-1 relative">
         <Label for="search" class="sr-only">Search tasks</Label>
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+        <Search
+          class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"
+        />
         <Input
           id="search"
           type="text"
@@ -185,7 +210,12 @@ const activeFilterCount = computed(() => {
       <DropdownMenu v-if="members.length > 0">
         <DropdownMenuTrigger as-child>
           <Button variant="outline" size="default" class="gap-2 shrink-0">
-            <Avatar v-if="selectedMember" :key="selectedMember.uid" :uid="selectedMember.uid" class="h-6 w-6">
+            <Avatar
+              v-if="selectedMember"
+              :key="selectedMember.uid"
+              :uid="selectedMember.uid"
+              class="h-6 w-6"
+            >
               <AvatarImage
                 v-if="selectedMember.avatarUrl"
                 :src="selectedMember.avatarUrl"
@@ -236,10 +266,14 @@ const activeFilterCount = computed(() => {
               <span
                 v-if="user?.uid === member.uid"
                 class="text-muted-foreground text-xs"
-              >(you)</span>
+                >(you)</span
+              >
             </span>
             <Check
-              v-if="taskStore.scopeFilter === 'assigneds' && taskStore.scopeUserId === member.uid"
+              v-if="
+                taskStore.scopeFilter === 'assigneds' &&
+                taskStore.scopeUserId === member.uid
+              "
               class="h-4 w-4 shrink-0"
             />
           </DropdownMenuItem>
@@ -260,9 +294,16 @@ const activeFilterCount = computed(() => {
             </Badge>
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" class="max-h-[290px] overflow-auto w-72 space-y-4">
+        <PopoverContent
+          align="end"
+          class="max-h-[290px] overflow-auto w-72 space-y-4"
+        >
           <div v-if="showProjectLinkFilter">
-            <Label for="project-link-filter" class="mb-1 block text-sm font-medium">Project Link</Label>
+            <Label
+              for="project-link-filter"
+              class="mb-1 block text-sm font-medium"
+              >Project Link</Label
+            >
             <Select
               :model-value="projectLinkFilter"
               @update:model-value="
@@ -281,9 +322,7 @@ const activeFilterCount = computed(() => {
           </div>
 
           <div>
-            <Label
-              for="priority-filter"
-              class="mb-1 block text-sm font-medium"
+            <Label for="priority-filter" class="mb-1 block text-sm font-medium"
               >Priority</Label
             >
             <Select
@@ -306,7 +345,10 @@ const activeFilterCount = computed(() => {
 
           <div>
             <Label class="mb-1 block text-sm font-medium">Due Date</Label>
-            <Popover :open="dueDatePopoverOpen" @update:open="onDueDatePopoverChange">
+            <Popover
+              :open="dueDatePopoverOpen"
+              @update:open="onDueDatePopoverChange"
+            >
               <PopoverTrigger as-child>
                 <button
                   class="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -330,7 +372,11 @@ const activeFilterCount = computed(() => {
                     ]"
                     :key="option.value"
                     class="flex w-full items-center rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                    :class="taskStore.dueDateFilter === option.value ? 'bg-accent text-accent-foreground' : ''"
+                    :class="
+                      taskStore.dueDateFilter === option.value
+                        ? 'bg-accent text-accent-foreground'
+                        : ''
+                    "
                     @click="selectDueDateOption(option.value)"
                   >
                     {{ option.label }}
@@ -339,7 +385,9 @@ const activeFilterCount = computed(() => {
                 <div v-if="showingCalendar">
                   <Calendar
                     :model-value="customDateValue"
-                    @update:model-value="(val: DateValue) => handleCalendarSelect(val)"
+                    @update:model-value="
+                      (val: DateValue) => handleCalendarSelect(val)
+                    "
                   />
                 </div>
               </PopoverContent>
@@ -349,14 +397,16 @@ const activeFilterCount = computed(() => {
       </Popover>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
       <button
         v-for="item in statusItems"
         :key="item.value"
         class="flex items-center gap-3 cursor-pointer rounded-lg border px-4 py-3 text-left transition-colors"
-        :class="taskStore.statusFilter === item.value
-          ? 'border-primary bg-primary/5'
-          : 'border-border bg-background hover:bg-muted/50'"
+        :class="
+          taskStore.statusFilter === item.value
+            ? 'border-primary bg-primary/5'
+            : 'border-border bg-background hover:bg-muted/50'
+        "
         @click="taskStore.setStatusFilter(item.value)"
       >
         <div
@@ -373,6 +423,5 @@ const activeFilterCount = computed(() => {
         </div>
       </button>
     </div>
-
   </div>
 </template>

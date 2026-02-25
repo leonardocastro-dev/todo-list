@@ -35,6 +35,15 @@ const getTaskBucketKey = (
   return projectId
 }
 
+const isCompletedStatus = (status: Status): boolean => status === 'completed'
+
+const getCompletedDelta = (oldStatus: Status, newStatus: Status): number => {
+  const wasCompleted = isCompletedStatus(oldStatus)
+  const isNowCompleted = isCompletedStatus(newStatus)
+  if (wasCompleted === isNowCompleted) return 0
+  return isNowCompleted ? 1 : -1
+}
+
 const isTaskMatchingFilters = (
   task: Task,
   filters: TaskFilterState,
@@ -44,7 +53,11 @@ const isTaskMatchingFilters = (
     if (!task.assigneeIds?.includes(filters.scopeUserId)) return false
   }
 
-  if (!skipStatus && filters.statusFilter !== 'all' && task.status !== filters.statusFilter) {
+  if (
+    !skipStatus &&
+    filters.statusFilter !== 'all' &&
+    task.status !== filters.statusFilter
+  ) {
     return false
   }
 
@@ -126,17 +139,26 @@ export const useTaskStore = defineStore('tasks', {
     },
     activeTasks(state): Task[] {
       const base = this.currentProjectId ? this.tasks : this.workspaceTasks
-      return base.filter((task: Task) => isTaskMatchingFilters(task, state, true))
+      return base.filter((task: Task) =>
+        isTaskMatchingFilters(task, state, true)
+      )
     },
     totalTasks(): number {
       return this.activeTasks.length
     },
     completedTasks(): number {
-      return this.activeTasks.filter((task: Task) => task.status === 'completed')
-        .length
+      return this.activeTasks.filter(
+        (task: Task) => task.status === 'completed'
+      ).length
+    },
+    inProgressTasks(): number {
+      return this.activeTasks.filter(
+        (task: Task) => task.status === 'inProgress'
+      ).length
     },
     pendingTasks(): number {
-      return this.activeTasks.filter((task: Task) => task.status === 'pending').length
+      return this.activeTasks.filter((task: Task) => task.status === 'pending')
+        .length
     },
     urgentTasks(): number {
       return this.activeTasks.filter(
@@ -347,11 +369,7 @@ export const useTaskStore = defineStore('tasks', {
       }
 
       // Se o workspace já carregou tasks com scope compatível
-      if (
-        !forceReload &&
-        workspaceId &&
-        this.loadedWorkspaces[workspaceId]
-      ) {
+      if (!forceReload && workspaceId && this.loadedWorkspaces[workspaceId]) {
         const wsScope = this.loadedWorkspaces[workspaceId]
         if (
           (wsScope === 'all' || wsScope === currentScope) &&
@@ -368,7 +386,12 @@ export const useTaskStore = defineStore('tasks', {
         }
       }
 
-      await this.loadTasksForProject(projectId, userId, workspaceId, currentScope)
+      await this.loadTasksForProject(
+        projectId,
+        userId,
+        workspaceId,
+        currentScope
+      )
     },
 
     async loadProjectPermissions(
@@ -556,7 +579,9 @@ export const useTaskStore = defineStore('tasks', {
           const bucketKey = getTaskBucketKey(project.id, workspaceId)
           if (!this.tasksByProject[bucketKey]) {
             const localTasks = localStorage.getItem(`localTasks_${project.id}`)
-            this.tasksByProject[bucketKey] = localTasks ? JSON.parse(localTasks) : []
+            this.tasksByProject[bucketKey] = localTasks
+              ? JSON.parse(localTasks)
+              : []
           }
         }
         this.loadedWorkspaces[workspaceId] = 'all'
@@ -679,7 +704,7 @@ export const useTaskStore = defineStore('tasks', {
         this.updateProjectCounters(
           projectId,
           1,
-          taskWithData.status === 'completed' ? 1 : 0
+          isCompletedStatus(taskWithData.status) ? 1 : 0
         )
         localStorage.setItem(
           `localTasks_${bucketKey}`,
@@ -705,7 +730,7 @@ export const useTaskStore = defineStore('tasks', {
       this.updateProjectCounters(
         projectId,
         1,
-        optimisticTask.status === 'completed' ? 1 : 0
+        isCompletedStatus(optimisticTask.status) ? 1 : 0
       )
 
       try {
@@ -763,7 +788,7 @@ export const useTaskStore = defineStore('tasks', {
         this.updateProjectCounters(
           projectId,
           -1,
-          optimisticTask.status === 'completed' ? -1 : 0
+          isCompletedStatus(optimisticTask.status) ? -1 : 0
         )
         showErrorToast('Failed to add task')
       }
@@ -789,10 +814,14 @@ export const useTaskStore = defineStore('tasks', {
         const oldStatus = projectTasks[taskIndex].status
         projectTasks[taskIndex] = { ...projectTasks[taskIndex], ...updatedTask }
         if (updatedTask.status && updatedTask.status !== oldStatus) {
+          const completedDelta = getCompletedDelta(
+            oldStatus,
+            updatedTask.status
+          )
           this.updateProjectCounters(
             projectTasks[taskIndex].projectId,
             0,
-            updatedTask.status === 'completed' ? 1 : -1
+            completedDelta
           )
           const projectStore = useProjectStore()
           projectStore.saveLocalProjects()
@@ -818,7 +847,7 @@ export const useTaskStore = defineStore('tasks', {
         updatedTask.status !== undefined &&
         updatedTask.status !== snapshot.status
       const completedDelta = statusChanged
-        ? (updatedTask.status === 'completed' ? 1 : -1)
+        ? getCompletedDelta(snapshot.status, updatedTask.status as Status)
         : 0
       if (completedDelta !== 0) {
         this.updateProjectCounters(existingTask.projectId, 0, completedDelta)
@@ -849,11 +878,7 @@ export const useTaskStore = defineStore('tasks', {
           projectTasks[currentIndex] = snapshot
         }
         if (completedDelta !== 0) {
-          this.updateProjectCounters(
-            existingTask.projectId,
-            0,
-            -completedDelta
-          )
+          this.updateProjectCounters(existingTask.projectId, 0, -completedDelta)
         }
         showErrorToast('Failed to update task')
       }
@@ -865,9 +890,9 @@ export const useTaskStore = defineStore('tasks', {
       const { bucketKey, task: existingTask } = taskData
 
       if (!userId) {
-        const deletedForCounter = (
-          this.tasksByProject[bucketKey] || []
-        ).find((task) => task.id === id)
+        const deletedForCounter = (this.tasksByProject[bucketKey] || []).find(
+          (task) => task.id === id
+        )
         this.tasksByProject[bucketKey] = (
           this.tasksByProject[bucketKey] || []
         ).filter((task) => task.id !== id)
@@ -875,7 +900,7 @@ export const useTaskStore = defineStore('tasks', {
           this.updateProjectCounters(
             existingTask.projectId,
             -1,
-            deletedForCounter.status === 'completed' ? -1 : 0
+            isCompletedStatus(deletedForCounter.status) ? -1 : 0
           )
           const projectStore = useProjectStore()
           projectStore.saveLocalProjects()
@@ -898,7 +923,7 @@ export const useTaskStore = defineStore('tasks', {
       this.updateProjectCounters(
         existingTask.projectId,
         -1,
-        deletedTask.status === 'completed' ? -1 : 0
+        isCompletedStatus(deletedTask.status) ? -1 : 0
       )
 
       try {
@@ -926,7 +951,7 @@ export const useTaskStore = defineStore('tasks', {
         this.updateProjectCounters(
           existingTask.projectId,
           1,
-          deletedTask.status === 'completed' ? 1 : 0
+          isCompletedStatus(deletedTask.status) ? 1 : 0
         )
         showErrorToast('Failed to delete task')
       }
@@ -951,10 +976,11 @@ export const useTaskStore = defineStore('tasks', {
       const previousStatus = projectTasks[taskIndex].status
       if (previousStatus === status) return
       projectTasks[taskIndex].status = status
+      const completedDelta = getCompletedDelta(previousStatus, status)
       this.updateProjectCounters(
         projectTasks[taskIndex].projectId,
         0,
-        status === 'completed' ? 1 : -1
+        completedDelta
       )
 
       if (userId) {
@@ -965,7 +991,7 @@ export const useTaskStore = defineStore('tasks', {
           this.updateProjectCounters(
             projectTasks[taskIndex].projectId,
             0,
-            status === 'completed' ? -1 : 1
+            -completedDelta
           )
           showErrorToast('Failed to update task status')
         }
@@ -973,7 +999,7 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     // Atualiza apenas o estado local (para UI otimista)
-    updateLocalTaskStatus(id: string, status: 'pending' | 'completed') {
+    updateLocalTaskStatus(id: string, status: Status) {
       const bucketKey = this.resolveTaskBucket(id)
       if (!bucketKey) return
 
@@ -987,10 +1013,11 @@ export const useTaskStore = defineStore('tasks', {
       projectTasks[taskIndex].status = status
 
       if (status !== previousStatus) {
+        const completedDelta = getCompletedDelta(previousStatus, status)
         this.updateProjectCounters(
           projectTasks[taskIndex].projectId,
           0,
-          status === 'completed' ? 1 : -1
+          completedDelta
         )
       }
 
@@ -1008,7 +1035,7 @@ export const useTaskStore = defineStore('tasks', {
     // Lança erro para que o composable possa reverter a UI
     async syncTaskStatusToServer(
       id: string,
-      status: 'pending' | 'completed',
+      status: Status,
       userId: string | null = null
     ) {
       if (!userId) return

@@ -73,8 +73,6 @@ The main application interface that orchestrates all major components:
 
 **TaskFilters Component** (`components/TaskFilters.vue`): Provides search input and dropdown filters for status and priority, with real-time filtering updates.
 
-**TaskStats Component** (`components/TaskStats.vue`): Displays visual statistics including completion percentages, task counts by status and priority, and progress indicators.
-
 ### UI Component Library (`components/ui/`)
 
 A comprehensive collection of reusable UI components based on Radix UI and styled with TailwindCSS, including buttons, cards, dialogs, forms, inputs, and more. These components ensure consistency across the application and provide accessibility features out of the box.

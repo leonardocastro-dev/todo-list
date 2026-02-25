@@ -371,7 +371,7 @@ const handleClose = () => {
           </div>
         </div>
 
-        <SheetFooter class="pt-4">
+        <SheetFooter class="p-0">
           <Button type="button" variant="outline" @click="handleClose">
             Cancel
           </Button>

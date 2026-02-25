@@ -38,6 +38,7 @@ const props = defineProps<{
   task: Task
   workspaceMembers?: WorkspaceMember[]
   assignedMemberIds?: string[]
+  canToggleStatus?: boolean
   canEdit?: boolean
   canDelete?: boolean
 }>()
@@ -46,6 +47,7 @@ const emit = defineEmits<{
   close: []
   edit: []
   delete: []
+  statusChange: [status: Status]
 }>()
 
 const hasAnyAction = computed(() => props.canEdit || props.canDelete)
@@ -66,7 +68,51 @@ const firstMember = computed(() => taskMembersWithData.value[0] || null)
 const otherMembers = computed(() => taskMembersWithData.value.slice(1))
 const hasMultipleMembers = computed(() => taskMembersWithData.value.length > 1)
 
+const statusOptions: Array<{ value: Status; label: string }> = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'inProgress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' }
+]
+
+const statusLabelMap: Record<Status, string> = {
+  pending: 'Pending',
+  inProgress: 'In Progress',
+  completed: 'Completed'
+}
+
 const isCompleted = computed(() => props.task.status === 'completed')
+
+const getStatusLabel = (status: Status): string => statusLabelMap[status]
+
+const getStatusIcon = (status: Status) => {
+  if (status === 'completed') return Check
+  if (status === 'inProgress') return Clock
+  return CircleDashed
+}
+
+const getStatusBadgeClass = (status: Status): string => {
+  if (status === 'completed') {
+    return 'rounded-2xl bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'
+  }
+  if (status === 'inProgress') {
+    return 'rounded-2xl bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800'
+  }
+  return 'rounded-2xl bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800'
+}
+
+const getStatusTextClass = (status: Status): string => {
+  if (status === 'completed') return 'text-emerald-600 dark:text-emerald-400'
+  if (status === 'inProgress') return 'text-blue-600 dark:text-blue-400'
+  return 'text-amber-600 dark:text-amber-400'
+}
+
+const handleStatusChange = (value: string) => {
+  if (value !== 'pending' && value !== 'inProgress' && value !== 'completed') {
+    return
+  }
+  if (value === props.task.status) return
+  emit('statusChange', value)
+}
 
 const isOverdue = computed(() => {
   if (!props.task.dueDate || isCompleted.value) return false
@@ -221,8 +267,12 @@ const handleClose = () => {
           Created
         </span>
         <span class="text-sm">
-          <span class="font-medium">{{ formatDate(new Date(task.createdAt || Date.now())) }}</span>
-          <span class="text-muted-foreground ml-1">{{ formatTime(new Date(task.createdAt || Date.now())) }}</span>
+          <span class="font-medium">{{
+            formatDate(new Date(task.createdAt || Date.now()))
+          }}</span>
+          <span class="text-muted-foreground ml-1">{{
+            formatTime(new Date(task.createdAt || Date.now()))
+          }}</span>
         </span>
         <!-- Status -->
         <span class="text-sm text-muted-foreground flex items-center gap-2">
@@ -230,21 +280,67 @@ const handleClose = () => {
           Status
         </span>
         <div>
-          <Badge
-            v-if="isCompleted"
-            variant="outline"
-            class="rounded-2xl bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
-          >
-            <Check class="h-3 w-3 mr-1" />
-            Completed
-          </Badge>
+          <DropdownMenu v-if="props.canToggleStatus">
+            <DropdownMenuTrigger as-child>
+              <Button
+                variant="outline"
+                size="sm"
+                class="w-[140px] justify-between p-1 h-auto"
+              >
+                <Badge
+                  variant="outline"
+                  :class="getStatusBadgeClass(task.status)"
+                >
+                  <span class="flex items-center gap-1.5">
+                    <component
+                      :is="getStatusIcon(task.status)"
+                      :class="['h-3.5 w-3.5', getStatusTextClass(task.status)]"
+                    />
+                    {{ getStatusLabel(task.status) }}
+                  </span>
+                </Badge>
+                <ChevronDown
+                  class="h-3.5 w-3.5 text-muted-foreground opacity-80"
+                />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" class="w-[140px]">
+              <DropdownMenuItem
+                v-for="statusOption in statusOptions.filter(
+                  (option) => option.value !== task.status
+                )"
+                :key="statusOption.value"
+                class="p-1"
+                @click="handleStatusChange(statusOption.value)"
+              >
+                <Badge
+                  variant="outline"
+                  :class="`justify-between ${getStatusBadgeClass(statusOption.value)}`"
+                >
+                  <span class="flex items-center gap-1.5">
+                    <component
+                      :is="getStatusIcon(statusOption.value)"
+                      :class="[
+                        'h-3.5 w-3.5',
+                        getStatusTextClass(statusOption.value)
+                      ]"
+                    />
+                    {{ statusOption.label }}
+                  </span>
+                </Badge>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Badge
             v-else
             variant="outline"
-            class="rounded-2xl bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800"
+            :class="getStatusBadgeClass(task.status)"
           >
-            <CircleDashed class="h-3 w-3 mr-1" />
-            Pending
+            <component
+              :is="getStatusIcon(task.status)"
+              :class="['h-3 w-3 mr-1', getStatusTextClass(task.status)]"
+            />
+            {{ getStatusLabel(task.status) }}
           </Badge>
         </div>
 
@@ -278,7 +374,8 @@ const handleClose = () => {
           class="text-sm font-medium"
           :class="isOverdue ? 'text-red-500' : ''"
         >
-          {{ isOverdue ? 'Overdue — ' : '' }}{{ formatDate(new Date(task.dueDate)) }}
+          {{ isOverdue ? 'Overdue — ' : ''
+          }}{{ formatDate(new Date(task.dueDate)) }}
         </span>
         <span v-else class="text-sm text-muted-foreground italic">
           No due date
@@ -307,9 +404,7 @@ const handleClose = () => {
                     :alt="firstMember.username || ''"
                   />
                   <AvatarFallback class="text-[10px]">
-                    {{
-                      firstMember.username?.charAt(0).toUpperCase() || '?'
-                    }}
+                    {{ firstMember.username?.charAt(0).toUpperCase() || '?' }}
                   </AvatarFallback>
                 </Avatar>
                 <span class="text-sm">{{
@@ -351,39 +446,48 @@ const handleClose = () => {
         </span>
       </div>
 
-    <!-- Description -->
-    <div class="px-5">
-      <div
-        v-if="task.description"
-        class="relative rounded-xl bg-muted/50 p-4"
-      >
-        <p class="font-medium mb-2">Task Description</p>
+      <!-- Description -->
+      <div class="px-5">
         <div
-          ref="descriptionRef"
-          class="text-sm text-muted-foreground overflow-hidden transition-all duration-300 break-all whitespace-pre-wrap"
-          :style="{ maxHeight: descriptionExpanded ? 'none' : '100px' }"
+          v-if="task.description"
+          class="relative rounded-xl bg-muted/50 p-4"
         >
-          {{ task.description }}
+          <p class="font-medium mb-2">Task Description</p>
+          <div
+            ref="descriptionRef"
+            class="text-sm text-muted-foreground overflow-hidden transition-all duration-300 break-all whitespace-pre-wrap"
+            :style="{ maxHeight: descriptionExpanded ? 'none' : '100px' }"
+          >
+            {{ task.description }}
+          </div>
+          <div
+            v-if="needsExpand && !descriptionExpanded"
+            class="pointer-events-none absolute bottom-0 left-0 right-0 h-20 rounded-b-xl"
+            style="
+              background: linear-gradient(
+                to top,
+                color-mix(in oklab, var(--muted) 50%, var(--background)) 0%,
+                transparent 100%
+              );
+            "
+          />
         </div>
         <div
-          v-if="needsExpand && !descriptionExpanded"
-          class="pointer-events-none absolute bottom-0 left-0 right-0 h-20 rounded-b-xl"
-          style="background: linear-gradient(to top, color-mix(in oklab, var(--muted) 50%, var(--background)) 0%, transparent 100%)"
-        />
+          v-if="task.description && needsExpand"
+          class="flex items-center justify-center gap-1 text-xs text-muted-foreground pt-2 cursor-pointer"
+          @click="toggleDescription"
+        >
+          <ChevronDown v-if="!descriptionExpanded" class="h-3 w-3" />
+          <ChevronUp v-else class="h-3 w-3" />
+          {{ descriptionExpanded ? 'Recolher' : 'Expandir' }}
+        </div>
+        <p
+          v-if="!task.description"
+          class="text-sm text-muted-foreground italic"
+        >
+          No description provided
+        </p>
       </div>
-      <div
-        v-if="task.description && needsExpand"
-        class="flex items-center justify-center gap-1 text-xs text-muted-foreground pt-2 cursor-pointer"
-        @click="toggleDescription"
-      >
-        <ChevronDown v-if="!descriptionExpanded" class="h-3 w-3" />
-        <ChevronUp v-else class="h-3 w-3" />
-        {{ descriptionExpanded ? 'Recolher' : 'Expandir' }}
-      </div>
-      <p v-if="!task.description" class="text-sm text-muted-foreground italic">
-        No description provided
-      </p>
-    </div>
     </SheetContent>
   </Sheet>
 </template>

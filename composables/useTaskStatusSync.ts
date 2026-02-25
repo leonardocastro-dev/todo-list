@@ -1,12 +1,12 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { toast } from 'vue-sonner'
 
 interface UseTaskStatusSyncOptions {
   taskId: string
-  initialStatus: 'pending' | 'completed'
-  onLocalUpdate: (status: 'pending' | 'completed') => void
-  onServerSync: (status: 'pending' | 'completed') => Promise<void>
+  initialStatus: Status
+  onLocalUpdate: (status: Status) => void
+  onServerSync: (status: Status) => Promise<void>
   debounceMs?: number
 }
 
@@ -19,7 +19,8 @@ export function useTaskStatusSync(options: UseTaskStatusSyncOptions) {
   } = options
 
   // Estado local para resposta imediata da UI
-  const localChecked = ref(initialStatus === 'completed')
+  const localStatus = ref<Status>(initialStatus)
+  const localChecked = computed(() => localStatus.value === 'completed')
 
   // ID da request para controle de race conditions
   let currentRequestId = 0
@@ -29,11 +30,7 @@ export function useTaskStatusSync(options: UseTaskStatusSyncOptions) {
 
   // Função de sync com servidor (debounced)
   const debouncedServerSync = useDebounceFn(
-    async (
-      status: 'pending' | 'completed',
-      requestId: number,
-      previousStatus: 'pending' | 'completed'
-    ) => {
+    async (status: Status, requestId: number, previousStatus: Status) => {
       if (requestId !== currentRequestId) return
 
       try {
@@ -41,7 +38,7 @@ export function useTaskStatusSync(options: UseTaskStatusSyncOptions) {
       } catch {
         // Reverte UI em caso de erro
         if (requestId === currentRequestId) {
-          localChecked.value = previousStatus === 'completed'
+          localStatus.value = previousStatus
           onLocalUpdate(previousStatus)
           toast.error('Failed to sync task status', {
             style: { background: '#fda4af' },
@@ -59,11 +56,11 @@ export function useTaskStatusSync(options: UseTaskStatusSyncOptions) {
 
   // Handler do toggle
   function toggle(checked: boolean) {
-    const previousStatus = localChecked.value ? 'completed' : 'pending'
-    localChecked.value = checked
+    const previousStatus = localStatus.value
+    const status: Status = checked ? 'completed' : 'pending'
+    localStatus.value = status
     currentRequestId++
     hasPendingSync.value = true
-    const status = checked ? 'completed' : 'pending'
 
     // Atualiza store imediatamente (para stats e outros componentes)
     onLocalUpdate(status)
@@ -73,10 +70,9 @@ export function useTaskStatusSync(options: UseTaskStatusSyncOptions) {
   }
 
   // Sincroniza com mudanças externas (ex: outro usuário)
-  function syncFromExternal(externalStatus: 'pending' | 'completed') {
-    const externalChecked = externalStatus === 'completed'
-    if (!hasPendingSync.value && localChecked.value !== externalChecked) {
-      localChecked.value = externalChecked
+  function syncFromExternal(externalStatus: Status) {
+    if (!hasPendingSync.value && localStatus.value !== externalStatus) {
+      localStatus.value = externalStatus
     }
   }
 

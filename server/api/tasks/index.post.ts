@@ -9,6 +9,14 @@ import {
 } from '@/server/utils/permissions'
 import { PERMISSIONS } from '@/constants/permissions'
 
+const VALID_TASK_STATUSES = ['pending', 'inProgress', 'completed'] as const
+
+const isValidTaskStatus = (
+  value: unknown
+): value is (typeof VALID_TASK_STATUSES)[number] =>
+  typeof value === 'string' &&
+  VALID_TASK_STATUSES.includes(value as (typeof VALID_TASK_STATUSES)[number])
+
 export default defineEventHandler(async (event) => {
   const { uid } = await verifyAuth(event)
 
@@ -61,12 +69,20 @@ export default defineEventHandler(async (event) => {
   }
 
   const taskId = String(Date.now())
+  const normalizedStatus = status ?? 'pending'
+
+  if (!isValidTaskStatus(normalizedStatus)) {
+    throw createError({
+      statusCode: 400,
+      message: 'Invalid task status'
+    })
+  }
 
   const task = {
     id: taskId,
     title: title.trim(),
     description: description?.trim() || null,
-    status: status || 'pending',
+    status: normalizedStatus,
     priority: priority || 'normal',
     dueDate: dueDate || null,
     ...(normalizedProjectId ? { projectId: normalizedProjectId } : {}),

@@ -17,7 +17,8 @@ import {
   Lock,
   Trash2,
   PenLine,
-  Clock
+  Clock,
+  CircleDashed
 } from 'lucide-vue-next'
 import TaskForm from './TaskForm.vue'
 import TaskInfos from './TaskInfos.vue'
@@ -118,6 +119,11 @@ const canToggleStatus = computed(() => {
 
 const hasAnyAction = computed(() => canEdit.value || canDelete.value)
 
+const handleStatusChangeFromInfo = async (status: Status) => {
+  if (!canToggleStatus.value) return
+  await taskStore.updateTask(props.task.id, { status }, user.value?.uid ?? null)
+}
+
 const { localChecked, toggle, syncFromExternal } = useTaskStatusSync({
   taskId: props.task.id,
   initialStatus: props.task.status,
@@ -153,6 +159,23 @@ const extraMembersCount = computed(() =>
   Math.max(0, taskMembersWithData.value.length - 3)
 )
 
+const statusBadge = computed(() => {
+  if (props.task.status === 'inProgress') {
+    return {
+      label: 'In Progress',
+      icon: Clock,
+      className:
+        'rounded-2xl bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800'
+    }
+  }
+
+  return {
+    label: 'Pending',
+    icon: CircleDashed,
+    className:
+      'rounded-2xl bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800'
+  }
+})
 
 const isOverdue = computed(() => {
   if (!props.task.dueDate || localChecked.value) return false
@@ -200,9 +223,16 @@ const formatDueDate = (date: Date) => {
             >
               {{ task.title }}
             </span>
-            <Badge :class="`priority-badge-${task.priority}`"
-            >
+            <Badge :class="`priority-badge-${task.priority}`">
               {{ task.priority }}
+            </Badge>
+            <Badge
+              v-if="task.status !== 'completed'"
+              variant="outline"
+              :class="statusBadge.className"
+            >
+              <component :is="statusBadge.icon" class="h-3 w-3 mr-1" />
+              {{ statusBadge.label }}
             </Badge>
           </div>
 
@@ -220,7 +250,8 @@ const formatDueDate = (date: Date) => {
                 :class="isOverdue ? 'text-red-500' : ''"
               >
                 <Clock class="h-3.5 w-3.5" />
-                {{ isOverdue ? 'Overdue' : 'Due' }} {{ formatDueDate(new Date(task.dueDate)) }}
+                {{ isOverdue ? 'Overdue' : 'Due' }}
+                {{ formatDueDate(new Date(task.dueDate)) }}
               </span>
               <span v-else>No due date</span>
             </div>
@@ -255,12 +286,7 @@ const formatDueDate = (date: Date) => {
 
         <DropdownMenu v-if="hasAnyAction">
           <DropdownMenuTrigger as-child>
-            <Button
-              variant="ghost"
-              size="sm"
-              class="h-8 w-8 p-0"
-              @click.stop
-            >
+            <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click.stop>
               <span class="sr-only">Open menu</span>
               <MoreHorizontal class="h-4 w-4" />
             </Button>
@@ -306,10 +332,7 @@ const formatDueDate = (date: Date) => {
   </Card>
 
   <Teleport to="body">
-    <div
-      v-if="isTransitioning"
-      class="fixed inset-0 z-50 bg-black/80"
-    />
+    <div v-if="isTransitioning" class="fixed inset-0 z-50 bg-black/80" />
   </Teleport>
 
   <TaskForm
@@ -326,10 +349,15 @@ const formatDueDate = (date: Date) => {
     :task="task"
     :workspace-members="workspaceMembers"
     :assigned-member-ids="task.assigneeIds || []"
+    :can-toggle-status="canToggleStatus"
     :can-edit="canEdit"
     :can-delete="canDelete"
     @close="showInfoModal = false"
     @edit="handleEditFromInfo"
-    @delete="showInfoModal = false; taskStore.deleteTask(task.id, user?.uid)"
+    @delete="
+      showInfoModal = false,
+      taskStore.deleteTask(task.id, user?.uid)
+    "
+    @status-change="handleStatusChangeFromInfo"
   />
 </template>

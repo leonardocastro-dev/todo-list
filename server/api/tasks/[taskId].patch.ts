@@ -10,6 +10,23 @@ import {
 } from '@/server/utils/permissions'
 import { PERMISSIONS } from '@/constants/permissions'
 
+const VALID_TASK_STATUSES = ['pending', 'inProgress', 'completed'] as const
+
+const isValidTaskStatus = (
+  value: unknown
+): value is (typeof VALID_TASK_STATUSES)[number] =>
+  typeof value === 'string' &&
+  VALID_TASK_STATUSES.includes(value as (typeof VALID_TASK_STATUSES)[number])
+
+const isCompletedStatus = (status: unknown): boolean => status === 'completed'
+
+const getCompletedDelta = (oldStatus: unknown, newStatus: unknown): number => {
+  const wasCompleted = isCompletedStatus(oldStatus)
+  const isNowCompleted = isCompletedStatus(newStatus)
+  if (wasCompleted === isNowCompleted) return 0
+  return isNowCompleted ? 1 : -1
+}
+
 export default defineEventHandler(async (event) => {
   const { uid } = await verifyAuth(event)
 
@@ -110,6 +127,12 @@ export default defineEventHandler(async (event) => {
   }
 
   if (status !== undefined) {
+    if (!isValidTaskStatus(status)) {
+      throw createError({
+        statusCode: 400,
+        message: 'Invalid task status'
+      })
+    }
     updates.status = status
   }
 
@@ -131,12 +154,15 @@ export default defineEventHandler(async (event) => {
   if (status !== undefined) {
     const oldStatus = taskDoc.data()?.status
     if (oldStatus !== status) {
-      await updateProjectTaskCounters(
-        workspaceId,
-        taskProjectId,
-        0,
-        status === 'completed' ? 1 : -1
-      )
+      const completedDelta = getCompletedDelta(oldStatus, status)
+      if (completedDelta !== 0) {
+        await updateProjectTaskCounters(
+          workspaceId,
+          taskProjectId,
+          0,
+          completedDelta
+        )
+      }
     }
   }
 
