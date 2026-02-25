@@ -39,7 +39,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
       :class="cn(
         'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500',
         side === 'right'
-          && 'data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm',
+          && 'data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right right-4 top-4 bottom-4 h-[calc(100vh-2rem)] w-3/4 rounded-2xl sm:max-w-sm',
         side === 'left'
           && 'data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm',
         side === 'top'
@@ -49,11 +49,12 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
         props.class)"
       v-bind="{ ...$attrs, ...forwarded }"
     >
-      <div class="flex items-center justify-end px-4 py-3 shrink-0 border-b">
+      <div class="flex items-center justify-end gap-2 px-5 py-3 shrink-0 border-b">
+        <slot name="header-actions" />
         <DialogClose
-          class="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
+          class="outline-none data-[state=open]:bg-secondary rounded-xs opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none"
         >
-          <X class="size-4" />
+          <X class="size-5 cursor-pointer" />
           <span class="sr-only">Close</span>
         </DialogClose>
       </div>

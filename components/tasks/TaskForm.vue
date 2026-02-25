@@ -3,12 +3,13 @@ import { computed, ref, watch } from 'vue'
 import type { DateValue } from '@internationalized/date'
 import { getLocalTimeZone, parseDate } from '@internationalized/date'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter
+} from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -188,7 +189,7 @@ const handleClose = () => {
 </script>
 
 <template>
-  <Dialog
+  <Sheet
     :open="isOpen"
     @update:open="
       (open) => {
@@ -196,11 +197,17 @@ const handleClose = () => {
       }
     "
   >
-    <DialogContent class="overflow-y-auto sm:max-h-[85vh] h-full flex flex-col">
-      <DialogHeader>
-        <DialogTitle>{{ editTask ? 'Edit Task' : 'Add New Task' }}</DialogTitle>
-      </DialogHeader>
-      <form class="space-y-4 pt-4" @submit.prevent="handleSubmit">
+    <SheetContent
+      side="right"
+      class="sm:max-w-[480px] w-full p-0 flex flex-col overflow-hidden"
+    >
+      <SheetHeader>
+        <SheetTitle class="text-2xl font-medium leading-tight">{{ editTask ? 'Edit Task' : 'Add New Task' }}</SheetTitle>
+        <SheetDescription class="sr-only">
+          {{ editTask ? 'Edit task details' : 'Create a new task' }}
+        </SheetDescription>
+      </SheetHeader>
+      <form class="space-y-4 px-5 pt-4" @submit.prevent="handleSubmit">
         <div class="space-y-2">
           <Label for="title" class="font-medium"> Title </Label>
           <Input
@@ -364,15 +371,15 @@ const handleClose = () => {
           </div>
         </div>
 
-        <DialogFooter class="pt-4">
+        <SheetFooter class="pt-4">
           <Button type="button" variant="outline" @click="handleClose">
             Cancel
           </Button>
           <Button type="submit">
             {{ editTask ? 'Update Task' : 'Add Task' }}
           </Button>
-        </DialogFooter>
+        </SheetFooter>
       </form>
-    </DialogContent>
-  </Dialog>
+    </SheetContent>
+  </Sheet>
 </template>

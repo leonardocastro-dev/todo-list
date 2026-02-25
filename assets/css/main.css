@@ -327,6 +327,10 @@
   @apply text-emerald-600;
 }
 
+body.sheet-transitioning [data-slot='sheet-overlay'] {
+  opacity: 0 !important;
+}
+
 .priority-badge-urgent {
   @apply bg-red-700 text-white;
 }

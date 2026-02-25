@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import {
   Check,
-  ArrowRight,
+  MoreHorizontal,
   Lock,
   Trash2,
   PenLine,
@@ -39,6 +39,23 @@ const taskStore = useTaskStore()
 const { user } = useAuth()
 const isEditing = ref(false)
 const showInfoModal = ref(false)
+
+const isTransitioning = ref(false)
+
+const handleEditFromInfo = () => {
+  isTransitioning.value = true
+  document.body.classList.add('sheet-transitioning')
+  showInfoModal.value = false
+  setTimeout(() => {
+    isEditing.value = true
+    setTimeout(() => {
+      document.body.classList.remove('sheet-transitioning')
+      requestAnimationFrame(() => {
+        isTransitioning.value = false
+      })
+    }, 500)
+  }, 300)
+}
 
 // Use project-specific permissions if provided, otherwise fall back to taskStore
 const canEdit = computed(() => {
@@ -245,7 +262,7 @@ const formatDueDate = (date: Date) => {
               @click.stop
             >
               <span class="sr-only">Open menu</span>
-              <ArrowRight class="h-4 w-4" />
+              <MoreHorizontal class="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -288,6 +305,13 @@ const formatDueDate = (date: Date) => {
     </CardContent>
   </Card>
 
+  <Teleport to="body">
+    <div
+      v-if="isTransitioning"
+      class="fixed inset-0 z-50 bg-black/80"
+    />
+  </Teleport>
+
   <TaskForm
     v-if="isEditing"
     :is-open="isEditing"
@@ -303,6 +327,10 @@ const formatDueDate = (date: Date) => {
     :task="task"
     :workspace-members="workspaceMembers"
     :assigned-member-ids="task.assigneeIds || []"
+    :can-edit="canEdit"
+    :can-delete="canDelete"
     @close="showInfoModal = false"
+    @edit="handleEditFromInfo"
+    @delete="showInfoModal = false; taskStore.deleteTask(task.id, user?.uid)"
   />
 </template>
