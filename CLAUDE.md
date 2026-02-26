@@ -18,6 +18,7 @@ pnpm deploy           # Full CI pipeline: prettier + lint + typecheck + build
 ```
 
 Firebase Functions (from `functions/` directory):
+
 ```bash
 npm run build         # Compile TypeScript
 npm run serve         # Build + start Firebase emulators
@@ -37,6 +38,7 @@ There are no tests configured in this project.
 Full-stack **Nuxt 3** workspace-based task management app with **Firebase** backend.
 
 ### Stack
+
 - **Frontend:** Vue 3 + Nuxt 3, Pinia stores, TailwindCSS 4, Shadcn-vue (Reka UI)
 - **Backend:** Nuxt server routes (`server/api/`), Firebase Admin SDK
 - **Database:** Firestore (NoSQL)
@@ -45,6 +47,7 @@ Full-stack **Nuxt 3** workspace-based task management app with **Firebase** back
 - **Validation:** Vee-Validate + Zod
 
 ### Data Model Hierarchy
+
 ```
 workspaces/{id}
   ├── members/{userId}          # permissions, role
@@ -59,29 +62,41 @@ invites/{id}                    # workspace invitations
 ```
 
 ### Routing
+
 File-based routing via Nuxt. Workspace routes (`/:workspace/**`) have SSR disabled in `nuxt.config.ts`. Landing page and auth pages are SSR-enabled.
 
 Key dynamic routes: `pages/[workspace]/` for workspace context, `pages/[workspace]/projects/[id].vue` for project detail, `pages/invite/[token].vue` for invite acceptance.
 
 ### State Management (Pinia)
+
 Three stores in `stores/`:
+
 - **workspaces.ts** — workspace CRUD, current workspace tracking
 - **projects.ts** — project CRUD with member assignment, permission-based access
 - **tasks.ts** (largest, ~950 lines) — multi-project task caching keyed by `projectId`, scope-aware filtering (`all` vs `assigneds`), optimistic updates with rollback, advanced filters (status, priority, due date, search)
 
 ### Permission System
+
 Hierarchical: Owner > Admin > granular permissions (`manage-projects`, `create-tasks`, `edit-tasks`, etc.). Defined in `constants/permissions.ts`, enforced server-side in `server/utils/permissions.ts`. Project assignments can override workspace-level permissions. Special case: task assignees can toggle task status without edit permission.
 
 ### Dual Mode (Guest / Authenticated)
+
 All stores support guest mode using `localStorage` when no user is logged in. Authenticated mode uses Firebase. The pattern throughout stores is:
+
 ```typescript
-if (userId) { /* Firebase operations */ } else { /* localStorage operations */ }
+if (userId) {
+  /* Firebase operations */
+} else {
+  /* localStorage operations */
+}
 ```
 
 ### Server API Pattern
+
 All mutations go through `server/api/` routes which validate permissions via `server/utils/permissions.ts` before writing to Firestore. Client reads can go directly to Firestore (secured by `firestore.rules`).
 
 ### Composables
+
 - `useAuth.ts` — singleton auth state, profile management, registration with rollback
 - `useWorkspace.ts` — workspace context for layout
 - `useMembers.ts` — member management
@@ -89,7 +104,9 @@ All mutations go through `server/api/` routes which validate permissions via `se
 - `useTaskStatusSync.ts` — debounced task status syncing
 
 ### UI Components
+
 Shadcn-vue components live in `components/ui/` (configured in `components.json`, New York style, slate base color). Feature components are organized by domain: `components/tasks/`, `components/projects/`, `components/members/`, `components/workspaces/`, `components/settings/`.
 
 ### Environment Variables
+
 Firebase config uses `NUXT_FIREBASE_*` prefix for public runtime config. Server-side: `FIREBASE_PRIVATE_KEY`, `FIREBASE_CLIENT_EMAIL`, `NUXT_RESEND_API_KEY`. See `nuxt.config.ts` `runtimeConfig` for the full list.

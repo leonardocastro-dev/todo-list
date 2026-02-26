@@ -291,10 +291,12 @@
 @keyframes glow-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary-glow) 40%, transparent);
+    box-shadow: 0 0 0 0
+      color-mix(in oklab, var(--primary-glow) 40%, transparent);
   }
   50% {
-    box-shadow: 0 0 24px 8px color-mix(in oklab, var(--primary-glow) 30%, transparent);
+    box-shadow: 0 0 24px 8px
+      color-mix(in oklab, var(--primary-glow) 30%, transparent);
   }
 }
 

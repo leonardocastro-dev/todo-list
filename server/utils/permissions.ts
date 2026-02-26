@@ -353,7 +353,6 @@ export async function isUserAssignedToTask(
 export async function canToggleTaskStatus(
   workspaceId: string,
   projectId: string,
-  taskId: string,
   userId: string
 ): Promise<boolean> {
   const permissions = await getMemberPermissions(workspaceId, userId)
@@ -361,16 +360,20 @@ export async function canToggleTaskStatus(
   // Owner/Admin can always toggle
   if (isOwnerOrAdmin(permissions)) return true
 
-  // Users with manage-tasks or edit-tasks can toggle
-  if (hasAnyPermission(permissions, ['manage-tasks', 'edit-tasks'])) return true
+  const assignmentRef = db.doc(
+    `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${userId}`
+  )
+  const assignmentSnap = await assignmentRef.get()
 
-  // Users assigned to the task can toggle
-  return isUserAssignedToTask(workspaceId, projectId, taskId, userId)
+  if (!assignmentSnap.exists) return false
+
+  const assignmentPermissions = assignmentSnap.data()?.permissions || {}
+  return assignmentPermissions['toggle-status'] === true
 }
 
 export async function deleteTaskAssignments(
   workspaceId: string,
-  projectId: string | undefined,
+  projectId: string,
   taskId: string
 ): Promise<void> {
   const assignmentsRef = db.collection(
@@ -399,7 +402,7 @@ export async function deleteProjectAssignments(
 
 export async function updateTaskMembers(
   workspaceId: string,
-  projectId: string | undefined,
+  projectId: string,
   taskId: string,
   memberIds: string[],
   assignedBy?: string
@@ -443,10 +446,8 @@ export async function updateTaskMembers(
     updatedAt: new Date().toISOString()
   })
 
-  // Recalculate and update project assignedUserIds when the task belongs to a project
-  if (projectId) {
-    await syncProjectAssignees(workspaceId, projectId)
-  }
+  // Recalculate and update project assignedUserIds
+  await syncProjectAssignees(workspaceId, projectId)
 }
 
 async function syncProjectAssignees(
@@ -571,11 +572,10 @@ export async function validateWorkspaceMemberIds(
 
 export async function updateProjectTaskCounters(
   workspaceId: string,
-  projectId: string | undefined,
+  projectId: string,
   taskCountDelta: number,
   completedCountDelta: number
 ): Promise<void> {
-  if (!projectId) return
   const projectRef = db.doc(`workspaces/${workspaceId}/projects/${projectId}`)
   const projectSnap = await projectRef.get()
   if (!projectSnap.exists) return
@@ -585,9 +585,7 @@ export async function updateProjectTaskCounters(
   // Backfill: if counters don't exist yet, calculate from scratch
   if (data?.taskCount === undefined || data?.taskCount === null) {
     const tasksRef = db.collection(`workspaces/${workspaceId}/tasks`)
-    const tasksSnap = await tasksRef
-      .where('projectId', '==', projectId)
-      .get()
+    const tasksSnap = await tasksRef.where('projectId', '==', projectId).get()
 
     let totalCount = 0
     let completedCount = 0

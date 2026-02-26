@@ -35,7 +35,7 @@ const roles = [
       'View assigned projects',
       'Create tasks (if permitted)',
       'Edit own tasks (if permitted)',
-      'Toggle task status when assigned',
+      'Toggle task status (if permitted)',
       'Per-project permission overrides'
     ]
   }
@@ -64,7 +64,10 @@ const roles = [
           <CardContent class="p-6 space-y-4">
             <div class="flex items-center gap-3">
               <span
-                :class="['text-sm font-semibold px-3 py-1 rounded-full', role.badge]"
+                :class="[
+                  'text-sm font-semibold px-3 py-1 rounded-full',
+                  role.badge
+                ]"
               >
                 {{ role.name }}
               </span>
@@ -88,7 +91,9 @@ const roles = [
       <div
         class="reveal mt-10 mx-auto max-w-2xl rounded-xl border border-primary/30 bg-primary/5 p-6 text-center space-y-2"
       >
-        <p class="font-semibold text-foreground">Per-project permission overrides</p>
+        <p class="font-semibold text-foreground">
+          Per-project permission overrides
+        </p>
         <p class="text-sm text-muted-foreground">
           Members can be granted extra permissions on specific projects — for
           example, a member can create tasks in one project without having that

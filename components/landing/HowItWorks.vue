@@ -22,10 +22,7 @@ const steps = [
 </script>
 
 <template>
-  <section
-    id="how-it-works"
-    class="py-20 md:py-28 bg-gradient-subtle"
-  >
+  <section id="how-it-works" class="py-20 md:py-28 bg-gradient-subtle">
     <div class="container mx-auto px-4 md:px-6">
       <div class="text-center space-y-4 mb-16 reveal">
         <h2 class="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">

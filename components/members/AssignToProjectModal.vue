@@ -87,6 +87,10 @@ const taskPermissionItems = computed<NestedItem[]>(() => {
           name: 'Delete tasks'
         }
       ]
+    },
+    {
+      id: 'toggle-status',
+      name: 'Toggle task status'
     }
   ]
 })

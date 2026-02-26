@@ -29,30 +29,8 @@ const isInitialLoading = ref(
 )
 const isReloading = ref(false)
 const isAddingTask = ref(false)
-const projectLinkFilter = ref<'all' | 'with-project' | 'without-project'>('all')
 
 const filteredWorkspaceTasks = computed(() => taskStore.filteredWorkspaceTasks)
-const visibleTasks = computed(() => {
-  if (projectLinkFilter.value === 'all') return filteredWorkspaceTasks.value
-  return filteredWorkspaceTasks.value.filter((task) => {
-    const hasProject = Boolean(
-      task.projectId && task.projectId.trim().length > 0
-    )
-    return projectLinkFilter.value === 'with-project' ? hasProject : !hasProject
-  })
-})
-
-const setProjectLinkFilter = (newFilter: string | number) => {
-  const filterValue = String(newFilter)
-  if (
-    filterValue !== 'all' &&
-    filterValue !== 'with-project' &&
-    filterValue !== 'without-project'
-  ) {
-    return
-  }
-  projectLinkFilter.value = filterValue
-}
 
 const canCreateWorkspaceTasks = computed(() => {
   if (projectStore.isGuestMode) return true
@@ -145,12 +123,6 @@ const handleReload = async () => {
 }
 
 const emptyStateMessage = computed(() => {
-  if (
-    filteredWorkspaceTasks.value.length > 0 &&
-    visibleTasks.value.length === 0
-  ) {
-    return 'No tasks match the selected project filter.'
-  }
   if (taskStore.workspaceTasks.length > 0) {
     return 'No tasks found. Try adjusting your filters.'
   }
@@ -177,9 +149,12 @@ const emptyStateMessage = computed(() => {
         <div>
           <h2 class="text-xl font-semibold">Workspace Tasks</h2>
           <p class="text-sm text-muted-foreground mt-1">
-            {{ visibleTasks.length }}
-            {{ visibleTasks.length === 1 ? 'task' : 'tasks' }}
-            <span v-if="taskStore.urgentTasks > 0" class="text-red-600 font-medium">
+            {{ filteredWorkspaceTasks.length }}
+            {{ filteredWorkspaceTasks.length === 1 ? 'task' : 'tasks' }}
+            <span
+              v-if="taskStore.urgentTasks > 0"
+              class="text-red-600 font-medium"
+            >
               &middot; {{ taskStore.urgentTasks }} urgent pending
             </span>
           </p>
@@ -212,14 +187,9 @@ const emptyStateMessage = computed(() => {
           </Button>
         </div>
       </div>
-
     </div>
 
-    <TaskFilters
-      show-project-link-filter
-      :project-link-filter="projectLinkFilter"
-      @update:project-link-filter="setProjectLinkFilter"
-    />
+    <TaskFilters />
 
     <!-- Loading State -->
     <div v-if="isInitialLoading || taskStore.isLoading" class="space-y-2">
@@ -253,22 +223,20 @@ const emptyStateMessage = computed(() => {
     </div>
 
     <!-- Empty State -->
-    <Alert v-else-if="visibleTasks.length === 0">
+    <Alert v-else-if="filteredWorkspaceTasks.length === 0">
       <AlertDescription>{{ emptyStateMessage }}</AlertDescription>
     </Alert>
 
     <!-- Task List -->
     <div v-else class="space-y-2">
       <TaskItem
-        v-for="task in visibleTasks"
+        v-for="task in filteredWorkspaceTasks"
         :key="task.id"
         :task="task"
         :workspace-id="workspaceId || undefined"
         :workspace-members="members"
         :project-name="getProjectName(task.projectId)"
-        :project-permissions="
-          task.projectId ? projectPermissionsMap[task.projectId] : undefined
-        "
+        :project-permissions="projectPermissionsMap[task.projectId]"
         :workspace-permissions="projectStore.memberPermissions"
       />
     </div>

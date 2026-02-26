@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { Checkbox } from '@/components/ui/checkbox'
+import { ref, computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -18,14 +17,18 @@ import {
   Trash2,
   PenLine,
   Clock,
+  LoaderCircle,
   CircleDashed
 } from 'lucide-vue-next'
 import TaskForm from './TaskForm.vue'
 import TaskInfos from './TaskInfos.vue'
 import { useAuth } from '@/composables/useAuth'
-import { useTaskStatusSync } from '@/composables/useTaskStatusSync'
 import type { WorkspaceMember } from '@/composables/useMembers'
-import { PERMISSIONS, hasAnyPermission } from '@/constants/permissions'
+import {
+  PERMISSIONS,
+  hasAnyPermission,
+  isOwnerOrAdmin
+} from '@/constants/permissions'
 
 const props = defineProps<{
   task: Task
@@ -93,58 +96,44 @@ const canDelete = computed(() => {
 
 const canToggleStatus = computed(() => {
   if (props.projectPermissions) {
-    // Users with edit permissions or assigned to task can toggle
-    const hasEditPermission = hasAnyPermission(props.projectPermissions, [
-      PERMISSIONS.MANAGE_TASKS,
-      PERMISSIONS.EDIT_TASKS
+    return hasAnyPermission(props.projectPermissions, [
+      PERMISSIONS.TOGGLE_STATUS
     ])
-    const isAssigned =
-      props.task.assigneeIds?.includes(user.value?.uid ?? '') ?? false
-    return hasEditPermission || isAssigned
   }
   if (props.workspacePermissions) {
-    const hasEditPermission = hasAnyPermission(props.workspacePermissions, [
-      PERMISSIONS.MANAGE_TASKS,
-      PERMISSIONS.EDIT_TASKS
-    ])
-    const isAssigned =
-      props.task.assigneeIds?.includes(user.value?.uid ?? '') ?? false
-    return hasEditPermission || isAssigned
+    return isOwnerOrAdmin(props.workspacePermissions)
   }
-  return taskStore.canToggleTaskStatus(
-    props.task.assigneeIds,
-    user.value?.uid ?? null
-  )
+  return taskStore.canToggleTaskStatus
 })
 
 const hasAnyAction = computed(() => canEdit.value || canDelete.value)
+
+const statusOptions: Array<{ value: Status; label: string }> = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'inProgress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' }
+]
+
+const isCompleted = computed(() => props.task.status === 'completed')
+
+const availableStatusOptions = computed(() =>
+  statusOptions.filter((option) => option.value !== props.task.status)
+)
+
+const getStatusIconClass = (status: Status) => {
+  if (status === 'inProgress') return 'h-4 w-4 text-blue-600 dark:text-blue-400'
+  return 'h-4 w-4 text-foreground'
+}
+
+const handleStatusChangeFromCard = async (status: Status) => {
+  if (!canToggleStatus.value || status === props.task.status) return
+  await taskStore.updateTask(props.task.id, { status }, user.value?.uid ?? null)
+}
 
 const handleStatusChangeFromInfo = async (status: Status) => {
   if (!canToggleStatus.value) return
   await taskStore.updateTask(props.task.id, { status }, user.value?.uid ?? null)
 }
-
-const { localChecked, toggle, syncFromExternal } = useTaskStatusSync({
-  taskId: props.task.id,
-  initialStatus: props.task.status,
-  onLocalUpdate: (status) => {
-    taskStore.updateLocalTaskStatus(props.task.id, status)
-  },
-  onServerSync: async (status) => {
-    await taskStore.syncTaskStatusToServer(
-      props.task.id,
-      status,
-      user.value?.uid
-    )
-  }
-})
-
-watch(
-  () => props.task.status,
-  (newStatus) => {
-    syncFromExternal(newStatus)
-  }
-)
 
 const taskMembersWithData = computed(() => {
   if (!props.workspaceMembers?.length) return []
@@ -159,26 +148,8 @@ const extraMembersCount = computed(() =>
   Math.max(0, taskMembersWithData.value.length - 3)
 )
 
-const statusBadge = computed(() => {
-  if (props.task.status === 'inProgress') {
-    return {
-      label: 'In Progress',
-      icon: Clock,
-      className:
-        'rounded-2xl bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800'
-    }
-  }
-
-  return {
-    label: 'Pending',
-    icon: CircleDashed,
-    className:
-      'rounded-2xl bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800'
-  }
-})
-
 const isOverdue = computed(() => {
-  if (!props.task.dueDate || localChecked.value) return false
+  if (!props.task.dueDate || isCompleted.value) return false
   const now = new Date()
   now.setHours(0, 0, 0, 0)
   const due = new Date(props.task.dueDate)
@@ -201,38 +172,84 @@ const formatDueDate = (date: Date) => {
     @click="showInfoModal = true"
   >
     <CardContent class="px-4">
-      <div class="flex items-start gap-3">
+      <div class="flex items-start gap-2">
         <div @click.stop>
-          <Checkbox
-            :id="`task-${task.id}`"
-            :model-value="localChecked"
-            :disabled="!canToggleStatus"
-            class="mt-0.5 rounded-full data-[state=unchecked]:border-2 data-[state=unchecked]:border-muted-foreground"
-            @update:model-value="
-              (checked) => canToggleStatus && toggle(!!checked)
-            "
+          <DropdownMenu v-if="canToggleStatus">
+            <DropdownMenuTrigger as-child>
+              <Button
+                variant="ghost"
+                size="icon"
+                class="h-6 w-6 p-0"
+                @click.stop
+              >
+                <span
+                  v-if="task.status === 'completed'"
+                  class="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500"
+                >
+                  <Check class="size-3 text-white" />
+                </span>
+                <LoaderCircle
+                  v-else-if="task.status === 'inProgress'"
+                  :class="getStatusIconClass(task.status)"
+                />
+                <CircleDashed v-else :class="getStatusIconClass(task.status)" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" class="w-[150px]">
+              <DropdownMenuItem
+                v-for="statusOption in availableStatusOptions"
+                :key="statusOption.value"
+                class="flex items-center gap-2"
+                @click="handleStatusChangeFromCard(statusOption.value)"
+              >
+                <span
+                  v-if="statusOption.value === 'completed'"
+                  class="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500"
+                >
+                  <Check class="size-3 text-white" />
+                </span>
+                <LoaderCircle
+                  v-else-if="statusOption.value === 'inProgress'"
+                  :class="getStatusIconClass(statusOption.value)"
+                />
+                <CircleDashed
+                  v-else
+                  :class="getStatusIconClass(statusOption.value)"
+                />
+                <span>{{ statusOption.label }}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            v-else
+            variant="ghost"
+            size="icon"
+            class="h-6 w-6 p-0"
+            @click.stop
           >
-            <Check class="size-2.5" />
-          </Checkbox>
+            <span
+              v-if="task.status === 'completed'"
+              class="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500"
+            >
+              <Check class="size-3 text-white" />
+            </span>
+            <LoaderCircle
+              v-else-if="task.status === 'inProgress'"
+              :class="getStatusIconClass(task.status)"
+            />
+            <CircleDashed v-else :class="getStatusIconClass(task.status)" />
+          </Button>
         </div>
 
         <div class="flex-1 overflow-hidden">
-          <div class="flex items-center gap-2 min-w-0 mb-1">
+          <div class="mb-1 flex min-h-6 min-w-0 items-center gap-2">
             <span
-              :class="`font-medium text-sm truncate ${localChecked ? 'line-through text-muted-foreground opacity-70' : ''}`"
+              :class="`font-medium text-sm truncate ${isCompleted ? 'line-through text-muted-foreground opacity-70' : ''}`"
             >
               {{ task.title }}
             </span>
             <Badge :class="`priority-badge-${task.priority}`">
               {{ task.priority }}
-            </Badge>
-            <Badge
-              v-if="task.status !== 'completed'"
-              variant="outline"
-              :class="statusBadge.className"
-            >
-              <component :is="statusBadge.icon" class="h-3 w-3 mr-1" />
-              {{ statusBadge.label }}
             </Badge>
           </div>
 
@@ -340,7 +357,7 @@ const formatDueDate = (date: Date) => {
     :edit-task="task"
     :user-id="user?.uid"
     :workspace-id="workspaceId"
-    :project-id="task.projectId || undefined"
+    :project-id="task.projectId"
     @close="isEditing = false"
   />
 
@@ -355,8 +372,7 @@ const formatDueDate = (date: Date) => {
     @close="showInfoModal = false"
     @edit="handleEditFromInfo"
     @delete="
-      showInfoModal = false,
-      taskStore.deleteTask(task.id, user?.uid)
+      ((showInfoModal = false), taskStore.deleteTask(task.id, user?.uid))
     "
     @status-change="handleStatusChangeFromInfo"
   />

@@ -34,7 +34,6 @@ import { Users, CalendarIcon } from 'lucide-vue-next'
 import { useMembers } from '@/composables/useMembers'
 
 type Priority = 'normal' | 'important' | 'urgent'
-const NO_PROJECT_VALUE = '__no_project__'
 
 const props = defineProps<{
   isOpen: boolean
@@ -65,9 +64,10 @@ const priority = ref<Priority>(
 )
 const dueDate = ref<DateValue | undefined>(undefined)
 const selectedProjectId = ref(
-  props.projectId || props.editTask?.projectId || NO_PROJECT_VALUE
+  props.projectId || props.editTask?.projectId || ''
 )
 const titleError = ref('')
+const projectError = ref('')
 
 const formatDisplayDate = (date: DateValue) => {
   return new Intl.DateTimeFormat('en-US', { dateStyle: 'long' }).format(
@@ -81,7 +81,7 @@ watch(
     if (!isOpen) return
 
     if (!props.editTask) {
-      selectedProjectId.value = props.projectId || NO_PROJECT_VALUE
+      selectedProjectId.value = props.projectId || ''
     }
 
     if (props.workspaceId) {
@@ -109,8 +109,7 @@ watch(
       } else {
         dueDate.value = undefined
       }
-      selectedProjectId.value =
-        newTask.projectId || props.projectId || NO_PROJECT_VALUE
+      selectedProjectId.value = newTask.projectId || props.projectId || ''
 
       if (props.isOpen && props.workspaceId) {
         await loadTaskAssignees(props.workspaceId, newTask.id)
@@ -121,8 +120,13 @@ watch(
 )
 
 const handleSubmit = () => {
-  if (!title.value.trim()) {
-    titleError.value = 'Title is required'
+  if (isSubmitDisabled.value) {
+    if (!title.value.trim()) {
+      titleError.value = 'Title is required'
+    }
+    if (!hasValidProjectSelection.value) {
+      projectError.value = 'Project is required'
+    }
     return
   }
 
@@ -145,10 +149,7 @@ const handleSubmit = () => {
   } else {
     taskStore.addTask(
       {
-        projectId:
-          selectedProjectId.value === NO_PROJECT_VALUE
-            ? undefined
-            : selectedProjectId.value,
+        projectId: selectedProjectId.value,
         title: title.value,
         description: description.value,
         priority: priority.value,
@@ -170,8 +171,9 @@ const resetForm = () => {
   description.value = ''
   priority.value = 'normal'
   dueDate.value = undefined
-  selectedProjectId.value = props.projectId || NO_PROJECT_VALUE
+  selectedProjectId.value = props.projectId || ''
   titleError.value = ''
+  projectError.value = ''
   selectedMemberIds.value = []
 }
 
@@ -180,6 +182,31 @@ const availableProjects = computed(() => {
   return projectStore.projects.filter(
     (p) => p.workspaceId === props.workspaceId
   )
+})
+
+const isProjectSelectionRequired = computed(
+  () => !props.editTask && !props.projectId
+)
+
+const hasValidProjectSelection = computed(() => {
+  const effectiveProjectId =
+    selectedProjectId.value ||
+    props.editTask?.projectId ||
+    props.projectId ||
+    ''
+
+  if (!effectiveProjectId.trim()) return false
+
+  if (!isProjectSelectionRequired.value) return true
+
+  return availableProjects.value.some(
+    (project) => project.id === effectiveProjectId
+  )
+})
+
+const isSubmitDisabled = computed(() => {
+  if (!title.value.trim()) return true
+  return !hasValidProjectSelection.value
 })
 
 const handleClose = () => {
@@ -202,7 +229,9 @@ const handleClose = () => {
       class="sm:max-w-[480px] w-full p-0 flex flex-col overflow-hidden"
     >
       <SheetHeader>
-        <SheetTitle class="text-2xl font-medium leading-tight">{{ editTask ? 'Edit Task' : 'Add New Task' }}</SheetTitle>
+        <SheetTitle class="text-2xl font-medium leading-tight">{{
+          editTask ? 'Edit Task' : 'Add New Task'
+        }}</SheetTitle>
         <SheetDescription class="sr-only">
           {{ editTask ? 'Edit task details' : 'Create a new task' }}
         </SheetDescription>
@@ -292,13 +321,26 @@ const handleClose = () => {
         </div>
 
         <div v-if="!editTask && !projectId" class="space-y-2">
-          <Label for="project" class="font-medium">Project (optional)</Label>
-          <Select v-model="selectedProjectId">
+          <Label for="project" class="font-medium">Project</Label>
+          <Select
+            v-model="selectedProjectId"
+            @update:model-value="
+              (value) => {
+                if (String(value || '').trim()) projectError = ''
+              }
+            "
+          >
             <SelectTrigger id="project">
-              <SelectValue placeholder="No project" />
+              <SelectValue placeholder="Select a project" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem :value="NO_PROJECT_VALUE">No project</SelectItem>
+              <SelectItem
+                v-if="availableProjects.length === 0"
+                value="__empty"
+                disabled
+              >
+                No projects available
+              </SelectItem>
               <SelectItem
                 v-for="project in availableProjects"
                 :key="project.id"
@@ -308,13 +350,16 @@ const handleClose = () => {
               </SelectItem>
             </SelectContent>
           </Select>
+          <p v-if="projectError" class="text-sm text-red-700">
+            {{ projectError }}
+          </p>
         </div>
 
         <!-- Assign Members Section -->
         <div v-if="workspaceId && userId" class="space-y-2">
           <Label class="flex items-center gap-2 font-medium">
             <Users class="h-4 w-4" />
-            Assign Members
+            Assign Members (optional)
           </Label>
           <p class="text-sm text-muted-foreground">
             Select members to assign to this task.
@@ -375,7 +420,7 @@ const handleClose = () => {
           <Button type="button" variant="outline" @click="handleClose">
             Cancel
           </Button>
-          <Button type="submit">
+          <Button type="submit" :disabled="isSubmitDisabled">
             {{ editTask ? 'Update Task' : 'Add Task' }}
           </Button>
         </SheetFooter>

@@ -8,7 +8,10 @@ const props = defineProps<{
   uid?: string
 }>()
 
-provide('avatarUid', computed(() => props.uid))
+provide(
+  'avatarUid',
+  computed(() => props.uid)
+)
 </script>
 
 <template>

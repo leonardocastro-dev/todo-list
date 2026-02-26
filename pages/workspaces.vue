@@ -52,7 +52,9 @@ onMounted(async () => {
         class="flex lg:flex-row flex-col-reverse md:items-end items-start lg:items-center gap-3"
       >
         <div class="text-right">
-          <p class="text-sm text-muted-foreground">{{ userProfile?.username || user.email }}</p>
+          <p class="text-sm text-muted-foreground">
+            {{ userProfile?.username || user.email }}
+          </p>
         </div>
         <div class="flex gap-3">
           <Button

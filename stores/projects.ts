@@ -92,8 +92,12 @@ export const useProjectStore = defineStore('projects', {
         if (!userId) {
           this.isGuestMode = true
           const localProjects = localStorage.getItem('localProjects')
-          const allProjects: Project[] = localProjects ? JSON.parse(localProjects) : []
-          this.projects = allProjects.filter(p => p.workspaceId === workspaceId)
+          const allProjects: Project[] = localProjects
+            ? JSON.parse(localProjects)
+            : []
+          this.projects = allProjects.filter(
+            (p) => p.workspaceId === workspaceId
+          )
           this.loadedWorkspaceId = workspaceId
           return
         }
@@ -166,10 +170,17 @@ export const useProjectStore = defineStore('projects', {
 
     // Save current workspace projects to localStorage without losing other workspaces
     saveLocalProjects() {
-      const allLocal: Project[] = JSON.parse(localStorage.getItem('localProjects') || '[]')
+      const allLocal: Project[] = JSON.parse(
+        localStorage.getItem('localProjects') || '[]'
+      )
       const currentWorkspaceId = this.loadedWorkspaceId
-      const otherWorkspaceProjects = allLocal.filter(p => p.workspaceId !== currentWorkspaceId)
-      localStorage.setItem('localProjects', JSON.stringify([...otherWorkspaceProjects, ...this.projects]))
+      const otherWorkspaceProjects = allLocal.filter(
+        (p) => p.workspaceId !== currentWorkspaceId
+      )
+      localStorage.setItem(
+        'localProjects',
+        JSON.stringify([...otherWorkspaceProjects, ...this.projects])
+      )
     },
 
     async addProject(

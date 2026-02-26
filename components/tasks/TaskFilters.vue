@@ -5,7 +5,7 @@ import { CalendarDate } from '@internationalized/date'
 import {
   SlidersHorizontal,
   ListTodo,
-  Clock,
+  LoaderCircle,
   CheckCircle2,
   CircleDashed,
   CalendarIcon,
@@ -42,21 +42,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/composables/useAuth'
 import { useMembers } from '@/composables/useMembers'
-
-const props = withDefaults(
-  defineProps<{
-    projectLinkFilter?: 'all' | 'with-project' | 'without-project'
-    showProjectLinkFilter?: boolean
-  }>(),
-  {
-    projectLinkFilter: 'all',
-    showProjectLinkFilter: false
-  }
-)
-
-const emit = defineEmits<{
-  'update:projectLinkFilter': [value: string]
-}>()
 
 const taskStore = useTaskStore()
 const { user } = useAuth()
@@ -112,7 +97,7 @@ const statusItems = computed(() => [
   {
     value: 'inProgress',
     label: 'In Progress',
-    icon: Clock,
+    icon: LoaderCircle,
     iconBg: 'bg-blue-100 dark:bg-blue-900/30',
     iconColor: 'text-blue-600 dark:text-blue-400',
     count: taskStore.inProgressTasks
@@ -182,7 +167,6 @@ const activeFilterCount = computed(() => {
   let count = 0
   if (taskStore.priorityFilter !== 'all') count++
   if (taskStore.dueDateFilter !== 'all') count++
-  if (props.showProjectLinkFilter && props.projectLinkFilter !== 'all') count++
   return count
 })
 </script>
@@ -298,29 +282,6 @@ const activeFilterCount = computed(() => {
           align="end"
           class="max-h-[290px] overflow-auto w-72 space-y-4"
         >
-          <div v-if="showProjectLinkFilter">
-            <Label
-              for="project-link-filter"
-              class="mb-1 block text-sm font-medium"
-              >Project Link</Label
-            >
-            <Select
-              :model-value="projectLinkFilter"
-              @update:model-value="
-                (val) => emit('update:projectLinkFilter', String(val || 'all'))
-              "
-            >
-              <SelectTrigger id="project-link-filter" class="w-full">
-                <SelectValue placeholder="All tasks" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All tasks</SelectItem>
-                <SelectItem value="with-project">With project</SelectItem>
-                <SelectItem value="without-project">Without project</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <div>
             <Label for="priority-filter" class="mb-1 block text-sm font-medium"
               >Priority</Label

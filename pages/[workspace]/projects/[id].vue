@@ -85,7 +85,9 @@ watch(
         </div>
 
         <div v-else-if="currentProject">
-          <h1 class="text-2xl font-bold text-primary mb-2 flex items-center gap-2">
+          <h1
+            class="text-2xl font-bold text-primary mb-2 flex items-center gap-2"
+          >
             <span v-if="currentProject.emoji">{{ currentProject.emoji }}</span>
             {{ currentProject.title }}
           </h1>
@@ -105,7 +107,10 @@ watch(
 
     <div class="-mx-6 border-b border-border mb-6" />
 
-    <div v-if="currentProject || projectStore.isLoading" class="max-w-6xl mx-auto">
+    <div
+      v-if="currentProject || projectStore.isLoading"
+      class="max-w-6xl mx-auto"
+    >
       <div
         class="flex sm:justify-between flex-col sm:flex-row sm:items-center justify-center mb-6"
       >
@@ -114,7 +119,10 @@ watch(
           <p class="text-sm text-muted-foreground mt-1">
             {{ taskStore.totalTasks }}
             {{ taskStore.totalTasks === 1 ? 'task' : 'tasks' }}
-            <span v-if="taskStore.urgentTasks > 0" class="text-red-600 font-medium">
+            <span
+              v-if="taskStore.urgentTasks > 0"
+              class="text-red-600 font-medium"
+            >
               &middot; {{ taskStore.urgentTasks }} urgent pending
             </span>
           </p>
@@ -148,10 +156,7 @@ watch(
 
       <TaskFilters />
       <div class="-mx-6 border-b border-border mb-6" />
-      <TaskList
-        :workspace-id="workspaceId"
-        :workspace-members="members"
-      />
+      <TaskList :workspace-id="workspaceId" :workspace-members="members" />
 
       <TaskForm
         :is-open="isAddingTask"

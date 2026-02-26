@@ -79,7 +79,9 @@ watch(() => route.fullPath, closeMobileMenu)
           <NuxtLink
             :to="`/${workspaceSlug}/tasks`"
             class="flex items-center px-4 py-3 text-base font-medium text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
-            :class="{ '!text-primary !bg-accent': isWorkspaceSectionActive('tasks') }"
+            :class="{
+              '!text-primary !bg-accent': isWorkspaceSectionActive('tasks')
+            }"
             @click="closeMobileMenu"
           >
             Tasks
@@ -87,7 +89,9 @@ watch(() => route.fullPath, closeMobileMenu)
           <NuxtLink
             :to="`/${workspaceSlug}/projects`"
             class="flex items-center px-4 py-3 text-base font-medium text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
-            :class="{ '!text-primary !bg-accent': isWorkspaceSectionActive('projects') }"
+            :class="{
+              '!text-primary !bg-accent': isWorkspaceSectionActive('projects')
+            }"
             @click="closeMobileMenu"
           >
             Projects
@@ -104,7 +108,9 @@ watch(() => route.fullPath, closeMobileMenu)
             v-else
             :to="`/${workspaceSlug}/members`"
             class="flex items-center gap-2 px-4 py-3 text-base font-medium rounded-md transition-colors text-muted-foreground hover:text-primary hover:bg-accent"
-            :class="{ '!text-primary !bg-accent': isWorkspaceSectionActive('members') }"
+            :class="{
+              '!text-primary !bg-accent': isWorkspaceSectionActive('members')
+            }"
             @click="closeMobileMenu"
           >
             <span>Members</span>
@@ -140,8 +146,14 @@ watch(() => route.fullPath, closeMobileMenu)
 
         <div class="p-4 border-t">
           <div v-if="workspace?.name" class="mb-3 px-2">
-            <p class="text-xs text-muted-foreground uppercase tracking-wide font-medium">Workspace</p>
-            <p class="text-sm font-semibold text-foreground truncate mt-0.5">{{ workspace.name }}</p>
+            <p
+              class="text-xs text-muted-foreground uppercase tracking-wide font-medium"
+            >
+              Workspace
+            </p>
+            <p class="text-sm font-semibold text-foreground truncate mt-0.5">
+              {{ workspace.name }}
+            </p>
           </div>
           <div v-if="user">
             <div class="mb-3 px-2">
@@ -192,8 +204,14 @@ watch(() => route.fullPath, closeMobileMenu)
           <img src="/logo-light.svg" alt="Fokuz" class="h-8" />
         </NuxtLink>
         <div v-if="workspace?.name" class="mt-4 px-1">
-          <p class="text-xs text-muted-foreground uppercase tracking-wide font-medium">Workspace</p>
-          <p class="text-sm font-semibold text-foreground truncate mt-0.5">{{ workspace.name }}</p>
+          <p
+            class="text-xs text-muted-foreground uppercase tracking-wide font-medium"
+          >
+            Workspace
+          </p>
+          <p class="text-sm font-semibold text-foreground truncate mt-0.5">
+            {{ workspace.name }}
+          </p>
         </div>
       </div>
 
@@ -204,7 +222,9 @@ watch(() => route.fullPath, closeMobileMenu)
         <NuxtLink
           :to="`/${workspaceSlug}/tasks`"
           class="flex items-center px-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
-          :class="{ '!text-primary !bg-accent': isWorkspaceSectionActive('tasks') }"
+          :class="{
+            '!text-primary !bg-accent': isWorkspaceSectionActive('tasks')
+          }"
         >
           <span>Tasks</span>
         </NuxtLink>
@@ -240,10 +260,13 @@ watch(() => route.fullPath, closeMobileMenu)
               :to="`/${workspaceSlug}/projects/${project.id}`"
               class="flex items-center gap-2 px-4 py-1.5 text-sm rounded-md transition-colors text-muted-foreground hover:text-primary hover:bg-accent"
               :class="{
-                '!text-primary !bg-accent': route.path === `/${workspaceSlug}/projects/${project.id}`
+                '!text-primary !bg-accent':
+                  route.path === `/${workspaceSlug}/projects/${project.id}`
               }"
             >
-              <span v-if="project.emoji" class="text-base leading-none">{{ project.emoji }}</span>
+              <span v-if="project.emoji" class="text-base leading-none">{{
+                project.emoji
+              }}</span>
               <span class="truncate">{{ project.title }}</span>
             </NuxtLink>
             <span
@@ -266,7 +289,9 @@ watch(() => route.fullPath, closeMobileMenu)
           v-else
           :to="`/${workspaceSlug}/members`"
           class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors text-muted-foreground hover:text-primary hover:bg-accent"
-          :class="{ '!text-primary !bg-accent': isWorkspaceSectionActive('members') }"
+          :class="{
+            '!text-primary !bg-accent': isWorkspaceSectionActive('members')
+          }"
         >
           <span>Members</span>
         </NuxtLink>

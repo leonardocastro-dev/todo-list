@@ -82,9 +82,13 @@ onMounted(async () => {
   }
 })
 
-watch(() => projectStore.projects, () => {
-  if (user.value?.uid) loadAssignments()
-}, { deep: true })
+watch(
+  () => projectStore.projects,
+  () => {
+    if (user.value?.uid) loadAssignments()
+  },
+  { deep: true }
+)
 
 const handleReload = async () => {
   if (!workspaceId.value) return

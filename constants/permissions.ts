@@ -10,6 +10,7 @@ export const PERMISSIONS = {
   CREATE_TASKS: 'create-tasks',
   EDIT_TASKS: 'edit-tasks',
   DELETE_TASKS: 'delete-tasks',
+  TOGGLE_STATUS: 'toggle-status',
   MANAGE_MEMBERS: 'manage-members',
   ADD_MEMBERS: 'add-members',
   REMOVE_MEMBERS: 'remove-members',

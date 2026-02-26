@@ -22,6 +22,7 @@ import {
   Check,
   Calendar,
   Clock,
+  LoaderCircle,
   Users,
   ChevronDown,
   ChevronUp,
@@ -86,7 +87,7 @@ const getStatusLabel = (status: Status): string => statusLabelMap[status]
 
 const getStatusIcon = (status: Status) => {
   if (status === 'completed') return Check
-  if (status === 'inProgress') return Clock
+  if (status === 'inProgress') return LoaderCircle
   return CircleDashed
 }
 
@@ -107,6 +108,7 @@ const getStatusTextClass = (status: Status): string => {
 }
 
 const handleStatusChange = (value: string) => {
+  if (!props.canToggleStatus) return
   if (value !== 'pending' && value !== 'inProgress' && value !== 'completed') {
     return
   }

@@ -14,7 +14,7 @@ const COLORS = [
   'bg-violet-500',
   'bg-purple-500',
   'bg-fuchsia-500',
-  'bg-pink-500',
+  'bg-pink-500'
 ]
 
 export function getAvatarColor(uid: string): string {

@@ -23,17 +23,7 @@ type TaskFilterState = {
   scopeUserId: string | null
 }
 
-const NO_PROJECT_KEY = '__no_project__'
-
-const getTaskBucketKey = (
-  projectId?: string | null,
-  workspaceId?: string | null
-): string => {
-  if (!projectId || projectId.trim().length === 0) {
-    return workspaceId ? `${NO_PROJECT_KEY}:${workspaceId}` : NO_PROJECT_KEY
-  }
-  return projectId
-}
+const getTaskBucketKey = (projectId: string): string => projectId
 
 const isCompletedStatus = (status: Status): boolean => status === 'completed'
 
@@ -211,31 +201,21 @@ export const useTaskStore = defineStore('tasks', {
         PERMISSIONS.MANAGE_TASKS
       ])
     },
-    // Check if user can toggle task status (complete/uncomplete)
-    // This is separate from canEditTasks because assigned members can toggle status
-    canToggleTaskStatus(state) {
-      return (
-        assignedMemberIds: string[] | undefined,
-        userId: string | null
-      ): boolean => {
-        // Guest mode: can always toggle local tasks
-        if (state.isGuestMode) return true
-        // If user has edit permissions, allow toggle
-        if (this.canEditTasks) return true
-        // If user is assigned to the task, allow toggle
-        if (userId && assignedMemberIds?.includes(userId)) return true
-        return false
-      }
+    // Check if user can toggle task status in the current project context
+    canToggleTaskStatus(state): boolean {
+      // Guest mode: can always toggle local tasks
+      if (state.isGuestMode) return true
+      if (!this.memberPermissions) return false
+      return hasAnyPermission(this.memberPermissions, [
+        PERMISSIONS.TOGGLE_STATUS
+      ])
     },
     workspaceTasks(): Task[] {
       if (!this.currentWorkspaceId) return []
       const projectStore = useProjectStore()
       const workspaceTaskBuckets = projectStore.projects
         .filter((p) => p.workspaceId === this.currentWorkspaceId)
-        .map((p) => getTaskBucketKey(p.id, this.currentWorkspaceId))
-      workspaceTaskBuckets.push(
-        getTaskBucketKey(undefined, this.currentWorkspaceId)
-      )
+        .map((p) => getTaskBucketKey(p.id))
 
       let allTasks: Task[] = []
       for (const bucketKey of workspaceTaskBuckets) {
@@ -281,11 +261,10 @@ export const useTaskStore = defineStore('tasks', {
     },
 
     updateProjectCounters(
-      projectId: string | undefined,
+      projectId: string,
       taskCountDelta: number,
       completedCountDelta: number
     ) {
-      if (!projectId) return
       const projectStore = useProjectStore()
       const project = projectStore.projects.find((p) => p.id === projectId)
       if (!project) return
@@ -297,23 +276,11 @@ export const useTaskStore = defineStore('tasks', {
     resolveTaskBucket(taskId: string): string | null {
       // Fast path: try currentProjectId first
       if (this.currentProjectId) {
-        const currentProjectBucket = getTaskBucketKey(
-          this.currentProjectId,
-          this.currentWorkspaceId
-        )
+        const currentProjectBucket = getTaskBucketKey(this.currentProjectId)
         const tasks = this.tasksByProject[currentProjectBucket]
         if (tasks?.some((t) => t.id === taskId)) {
           return currentProjectBucket
         }
-      }
-
-      const noProjectBucket = getTaskBucketKey(
-        undefined,
-        this.currentWorkspaceId
-      )
-      const noProjectTasks = this.tasksByProject[noProjectBucket]
-      if (noProjectTasks?.some((t) => t.id === taskId)) {
-        return noProjectBucket
       }
 
       // Search all projects
@@ -373,7 +340,7 @@ export const useTaskStore = defineStore('tasks', {
         const wsScope = this.loadedWorkspaces[workspaceId]
         if (
           (wsScope === 'all' || wsScope === currentScope) &&
-          this.tasksByProject[getTaskBucketKey(projectId, workspaceId)]
+          this.tasksByProject[getTaskBucketKey(projectId)]
         ) {
           await this.loadProjectPermissions(projectId, userId, workspaceId)
           this.loadedProjects[projectId] = {
@@ -542,8 +509,6 @@ export const useTaskStore = defineStore('tasks', {
       const bucketKeys = workspaceProjectIds.map((projectId) =>
         getTaskBucketKey(projectId)
       )
-      const noProjectBucket = getTaskBucketKey(undefined, workspaceId)
-      bucketKeys.push(noProjectBucket)
 
       this.tasksByProject = Object.fromEntries(
         Object.entries(this.tasksByProject).filter(
@@ -576,7 +541,7 @@ export const useTaskStore = defineStore('tasks', {
           (p) => p.workspaceId === workspaceId
         )
         for (const project of localProjects) {
-          const bucketKey = getTaskBucketKey(project.id, workspaceId)
+          const bucketKey = getTaskBucketKey(project.id)
           if (!this.tasksByProject[bucketKey]) {
             const localTasks = localStorage.getItem(`localTasks_${project.id}`)
             this.tasksByProject[bucketKey] = localTasks
@@ -628,12 +593,20 @@ export const useTaskStore = defineStore('tasks', {
         // Group tasks by projectId
         const grouped: Record<string, Task[]> = {}
         snapshot.docs.forEach((docSnap) => {
-          const data = docSnap.data() as Omit<Task, 'id'>
-          const projectId = data.projectId
-          const hasProject = Boolean(projectId)
-          if (hasProject && !accessibleProjectIds.includes(projectId!)) return
-          const task: Task = { id: docSnap.id, ...data }
-          const bucketKey = getTaskBucketKey(projectId, workspaceId)
+          const data = docSnap.data()
+          const projectId =
+            typeof data.projectId === 'string' &&
+            data.projectId.trim().length > 0
+              ? data.projectId
+              : null
+          if (!projectId) return
+          if (!accessibleProjectIds.includes(projectId)) return
+          const task: Task = {
+            id: docSnap.id,
+            ...(data as Omit<Task, 'id'>),
+            projectId
+          }
+          const bucketKey = getTaskBucketKey(projectId)
           if (!grouped[bucketKey]) grouped[bucketKey] = []
           grouped[bucketKey].push(task)
         })
@@ -680,10 +653,11 @@ export const useTaskStore = defineStore('tasks', {
       memberIds?: string[]
     ) {
       const projectId = task.projectId
-      const bucketKey = getTaskBucketKey(
-        projectId,
-        workspaceId || this.currentWorkspaceId
-      )
+      if (!projectId || projectId.trim().length === 0) {
+        showErrorToast('Project is required to create tasks')
+        return
+      }
+      const bucketKey = getTaskBucketKey(projectId)
 
       // Garante que o array existe
       if (!this.tasksByProject[bucketKey]) {
@@ -757,10 +731,7 @@ export const useTaskStore = defineStore('tasks', {
 
         // Replace optimistic task with server task (real ID)
         if (response.success && response.task) {
-          const responseBucket = getTaskBucketKey(
-            response.task.projectId,
-            workspaceId || this.currentWorkspaceId
-          )
+          const responseBucket = getTaskBucketKey(response.task.projectId)
           if (responseBucket !== bucketKey) {
             this.tasksByProject[bucketKey] = this.tasksByProject[
               bucketKey

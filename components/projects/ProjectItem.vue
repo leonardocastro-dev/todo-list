@@ -10,12 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import {
-  MoreHorizontal,
-  Lock,
-  Trash2,
-  PenLine
-} from 'lucide-vue-next'
+import { MoreHorizontal, Lock, Trash2, PenLine } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 
 const props = defineProps<{
@@ -92,7 +87,7 @@ const completionPercentage = computed(() =>
         </h3>
         <p
           v-if="project.description"
-          class="text-sm text-muted-foreground mb-2 line-clamp-2"
+          class="text-sm truncate text-muted-foreground mb-2 line-clamp-2"
         >
           {{ project.description }}
         </p>
@@ -111,7 +106,9 @@ const completionPercentage = computed(() =>
           </p>
         </div>
 
-        <div class="flex items-center justify-between w-full gap-4 text-xs text-muted-foreground">
+        <div
+          class="flex items-center justify-between w-full gap-4 text-xs text-muted-foreground"
+        >
           <div
             v-if="projectMembersWithData.length > 0"
             class="flex -space-x-2 *:data-[slot=avatar]:ring-background *:data-[slot=avatar]:ring-2"

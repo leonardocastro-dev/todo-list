@@ -43,16 +43,21 @@ export default defineEventHandler(async (event) => {
     typeof taskDoc.data()?.projectId === 'string' &&
     taskDoc.data()?.projectId.trim().length > 0
       ? taskDoc.data()?.projectId
-      : undefined
+      : null
 
-  if (taskProjectId) {
-    const hasAccess = await canAccessProject(workspaceId, taskProjectId, uid)
-    if (!hasAccess) {
-      throw createError({
-        statusCode: 403,
-        message: 'You do not have access to this project'
-      })
-    }
+  if (!taskProjectId) {
+    throw createError({
+      statusCode: 400,
+      message: 'Task must belong to a project'
+    })
+  }
+
+  const hasAccess = await canAccessProject(workspaceId, taskProjectId, uid)
+  if (!hasAccess) {
+    throw createError({
+      statusCode: 403,
+      message: 'You do not have access to this project'
+    })
   }
 
   // Delete task assignments

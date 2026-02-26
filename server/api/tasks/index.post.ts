@@ -42,30 +42,43 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Task title is required' })
   }
 
+  const normalizedProjectId =
+    typeof projectId === 'string' && projectId.trim().length > 0
+      ? projectId.trim()
+      : null
+
+  if (!normalizedProjectId) {
+    throw createError({
+      statusCode: 400,
+      message: 'Project ID is required'
+    })
+  }
+
   // Check if user has permission to create tasks
   await requirePermission(workspaceId, uid, [
     PERMISSIONS.MANAGE_TASKS,
     PERMISSIONS.CREATE_TASKS
   ])
 
-  const normalizedProjectId =
-    typeof projectId === 'string' && projectId.trim().length > 0
-      ? projectId.trim()
-      : undefined
+  const projectRef = db.doc(
+    `workspaces/${workspaceId}/projects/${normalizedProjectId}`
+  )
+  const projectSnap = await projectRef.get()
+  if (!projectSnap.exists) {
+    throw createError({ statusCode: 404, message: 'Project not found' })
+  }
 
-  if (normalizedProjectId) {
-    const hasAccess = await canAccessProject(
-      workspaceId,
-      normalizedProjectId,
-      uid
-    )
+  const hasAccess = await canAccessProject(
+    workspaceId,
+    normalizedProjectId,
+    uid
+  )
 
-    if (!hasAccess) {
-      throw createError({
-        statusCode: 403,
-        message: 'You do not have access to this project'
-      })
-    }
+  if (!hasAccess) {
+    throw createError({
+      statusCode: 403,
+      message: 'You do not have access to this project'
+    })
   }
 
   const taskId = String(Date.now())
@@ -85,7 +98,7 @@ export default defineEventHandler(async (event) => {
     status: normalizedStatus,
     priority: priority || 'normal',
     dueDate: dueDate || null,
-    ...(normalizedProjectId ? { projectId: normalizedProjectId } : {}),
+    projectId: normalizedProjectId,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     assigneeIds: memberIds || []
