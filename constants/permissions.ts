@@ -82,24 +82,12 @@ export const PROJECT_PERMISSION_SET = new Set<string>(
   Object.values(PROJECT_PERMISSIONS)
 )
 
-// Combined implies (backward compat)
-export const implies: Record<string, string[]> = {
-  [PERMISSIONS.MANAGE_PROJECTS]: [
-    PERMISSIONS.CREATE_PROJECTS,
-    PERMISSIONS.EDIT_PROJECTS,
-    PERMISSIONS.DELETE_PROJECTS
-  ],
-  [PERMISSIONS.MANAGE_TASKS]: [
-    PERMISSIONS.CREATE_TASKS,
-    PERMISSIONS.EDIT_TASKS,
-    PERMISSIONS.DELETE_TASKS,
-    PERMISSIONS.TOGGLE_STATUS
-  ],
-  [PERMISSIONS.MANAGE_MEMBERS]: [
-    PERMISSIONS.ADD_MEMBERS,
-    PERMISSIONS.REMOVE_MEMBERS,
-    PERMISSIONS.ASSIGN_PROJECT
-  ]
+const isWorkspaceScopedPermission = (permission: string): boolean => {
+  return WORKSPACE_PERMISSION_SET.has(permission)
+}
+
+const isProjectScopedPermission = (permission: string): boolean => {
+  return PROJECT_PERMISSION_SET.has(permission)
 }
 
 export const isOwner = (role: Role | string | null | undefined): boolean => {
@@ -121,13 +109,15 @@ export const hasPermission = (
   permissions: Record<string, boolean> | null,
   permission: string
 ): boolean => {
+  if (isWorkspaceScopedPermission(permission)) {
+    return hasWorkspacePermission(role, permissions, permission)
+  }
+  if (isProjectScopedPermission(permission)) {
+    return hasProjectPermission(role, permissions, permission)
+  }
   if (isOwnerOrAdmin(role)) return true
   if (!permissions) return false
   if (permissions[permission] === true) return true
-  for (const [parent, children] of Object.entries(implies)) {
-    if (permissions[parent] === true && children.includes(permission))
-      return true
-  }
   return false
 }
 
