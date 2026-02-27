@@ -6,12 +6,20 @@ import type { Role } from '@/constants/permissions'
 import {
   ROLES,
   PERMISSIONS,
+  WORKSPACE_PERMISSIONS,
+  PROJECT_PERMISSIONS,
   implies,
+  impliesWorkspace,
+  impliesProject,
   isOwner,
   isAdmin,
   isOwnerOrAdmin,
   hasPermission,
-  hasAnyPermission
+  hasAnyPermission,
+  hasWorkspacePermission,
+  hasProjectPermission,
+  WORKSPACE_PERMISSION_SET,
+  PROJECT_PERMISSION_SET
 } from '@/constants/permissions'
 
 export {
@@ -20,9 +28,17 @@ export {
   isOwnerOrAdmin,
   hasPermission,
   hasAnyPermission,
+  hasWorkspacePermission,
+  hasProjectPermission,
   ROLES,
   PERMISSIONS,
-  implies
+  WORKSPACE_PERMISSIONS,
+  PROJECT_PERMISSIONS,
+  implies,
+  impliesWorkspace,
+  impliesProject,
+  WORKSPACE_PERMISSION_SET,
+  PROJECT_PERMISSION_SET
 }
 
 export interface MemberData {
@@ -132,6 +148,42 @@ export async function requirePermission(
   }
 
   return member
+}
+
+export async function requireProjectPermission(
+  workspaceId: string,
+  projectId: string,
+  userId: string,
+  requiredPermissions: string[]
+): Promise<MemberData> {
+  await requireWorkspaceMember(workspaceId, userId)
+
+  const member = await getMemberData(workspaceId, userId)
+
+  if (!member) {
+    throw createError({
+      statusCode: 403,
+      message: 'You do not have permission to perform this action'
+    })
+  }
+
+  if (isOwnerOrAdmin(member.role)) return member
+
+  // Check project-level permissions (assignment)
+  const assignmentRef = db.doc(
+    `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${userId}`
+  )
+  const snap = await assignmentRef.get()
+  const projectPerms = snap.exists ? snap.data()?.permissions || {} : {}
+
+  for (const perm of requiredPermissions) {
+    if (hasProjectPermission(null, projectPerms, perm)) return member
+  }
+
+  throw createError({
+    statusCode: 403,
+    message: 'You do not have permission to perform this action'
+  })
 }
 
 export async function requireOwner(

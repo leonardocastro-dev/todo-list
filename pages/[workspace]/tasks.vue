@@ -12,7 +12,11 @@ import { useAuth } from '@/composables/useAuth'
 import { useWorkspace } from '@/composables/useWorkspace'
 import { useMembers } from '@/composables/useMembers'
 import { useProjectPermissions } from '@/composables/useProjectPermissions'
-import { PERMISSIONS, hasAnyPermission } from '@/constants/permissions'
+import {
+  PERMISSIONS,
+  isOwnerOrAdmin,
+  hasProjectPermission
+} from '@/constants/permissions'
 
 definePageMeta({ layout: 'workspace' })
 
@@ -34,11 +38,13 @@ const filteredWorkspaceTasks = computed(() => taskStore.filteredWorkspaceTasks)
 
 const canCreateWorkspaceTasks = computed(() => {
   if (projectStore.isGuestMode) return true
-  return hasAnyPermission(
-    projectStore.memberRole,
-    projectStore.memberPermissions,
-    [PERMISSIONS.MANAGE_TASKS, PERMISSIONS.CREATE_TASKS]
-  )
+  if (isOwnerOrAdmin(projectStore.memberRole)) return true
+
+  // Check if user has CREATE_TASKS in any project
+  for (const perms of Object.values(projectPermissionsMap.value)) {
+    if (hasProjectPermission(null, perms, PERMISSIONS.CREATE_TASKS)) return true
+  }
+  return false
 })
 
 // Get project name for a task

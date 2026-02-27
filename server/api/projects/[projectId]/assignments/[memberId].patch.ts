@@ -5,7 +5,7 @@ import {
   hasAnyPermission,
   canAccessProject
 } from '@/server/utils/permissions'
-import { PERMISSIONS } from '@/constants/permissions'
+import { PERMISSIONS, PROJECT_PERMISSION_SET } from '@/constants/permissions'
 
 export default defineEventHandler(async (event) => {
   const { uid } = await verifyAuth(event)
@@ -53,18 +53,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Validate task permissions against allowed keys
-  const ALLOWED_PROJECT_PERMISSIONS = new Set<string>([
-    PERMISSIONS.MANAGE_TASKS,
-    PERMISSIONS.CREATE_TASKS,
-    PERMISSIONS.EDIT_TASKS,
-    PERMISSIONS.DELETE_TASKS,
-    PERMISSIONS.TOGGLE_STATUS
-  ])
-
+  // Validate task permissions against allowed project-scoped keys
   if (taskPermissions && typeof taskPermissions === 'object') {
     const invalidKeys = Object.keys(taskPermissions).filter(
-      (key) => !ALLOWED_PROJECT_PERMISSIONS.has(key)
+      (key) => !PROJECT_PERMISSION_SET.has(key)
     )
     if (invalidKeys.length > 0) {
       throw createError({

@@ -34,7 +34,13 @@ const visibleProjects = computed(() => {
   const userPermissions = projectStore.memberPermissions
 
   // If user has access-projects permission, show all projects
-  if (hasPermission(userPermissions, PERMISSIONS.ACCESS_PROJECTS)) {
+  if (
+    hasPermission(
+      projectStore.memberRole,
+      userPermissions,
+      PERMISSIONS.ACCESS_PROJECTS
+    )
+  ) {
     return allProjects
   }
 

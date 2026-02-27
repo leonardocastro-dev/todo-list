@@ -3,7 +3,7 @@ import {
   verifyAuth,
   canAccessProject,
   deleteTaskAssignments,
-  requirePermission,
+  requireProjectPermission,
   updateProjectTaskCounters
 } from '@/server/utils/permissions'
 import { PERMISSIONS } from '@/constants/permissions'
@@ -26,12 +26,6 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Check if user has permission to delete tasks
-  await requirePermission(workspaceId, uid, [
-    PERMISSIONS.MANAGE_TASKS,
-    PERMISSIONS.DELETE_TASKS
-  ])
-
   const taskRef = db.doc(`workspaces/${workspaceId}/tasks/${taskId}`)
   const taskDoc = await taskRef.get()
 
@@ -40,6 +34,12 @@ export default defineEventHandler(async (event) => {
   }
 
   const taskProjectId = taskDoc.data()?.projectId as string
+
+  // Check if user has permission to delete tasks (project-scoped)
+  await requireProjectPermission(workspaceId, taskProjectId, uid, [
+    PERMISSIONS.MANAGE_TASKS,
+    PERMISSIONS.DELETE_TASKS
+  ])
 
   const hasAccess = await canAccessProject(workspaceId, taskProjectId, uid)
   if (!hasAccess) {

@@ -4,7 +4,8 @@ import {
   getMemberData,
   isOwner,
   isAdmin,
-  isOwnerOrAdmin
+  isOwnerOrAdmin,
+  PROJECT_PERMISSION_SET
 } from '@/server/utils/permissions'
 
 export default defineEventHandler(async (event) => {
@@ -84,6 +85,17 @@ export default defineEventHandler(async (event) => {
         message: 'Only the workspace owner can modify admin permissions'
       })
     }
+  }
+
+  // Reject project-scoped permissions at workspace level
+  const invalidProjectPerms = Object.keys(permissions).filter((key) =>
+    PROJECT_PERMISSION_SET.has(key)
+  )
+  if (invalidProjectPerms.length > 0) {
+    throw createError({
+      statusCode: 400,
+      message: `Task permissions (${invalidProjectPerms.join(', ')}) must be set at project level`
+    })
   }
 
   const memberRef = db.doc(`workspaces/${workspaceId}/members/${memberId}`)

@@ -4,7 +4,7 @@ import {
   canAccessProject,
   updateTaskMembers,
   validateWorkspaceMemberIds,
-  requirePermission,
+  requireProjectPermission,
   updateProjectTaskCounters
 } from '@/server/utils/permissions'
 import { PERMISSIONS } from '@/constants/permissions'
@@ -50,8 +50,8 @@ export default defineEventHandler(async (event) => {
   }
   const normalizedProjectId = projectId.trim()
 
-  // Check if user has permission to create tasks
-  await requirePermission(workspaceId, uid, [
+  // Check if user has permission to create tasks (project-scoped)
+  await requireProjectPermission(workspaceId, normalizedProjectId, uid, [
     PERMISSIONS.MANAGE_TASKS,
     PERMISSIONS.CREATE_TASKS
   ])

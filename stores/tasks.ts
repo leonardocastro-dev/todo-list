@@ -11,7 +11,11 @@ import {
 } from 'firebase/firestore'
 import { useProjectStore } from './projects'
 import { useAuth } from '@/composables/useAuth'
-import { PERMISSIONS, hasAnyPermission } from '@/constants/permissions'
+import {
+  PERMISSIONS,
+  hasAnyPermission,
+  WORKSPACE_PERMISSION_SET
+} from '@/constants/permissions'
 
 type TaskFilterState = {
   searchQuery: string
@@ -370,6 +374,13 @@ export const useTaskStore = defineStore('tasks', {
       const { $firestore } = useNuxtApp()
       const projectStore = useProjectStore()
       const workspacePermissions = projectStore.memberPermissions || {}
+      // Filter to only workspace-scoped permissions (exclude task permissions)
+      const filteredWorkspacePerms: Record<string, boolean> = {}
+      for (const [key, val] of Object.entries(workspacePermissions)) {
+        if (WORKSPACE_PERMISSION_SET.has(key)) {
+          filteredWorkspacePerms[key] = val
+        }
+      }
       const userAssignmentRef = doc(
         $firestore,
         'workspaces',
@@ -384,7 +395,7 @@ export const useTaskStore = defineStore('tasks', {
         ? userAssignmentSnap.data().permissions || {}
         : {}
       this.permissionsByProject[projectId] = {
-        ...workspacePermissions,
+        ...filteredWorkspacePerms,
         ...taskPermissions
       }
     },

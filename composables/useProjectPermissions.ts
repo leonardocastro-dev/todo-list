@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { doc, getDoc } from 'firebase/firestore'
+import { WORKSPACE_PERMISSION_SET } from '@/constants/permissions'
 
 export const useProjectPermissions = () => {
   const projectPermissionsMap = ref<Record<string, Record<string, boolean>>>({})
@@ -16,8 +17,14 @@ export const useProjectPermissions = () => {
       const { $firestore } = useNuxtApp()
       const projectStore = useProjectStore()
 
-      // Workspace-level granular permissions
+      // Filter to only workspace-scoped permissions (exclude task permissions)
       const workspacePerms = projectStore.memberPermissions || {}
+      const filteredWorkspacePerms: Record<string, boolean> = {}
+      for (const [key, val] of Object.entries(workspacePerms)) {
+        if (WORKSPACE_PERMISSION_SET.has(key)) {
+          filteredWorkspacePerms[key] = val
+        }
+      }
 
       // Load project-specific permissions for each project
       const permPromises = projectIds.map(async (projectId) => {
@@ -29,9 +36,9 @@ export const useProjectPermissions = () => {
 
         const projectPerms = snap.exists() ? snap.data()?.permissions || {} : {}
 
-        // Merge workspace + project permissions
+        // Merge filtered workspace + project permissions
         projectPermissionsMap.value[projectId] = {
-          ...workspacePerms,
+          ...filteredWorkspacePerms,
           ...projectPerms
         }
       })

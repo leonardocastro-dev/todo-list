@@ -4,7 +4,7 @@ import {
   canAccessProject,
   updateTaskMembers,
   validateWorkspaceMemberIds,
-  requirePermission,
+  requireProjectPermission,
   canToggleTaskStatus,
   updateProjectTaskCounters
 } from '@/server/utils/permissions'
@@ -90,8 +90,8 @@ export default defineEventHandler(async (event) => {
       })
     }
   } else {
-    // For other edits, require full edit permissions
-    await requirePermission(workspaceId, uid, [
+    // For other edits, require full edit permissions (project-scoped)
+    await requireProjectPermission(workspaceId, taskProjectId, uid, [
       PERMISSIONS.MANAGE_TASKS,
       PERMISSIONS.EDIT_TASKS
     ])
