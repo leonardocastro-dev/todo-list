@@ -77,48 +77,42 @@ const initializePermissions = () => {
 const nestedItems = computed<NestedItem[]>(() => {
   return [
     {
-      id: 'admin',
-      name: 'Admin',
+      id: 'access-projects',
+      name: 'Access projects'
+    },
+    {
+      id: 'manage-projects',
+      name: 'Manage projects',
       children: [
         {
-          id: 'access-projects',
-          name: 'Access projects'
+          id: 'create-projects',
+          name: 'Create projects'
         },
         {
-          id: 'manage-projects',
-          name: 'Manage projects',
-          children: [
-            {
-              id: 'create-projects',
-              name: 'Create projects'
-            },
-            {
-              id: 'delete-projects',
-              name: 'Delete projects'
-            },
-            {
-              id: 'edit-projects',
-              name: 'Edit projects'
-            }
-          ]
+          id: 'delete-projects',
+          name: 'Delete projects'
         },
         {
-          id: 'manage-members',
-          name: 'Manage members',
-          children: [
-            {
-              id: 'add-members',
-              name: 'Add members'
-            },
-            {
-              id: 'remove-members',
-              name: 'Remove members'
-            },
-            {
-              id: 'assign-project',
-              name: 'Assign to project'
-            }
-          ]
+          id: 'edit-projects',
+          name: 'Edit projects'
+        }
+      ]
+    },
+    {
+      id: 'manage-members',
+      name: 'Manage members',
+      children: [
+        {
+          id: 'add-members',
+          name: 'Add members'
+        },
+        {
+          id: 'remove-members',
+          name: 'Remove members'
+        },
+        {
+          id: 'assign-project',
+          name: 'Assign to project'
         }
       ]
     }
@@ -190,6 +184,7 @@ const savePermissions = async () => {
     // Build permissions object from optimized selected permissions
     const permissionsData: Record<string, boolean> = {}
     for (const id of selectedPermissions.value) {
+      if (id === 'owner' || id === 'admin') continue
       permissionsData[id] = true
     }
 

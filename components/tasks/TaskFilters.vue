@@ -198,7 +198,7 @@ const activeFilterCount = computed(() => {
               v-if="selectedMember"
               :key="selectedMember.uid"
               :uid="selectedMember.uid"
-              class="h-6 w-6"
+              class="h-5 w-5"
             >
               <AvatarImage
                 v-if="selectedMember.avatarUrl"
@@ -209,7 +209,7 @@ const activeFilterCount = computed(() => {
                 {{ selectedMember.username?.charAt(0).toUpperCase() || '?' }}
               </AvatarFallback>
             </Avatar>
-            <Users v-else class="h-4 w-4" />
+            <Users v-else class="text-muted-foreground" />
             <span>{{ scopeLabel }}</span>
             <ChevronDown class="h-4 w-4 opacity-50" />
           </Button>
@@ -221,7 +221,7 @@ const activeFilterCount = computed(() => {
             class="flex items-center gap-2 cursor-pointer"
             @click="selectMember(null)"
           >
-            <Users class="h-6 w-6 shrink-0" />
+            <Users class="shrink-0" />
             <span class="flex-1">All</span>
             <Check
               v-if="taskStore.scopeFilter === 'all'"
@@ -235,7 +235,7 @@ const activeFilterCount = computed(() => {
             class="flex items-center gap-2 cursor-pointer"
             @click="selectMember(member.uid)"
           >
-            <Avatar :uid="member.uid" class="h-6 w-6 shrink-0">
+            <Avatar :uid="member.uid" class="h-5 w-5 shrink-0">
               <AvatarImage
                 v-if="member.avatarUrl"
                 :src="member.avatarUrl"

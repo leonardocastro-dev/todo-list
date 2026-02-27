@@ -9,6 +9,7 @@ export const useProjectStore = defineStore('projects', {
     projects: [] as Project[],
     isLoading: false,
     error: null as string | null,
+    memberRole: null as string | null,
     memberPermissions: null as Record<string, boolean> | null,
     isGuestMode: false,
     loadedWorkspaceId: null as string | null
@@ -26,8 +27,7 @@ export const useProjectStore = defineStore('projects', {
     canCreateProjects: (state) => {
       // Guest mode: can always create local projects
       if (state.isGuestMode) return true
-      if (!state.memberPermissions) return false
-      return hasAnyPermission(state.memberPermissions, [
+      return hasAnyPermission(state.memberRole, state.memberPermissions, [
         PERMISSIONS.MANAGE_PROJECTS,
         PERMISSIONS.CREATE_PROJECTS
       ])
@@ -36,8 +36,7 @@ export const useProjectStore = defineStore('projects', {
     canDeleteProjects: (state) => {
       // Guest mode: can always delete local projects
       if (state.isGuestMode) return true
-      if (!state.memberPermissions) return false
-      return hasAnyPermission(state.memberPermissions, [
+      return hasAnyPermission(state.memberRole, state.memberPermissions, [
         PERMISSIONS.MANAGE_PROJECTS,
         PERMISSIONS.DELETE_PROJECTS
       ])
@@ -46,10 +45,16 @@ export const useProjectStore = defineStore('projects', {
     canEditProjects: (state) => {
       // Guest mode: can always edit local projects
       if (state.isGuestMode) return true
-      if (!state.memberPermissions) return false
-      return hasAnyPermission(state.memberPermissions, [
+      return hasAnyPermission(state.memberRole, state.memberPermissions, [
         PERMISSIONS.MANAGE_PROJECTS,
         PERMISSIONS.EDIT_PROJECTS
+      ])
+    },
+    // Check if user can assign members to projects
+    canAssignProjectMembers: (state) => {
+      if (state.isGuestMode) return false
+      return hasAnyPermission(state.memberRole, state.memberPermissions, [
+        PERMISSIONS.ASSIGN_PROJECT
       ])
     }
   },
@@ -117,8 +122,10 @@ export const useProjectStore = defineStore('projects', {
         const memberSnap = await getDoc(memberRef)
 
         if (memberSnap.exists()) {
+          this.memberRole = memberSnap.data().role || 'member'
           this.memberPermissions = memberSnap.data().permissions || null
         } else {
+          this.memberRole = null
           this.memberPermissions = null
         }
 

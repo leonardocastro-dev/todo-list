@@ -19,6 +19,7 @@ const sortedProjects = computed(() => {
 
 const emit = defineEmits<{
   edit: [project: Project]
+  'members-updated': []
 }>()
 </script>
 
@@ -54,6 +55,7 @@ const emit = defineEmits<{
         :workspace-members="workspaceMembers"
         :assigned-member-ids="projectAssignmentsMap[project.id] || []"
         @edit="emit('edit', $event)"
+        @members-updated="emit('members-updated')"
       />
     </div>
   </div>

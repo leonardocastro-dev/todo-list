@@ -42,17 +42,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Task title is required' })
   }
 
-  const normalizedProjectId =
-    typeof projectId === 'string' && projectId.trim().length > 0
-      ? projectId.trim()
-      : null
-
-  if (!normalizedProjectId) {
+  if (typeof projectId !== 'string' || projectId.trim().length === 0) {
     throw createError({
       statusCode: 400,
       message: 'Project ID is required'
     })
   }
+  const normalizedProjectId = projectId.trim()
 
   // Check if user has permission to create tasks
   await requirePermission(workspaceId, uid, [

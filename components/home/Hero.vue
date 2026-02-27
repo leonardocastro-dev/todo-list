@@ -82,9 +82,7 @@ import {
           <div
             class="rounded-xl border border-border bg-card p-4 shadow-md flex items-start gap-2 hover:border-primary/40 transition-colors"
           >
-            <div
-              class="flex h-6 w-6 shrink-0 items-center justify-center"
-            >
+            <div class="flex h-6 w-6 shrink-0 items-center justify-center">
               <LoaderCircle class="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
             <div class="flex-1 space-y-1.5">
@@ -119,9 +117,7 @@ import {
           <div
             class="rounded-xl border border-border bg-card p-4 shadow-md flex items-start gap-2"
           >
-            <div
-              class="flex h-6 w-6 shrink-0 items-center justify-center"
-            >
+            <div class="flex h-6 w-6 shrink-0 items-center justify-center">
               <span
                 class="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500"
               >
@@ -151,9 +147,7 @@ import {
           <div
             class="rounded-xl border border-border bg-card p-4 shadow-md flex items-start gap-2 hover:border-primary/40 transition-colors"
           >
-            <div
-              class="flex h-6 w-6 shrink-0 items-center justify-center"
-            >
+            <div class="flex h-6 w-6 shrink-0 items-center justify-center">
               <CircleDashed class="h-4 w-4 text-foreground" />
             </div>
             <div class="flex-1 space-y-1.5">

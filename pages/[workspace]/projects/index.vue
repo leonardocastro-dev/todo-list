@@ -153,6 +153,7 @@ const handleReload = async () => {
       :project-assignments-map="projectAssignmentsMap"
       :is-loading="isInitialLoading"
       @edit="handleEdit"
+      @members-updated="loadAssignments"
     />
 
     <ProjectForm

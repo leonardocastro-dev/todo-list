@@ -1,7 +1,7 @@
 import { db } from '@/server/utils/firebase-admin'
 import {
   verifyAuth,
-  getMemberPermissions,
+  getMemberData,
   hasAnyPermission,
   updateProjectMembers,
   validateWorkspaceMemberIds
@@ -23,9 +23,9 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify user is a workspace member
-  const permissions = await getMemberPermissions(workspaceId, uid)
+  const member = await getMemberData(workspaceId, uid)
 
-  if (!permissions) {
+  if (!member) {
     throw createError({
       statusCode: 403,
       message: 'You are not a member of this workspace'
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
 
   // Verify user has permission to create projects
   if (
-    !hasAnyPermission(permissions, [
+    !hasAnyPermission(member.role, member.permissions, [
       PERMISSIONS.MANAGE_PROJECTS,
       PERMISSIONS.CREATE_PROJECTS
     ])

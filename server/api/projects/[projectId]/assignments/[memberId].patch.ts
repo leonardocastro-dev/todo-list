@@ -1,7 +1,7 @@
 import { db } from '@/server/utils/firebase-admin'
 import {
   verifyAuth,
-  getMemberPermissions,
+  getMemberData,
   hasAnyPermission,
   canAccessProject
 } from '@/server/utils/permissions'
@@ -32,11 +32,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify user has permission to assign members to projects
-  const userPermissions = await getMemberPermissions(workspaceId, uid)
+  const member = await getMemberData(workspaceId, uid)
 
   if (
-    !hasAnyPermission(userPermissions, [
-      PERMISSIONS.MANAGE_PROJECTS,
+    !hasAnyPermission(member?.role, member?.permissions ?? null, [
       PERMISSIONS.ASSIGN_PROJECT
     ])
   ) {
@@ -44,6 +43,35 @@ export default defineEventHandler(async (event) => {
       statusCode: 403,
       message: 'You do not have permission to manage project assignments'
     })
+  }
+
+  // Prevent self-assignment to avoid privilege escalation
+  if (memberId === uid) {
+    throw createError({
+      statusCode: 403,
+      message: 'You cannot assign yourself to a project'
+    })
+  }
+
+  // Validate task permissions against allowed keys
+  const ALLOWED_PROJECT_PERMISSIONS = new Set<string>([
+    PERMISSIONS.MANAGE_TASKS,
+    PERMISSIONS.CREATE_TASKS,
+    PERMISSIONS.EDIT_TASKS,
+    PERMISSIONS.DELETE_TASKS,
+    PERMISSIONS.TOGGLE_STATUS
+  ])
+
+  if (taskPermissions && typeof taskPermissions === 'object') {
+    const invalidKeys = Object.keys(taskPermissions).filter(
+      (key) => !ALLOWED_PROJECT_PERMISSIONS.has(key)
+    )
+    if (invalidKeys.length > 0) {
+      throw createError({
+        statusCode: 400,
+        message: `Invalid permission keys: ${invalidKeys.join(', ')}`
+      })
+    }
   }
 
   // Verify the target member exists in workspace

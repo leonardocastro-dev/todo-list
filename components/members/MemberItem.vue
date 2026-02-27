@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { NuxtImg } from '#components'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,25 +10,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import {
-  MoreHorizontal,
-  Mail,
-  Crown,
-  Shield,
-  Lock,
-  Trash2,
-  FolderOpen
-} from 'lucide-vue-next'
+import { MoreHorizontal, Crown, Shield, Lock, Trash2 } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
+import { ROLES, PERMISSIONS } from '@/constants/permissions'
 import { toast } from 'vue-sonner'
 import MemberPermissionsModal from './MemberPermissionsModal.vue'
-import AssignToProjectModal from './AssignToProjectModal.vue'
 
 interface Member {
   uid: string
   email: string
   username: string
   avatarUrl: string | null
+  role?: string
   permissions?: Record<string, boolean> | null
   joinedAt?: any
 }
@@ -36,33 +29,33 @@ interface Member {
 const props = defineProps<{
   member: Member
   workspaceId: string
+  currentUserRole: string | null
   currentUserPermissions: Record<string, boolean> | null
 }>()
 
 const emit = defineEmits<{
   'member-removed': [memberId: string]
   'permissions-updated': []
-  'project-assigned': []
+  'role-updated': []
+  'ownership-transferred': []
 }>()
 
 const { user } = useAuth()
 const isRemoving = ref(false)
 const isPermissionsOpen = ref(false)
-const isAssignProjectOpen = ref(false)
+const isUpdatingAdminRole = ref(false)
+const isTransferringOwnership = ref(false)
 
-const isOwner = computed(() => props.member.permissions?.['owner'] === true)
-const isAdmin = computed(() => props.member.permissions?.['admin'] === true)
-const isCurrentUserOwner = computed(
-  () => props.currentUserPermissions?.['owner'] === true
-)
-const isCurrentUserAdmin = computed(
-  () => props.currentUserPermissions?.['admin'] === true
-)
+const isOwner = computed(() => props.member.role === ROLES.OWNER)
+const isAdmin = computed(() => props.member.role === ROLES.ADMIN)
+const isCurrentUserOwner = computed(() => props.currentUserRole === ROLES.OWNER)
+const isCurrentUserAdmin = computed(() => props.currentUserRole === ROLES.ADMIN)
 const isCurrentUser = computed(() => props.member.uid === user.value?.uid)
 
 const canManagePermissions = computed(() => {
   if (isOwner.value) return false
   if (isCurrentUser.value) return false
+  if (isAdmin.value && !isCurrentUserOwner.value) return false
   return isCurrentUserOwner.value || isCurrentUserAdmin.value
 })
 
@@ -70,28 +63,38 @@ const canRemoveMember = computed(() => {
   if (isOwner.value) return false
   if (isCurrentUser.value) return false
   if (isCurrentUserOwner.value) return true
+  if (isAdmin.value) return false
   return (
     isCurrentUserAdmin.value ||
-    props.currentUserPermissions?.['manage-members'] === true ||
-    props.currentUserPermissions?.['remove-members'] === true
+    props.currentUserPermissions?.[PERMISSIONS.MANAGE_MEMBERS] === true ||
+    props.currentUserPermissions?.[PERMISSIONS.REMOVE_MEMBERS] === true
   )
 })
 
-const canAssignToProject = computed(() => {
-  if (isOwner.value) return false
+const canToggleAdminRole = computed(() => {
+  if (!isCurrentUserOwner.value) return false
   if (isCurrentUser.value) return false
-  return (
-    isCurrentUserOwner.value ||
-    isCurrentUserAdmin.value ||
-    props.currentUserPermissions?.['assign-project'] === true
-  )
+  if (isOwner.value) return false
+  return true
+})
+
+const canTransferOwnership = computed(() => {
+  if (!isCurrentUserOwner.value) return false
+  if (isCurrentUser.value) return false
+  if (isOwner.value) return false
+  return true
 })
 
 const showDropdown = computed(
   () =>
+    canToggleAdminRole.value ||
+    canTransferOwnership.value ||
     canManagePermissions.value ||
-    canRemoveMember.value ||
-    canAssignToProject.value
+    canRemoveMember.value
+)
+
+const avatarFallback = computed(
+  () => props.member.username?.charAt(0).toUpperCase() || '?'
 )
 
 const getAuthToken = async (): Promise<string | null> => {
@@ -135,12 +138,103 @@ const removeMember = async () => {
   }
 }
 
-const handlePermissionsUpdated = () => {
-  emit('permissions-updated')
+const updateAdminRole = async (shouldBeAdmin: boolean) => {
+  if (isUpdatingAdminRole.value) return
+
+  if (typeof window !== 'undefined') {
+    const memberName = props.member.username || props.member.email
+    const actionText = shouldBeAdmin ? 'promote' : 'demote'
+    const targetRoleText = shouldBeAdmin ? 'admin' : 'member'
+    const confirmed = window.confirm(
+      `Are you sure you want to ${actionText} ${memberName} to ${targetRoleText}?`
+    )
+    if (!confirmed) return
+  }
+
+  try {
+    isUpdatingAdminRole.value = true
+
+    const token = await getAuthToken()
+    if (!token) throw new Error('Not authenticated')
+
+    const response = await $fetch<{ success: boolean }>(
+      `/api/workspaces/${props.workspaceId}/members/${props.member.uid}/admin`,
+      {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+        body: { isAdmin: shouldBeAdmin }
+      }
+    )
+
+    if (response.success) {
+      toast.success(
+        shouldBeAdmin
+          ? 'Member promoted to admin successfully'
+          : 'Admin demoted to member successfully',
+        {
+          style: { background: '#6ee7b7' },
+          duration: 3000
+        }
+      )
+      emit('role-updated')
+    }
+  } catch (error: any) {
+    console.error('Error updating admin role:', error)
+    toast.error(error.data?.message || 'Failed to update admin role', {
+      style: { background: '#fda4af' },
+      duration: 3000
+    })
+  } finally {
+    isUpdatingAdminRole.value = false
+  }
 }
 
-const handleProjectAssigned = () => {
-  emit('project-assigned')
+const transferOwnership = async () => {
+  if (isTransferringOwnership.value) return
+
+  if (typeof window !== 'undefined') {
+    const memberName = props.member.username || props.member.email
+    const confirmed = window.confirm(
+      `Transfer workspace ownership to ${memberName}? This action cannot be undone automatically.`
+    )
+    if (!confirmed) return
+  }
+
+  try {
+    isTransferringOwnership.value = true
+
+    const token = await getAuthToken()
+    if (!token) throw new Error('Not authenticated')
+
+    const response = await $fetch<{ success: boolean }>(
+      `/api/workspaces/${props.workspaceId}/ownership/transfer`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: { targetMemberId: props.member.uid }
+      }
+    )
+
+    if (response.success) {
+      toast.success('Ownership transferred successfully', {
+        style: { background: '#6ee7b7' },
+        duration: 3000
+      })
+      emit('ownership-transferred')
+    }
+  } catch (error: any) {
+    console.error('Error transferring ownership:', error)
+    toast.error(error.data?.message || 'Failed to transfer ownership', {
+      style: { background: '#fda4af' },
+      duration: 3000
+    })
+  } finally {
+    isTransferringOwnership.value = false
+  }
+}
+
+const handlePermissionsUpdated = () => {
+  emit('permissions-updated')
 }
 </script>
 
@@ -149,17 +243,14 @@ const handleProjectAssigned = () => {
     class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-4 border rounded-lg transition-colors"
   >
     <div class="flex items-center gap-3 min-w-0">
-      <div
-        class="hidden sm:flex h-10 w-10 shrink-0 rounded-full bg-muted items-center justify-center overflow-hidden"
-      >
-        <NuxtImg
+      <Avatar :uid="member.uid" class="hidden sm:flex h-10 w-10 shrink-0">
+        <AvatarImage
           v-if="member.avatarUrl"
           :src="member.avatarUrl"
           :alt="member.username"
-          class="h-full w-full object-cover"
         />
-        <Mail v-else class="h-5 w-5 text-primary" />
-      </div>
+        <AvatarFallback>{{ avatarFallback }}</AvatarFallback>
+      </Avatar>
       <div class="min-w-0 flex-1">
         <p class="font-medium text-foreground text-sm sm:text-base truncate">
           {{ member.username || member.email }}
@@ -173,17 +264,14 @@ const handleProjectAssigned = () => {
     <div
       class="flex items-center justify-between sm:justify-end gap-2 shrink-0"
     >
-      <div
-        class="flex sm:hidden h-9 w-9 shrink-0 rounded-full bg-muted items-center justify-center overflow-hidden"
-      >
-        <NuxtImg
+      <Avatar :uid="member.uid" class="flex sm:hidden h-9 w-9 shrink-0">
+        <AvatarImage
           v-if="member.avatarUrl"
           :src="member.avatarUrl"
           :alt="member.username"
-          class="h-full w-full object-cover"
         />
-        <Mail v-else class="h-4 w-4 text-primary" />
-      </div>
+        <AvatarFallback>{{ avatarFallback }}</AvatarFallback>
+      </Avatar>
 
       <div class="flex items-center gap-2">
         <Badge v-if="isOwner" variant="secondary" class="gap-1">
@@ -219,23 +307,42 @@ const handleProjectAssigned = () => {
               Permissions
             </DropdownMenuItem>
 
+            <DropdownMenuSeparator
+              v-if="canToggleAdminRole || canTransferOwnership"
+            />
+
             <DropdownMenuItem
-              v-if="canAssignToProject"
-              @click="isAssignProjectOpen = true"
+              v-if="canToggleAdminRole && !isAdmin"
+              :disabled="isUpdatingAdminRole"
+              @click="updateAdminRole(true)"
             >
-              <FolderOpen class="h-4 w-4" />
-              Assign to Project
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              v-else
-              disabled
-              class="flex items-center gap-2 opacity-50 cursor-not-allowed"
-            >
-              <Lock class="h-4 w-4" />
-              Assign to Project
+              <Shield class="h-4 w-4" />
+              {{ isUpdatingAdminRole ? 'Updating...' : 'Promote to Admin' }}
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              v-if="canToggleAdminRole && isAdmin"
+              :disabled="isUpdatingAdminRole"
+              @click="updateAdminRole(false)"
+            >
+              <Shield class="h-4 w-4" />
+              {{ isUpdatingAdminRole ? 'Updating...' : 'Demote Admin' }}
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              v-if="canTransferOwnership"
+              :disabled="isTransferringOwnership"
+              @click="transferOwnership"
+            >
+              <Crown class="h-4 w-4" />
+              {{
+                isTransferringOwnership
+                  ? 'Transferring...'
+                  : 'Transfer Ownership'
+              }}
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator v-if="canRemoveMember" />
 
             <DropdownMenuItem
               v-if="canRemoveMember"
@@ -264,12 +371,5 @@ const handleProjectAssigned = () => {
     :member="member"
     :workspace-id="workspaceId"
     @permissions-updated="handlePermissionsUpdated"
-  />
-
-  <AssignToProjectModal
-    v-model:open="isAssignProjectOpen"
-    :member="member"
-    :workspace-id="workspaceId"
-    @project-assigned="handleProjectAssigned"
   />
 </template>

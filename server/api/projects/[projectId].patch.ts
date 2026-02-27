@@ -1,7 +1,7 @@
 import { db } from '@/server/utils/firebase-admin'
 import {
   verifyAuth,
-  getMemberPermissions,
+  getMemberData,
   hasAnyPermission,
   canAccessProject,
   updateProjectMembers,
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify user has permission to edit projects
-  const permissions = await getMemberPermissions(workspaceId, uid)
+  const member = await getMemberData(workspaceId, uid)
 
   // Check if this is only a member assignment update (no title, description, or emoji changes)
   const isMemberAssignmentOnly =
@@ -46,8 +46,7 @@ export default defineEventHandler(async (event) => {
   if (isMemberAssignmentOnly) {
     // For member-only updates, allow assign-project permission
     if (
-      !hasAnyPermission(permissions, [
-        PERMISSIONS.MANAGE_PROJECTS,
+      !hasAnyPermission(member?.role, member?.permissions ?? null, [
         PERMISSIONS.EDIT_PROJECTS,
         PERMISSIONS.ASSIGN_PROJECT
       ])
@@ -60,7 +59,7 @@ export default defineEventHandler(async (event) => {
   } else {
     // For full project edits, require manage-projects or edit-projects
     if (
-      !hasAnyPermission(permissions, [
+      !hasAnyPermission(member?.role, member?.permissions ?? null, [
         PERMISSIONS.MANAGE_PROJECTS,
         PERMISSIONS.EDIT_PROJECTS
       ])

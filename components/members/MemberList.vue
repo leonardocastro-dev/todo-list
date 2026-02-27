@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { UserPlus } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
+import { ROLES, PERMISSIONS } from '@/constants/permissions'
 import { toast } from 'vue-sonner'
 import { Skeleton } from '@/components/ui/skeleton'
 import MemberItem from './MemberItem.vue'
@@ -23,6 +24,7 @@ interface Member {
   email: string
   username: string
   avatarUrl: string | null
+  role?: string
   permissions?: Record<string, boolean> | null
   joinedAt?: any
 }
@@ -38,22 +40,25 @@ const isInviting = ref(false)
 const isSending = ref(false)
 const memberEmail = ref('')
 
-// Get current user's permissions from the members list
-const currentUserPermissions = computed(() => {
+// Get current user's member data from the members list
+const currentMember = computed(() => {
   if (!user.value) return null
-  const currentMember = props.members.find((m) => m.uid === user.value?.uid)
-  return currentMember?.permissions || null
+  return props.members.find((m) => m.uid === user.value?.uid) || null
 })
+
+const currentUserRole = computed(() => currentMember.value?.role || null)
+const currentUserPermissions = computed(
+  () => currentMember.value?.permissions || null
+)
 
 // Check if current user can invite members
 const canInviteMembers = computed(() => {
   if (!user.value) return false
-  // Check permissions (owner, admin, or specific permission)
+  const role = currentUserRole.value
+  if (role === ROLES.OWNER || role === ROLES.ADMIN) return true
   return (
-    currentUserPermissions.value?.['owner'] === true ||
-    currentUserPermissions.value?.['admin'] === true ||
-    currentUserPermissions.value?.['manage-members'] === true ||
-    currentUserPermissions.value?.['add-members'] === true
+    currentUserPermissions.value?.[PERMISSIONS.MANAGE_MEMBERS] === true ||
+    currentUserPermissions.value?.[PERMISSIONS.ADD_MEMBERS] === true
   )
 })
 
@@ -112,6 +117,8 @@ const emit = defineEmits<{
   inviteMember: [email: string]
   'member-removed': [memberId: string]
   'permissions-updated': []
+  'member-role-updated': []
+  'ownership-transferred': []
 }>()
 
 const handleMemberRemoved = (memberId: string) => {
@@ -120,6 +127,14 @@ const handleMemberRemoved = (memberId: string) => {
 
 const handlePermissionsUpdated = () => {
   emit('permissions-updated')
+}
+
+const handleMemberRoleUpdated = () => {
+  emit('member-role-updated')
+}
+
+const handleOwnershipTransferred = () => {
+  emit('ownership-transferred')
 }
 </script>
 
@@ -174,9 +189,12 @@ const handlePermissionsUpdated = () => {
           :key="member.uid"
           :member="member"
           :workspace-id="workspace.id"
+          :current-user-role="currentUserRole"
           :current-user-permissions="currentUserPermissions"
           @member-removed="handleMemberRemoved"
           @permissions-updated="handlePermissionsUpdated"
+          @role-updated="handleMemberRoleUpdated"
+          @ownership-transferred="handleOwnershipTransferred"
         />
       </div>
     </CardContent>

@@ -61,18 +61,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Task not found' })
   }
 
-  const taskProjectId =
-    typeof taskDoc.data()?.projectId === 'string' &&
-    taskDoc.data()?.projectId.trim().length > 0
-      ? taskDoc.data()?.projectId
-      : null
-
-  if (!taskProjectId) {
-    throw createError({
-      statusCode: 400,
-      message: 'Task must belong to a project'
-    })
-  }
+  const taskProjectId = taskDoc.data()?.projectId as string
 
   // Determine if this is a status-only update (toggle complete/incomplete)
   const isStatusOnlyUpdate =
@@ -82,6 +71,14 @@ export default defineEventHandler(async (event) => {
     priority === undefined &&
     dueDate === undefined &&
     memberIds === undefined
+
+  const hasAccess = await canAccessProject(workspaceId, taskProjectId, uid)
+  if (!hasAccess) {
+    throw createError({
+      statusCode: 403,
+      message: 'You do not have access to this project'
+    })
+  }
 
   if (isStatusOnlyUpdate) {
     // For status toggle, allow only for owner/admin or project toggle-status permission
@@ -98,14 +95,6 @@ export default defineEventHandler(async (event) => {
       PERMISSIONS.MANAGE_TASKS,
       PERMISSIONS.EDIT_TASKS
     ])
-  }
-
-  const hasAccess = await canAccessProject(workspaceId, taskProjectId, uid)
-  if (!hasAccess) {
-    throw createError({
-      statusCode: 403,
-      message: 'You do not have access to this project'
-    })
   }
 
   const updates: Record<string, unknown> = {

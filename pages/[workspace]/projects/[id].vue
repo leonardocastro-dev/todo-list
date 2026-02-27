@@ -1,23 +1,43 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { Plus, ArrowLeft, RefreshCw } from 'lucide-vue-next'
+import { Plus, ArrowLeft, RefreshCw, Users } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import TaskList from '@/components/tasks/TaskList.vue'
 import TaskFilters from '@/components/tasks/TaskFilters.vue'
 import TaskForm from '@/components/tasks/TaskForm.vue'
+import ProjectMembersPermissionsModal from '@/components/projects/ProjectMembersPermissionsModal.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useMembers } from '@/composables/useMembers'
 
 const route = useRoute()
 const router = useRouter()
 const { user } = useAuth()
-const { members, loadWorkspaceMembers } = useMembers()
+const {
+  members,
+  loadWorkspaceMembers,
+  projectAssignmentsMap,
+  loadAllProjectAssignments
+} = useMembers()
 
 const isAddingTask = ref(false)
 const isReloading = ref(false)
+const isMembersModalOpen = ref(false)
 const taskStore = useTaskStore()
 const projectStore = useProjectStore()
+
+const canManageMembers = computed(() => projectStore.canAssignProjectMembers)
+
+const assignedMembers = computed(() => {
+  const assignedIds = projectAssignmentsMap.value[projectId] || []
+  return members.value.filter((m) => assignedIds.includes(m.uid))
+})
+
+const displayedMembers = computed(() => assignedMembers.value.slice(0, 5))
+const extraMembersCount = computed(() =>
+  Math.max(0, assignedMembers.value.length - 5)
+)
 
 const handleReload = async () => {
   isReloading.value = true
@@ -35,11 +55,16 @@ const currentProject = computed(() => {
   return projectStore.projects.find((p) => p.id === projectId)
 })
 
+const handleMembersUpdated = async () => {
+  await loadAllProjectAssignments(workspaceId, [projectId], true)
+}
+
 onMounted(async () => {
   taskStore.setScopeFilter('assigneds', user.value?.uid)
   await projectStore.loadProjectsForWorkspace(workspaceId, user.value?.uid)
   if (user.value?.uid) {
     await loadWorkspaceMembers(workspaceId)
+    await loadAllProjectAssignments(workspaceId, [projectId])
   }
   await taskStore.setCurrentProject(projectId, user.value?.uid, workspaceId)
 })
@@ -94,6 +119,48 @@ watch(
           <p v-if="currentProject.description" class="text-muted-foreground">
             {{ currentProject.description }}
           </p>
+
+          <!-- Members Section -->
+          <div class="mt-4 flex items-center gap-3">
+            <div
+              v-if="assignedMembers.length > 0"
+              class="flex -space-x-2 *:data-[slot=avatar]:ring-background *:data-[slot=avatar]:ring-2"
+            >
+              <Avatar
+                v-for="member in displayedMembers"
+                :key="member.uid"
+                :uid="member.uid"
+                class="h-8 w-8"
+              >
+                <AvatarImage
+                  v-if="member.avatarUrl"
+                  :src="member.avatarUrl"
+                  :alt="member.username || ''"
+                />
+                <AvatarFallback class="text-xs">
+                  {{ member.username?.charAt(0).toUpperCase() || '?' }}
+                </AvatarFallback>
+              </Avatar>
+              <Avatar v-if="extraMembersCount > 0" class="h-8 w-8">
+                <AvatarFallback class="text-xs bg-muted">
+                  +{{ extraMembersCount }}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            <span v-else class="text-sm text-muted-foreground">
+              No members assigned
+            </span>
+            <Button
+              v-if="canManageMembers"
+              variant="outline"
+              size="sm"
+              class="flex items-center gap-1"
+              @click="isMembersModalOpen = true"
+            >
+              <Users class="h-4 w-4" />
+              Manage
+            </Button>
+          </div>
         </div>
 
         <div v-else class="text-center py-8">
@@ -164,6 +231,13 @@ watch(
         :workspace-id="workspaceId"
         :project-id="projectId"
         @close="isAddingTask = false"
+      />
+
+      <ProjectMembersPermissionsModal
+        v-model:open="isMembersModalOpen"
+        :project-id="projectId"
+        :workspace-id="workspaceId"
+        @members-updated="handleMembersUpdated"
       />
     </div>
   </div>

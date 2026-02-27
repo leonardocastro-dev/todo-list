@@ -16,7 +16,7 @@ export const useProjectPermissions = () => {
       const { $firestore } = useNuxtApp()
       const projectStore = useProjectStore()
 
-      // Workspace-level permissions (owner/admin/global perms)
+      // Workspace-level granular permissions
       const workspacePerms = projectStore.memberPermissions || {}
 
       // Load project-specific permissions for each project

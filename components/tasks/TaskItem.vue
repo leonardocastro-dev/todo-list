@@ -36,6 +36,7 @@ const props = defineProps<{
   workspaceMembers?: WorkspaceMember[]
   projectName?: string
   projectPermissions?: Record<string, boolean>
+  workspaceRole?: string | null
   workspacePermissions?: Record<string, boolean> | null
 }>()
 
@@ -64,44 +65,46 @@ const handleEditFromInfo = () => {
 // Use project-specific permissions if provided, otherwise fall back to taskStore
 const canEdit = computed(() => {
   if (props.projectPermissions) {
-    return hasAnyPermission(props.projectPermissions, [
+    return hasAnyPermission(null, props.projectPermissions, [
       PERMISSIONS.MANAGE_TASKS,
       PERMISSIONS.EDIT_TASKS
     ])
   }
-  if (props.workspacePermissions) {
-    return hasAnyPermission(props.workspacePermissions, [
-      PERMISSIONS.MANAGE_TASKS,
-      PERMISSIONS.EDIT_TASKS
-    ])
+  if (props.workspaceRole || props.workspacePermissions) {
+    return hasAnyPermission(
+      props.workspaceRole,
+      props.workspacePermissions ?? null,
+      [PERMISSIONS.MANAGE_TASKS, PERMISSIONS.EDIT_TASKS]
+    )
   }
   return taskStore.canEditTasks
 })
 
 const canDelete = computed(() => {
   if (props.projectPermissions) {
-    return hasAnyPermission(props.projectPermissions, [
+    return hasAnyPermission(null, props.projectPermissions, [
       PERMISSIONS.MANAGE_TASKS,
       PERMISSIONS.DELETE_TASKS
     ])
   }
-  if (props.workspacePermissions) {
-    return hasAnyPermission(props.workspacePermissions, [
-      PERMISSIONS.MANAGE_TASKS,
-      PERMISSIONS.DELETE_TASKS
-    ])
+  if (props.workspaceRole || props.workspacePermissions) {
+    return hasAnyPermission(
+      props.workspaceRole,
+      props.workspacePermissions ?? null,
+      [PERMISSIONS.MANAGE_TASKS, PERMISSIONS.DELETE_TASKS]
+    )
   }
   return taskStore.canDeleteTasks
 })
 
 const canToggleStatus = computed(() => {
   if (props.projectPermissions) {
-    return hasAnyPermission(props.projectPermissions, [
+    return hasAnyPermission(null, props.projectPermissions, [
       PERMISSIONS.TOGGLE_STATUS
     ])
   }
-  if (props.workspacePermissions) {
-    return isOwnerOrAdmin(props.workspacePermissions)
+  if (props.workspaceRole) {
+    return isOwnerOrAdmin(props.workspaceRole)
   }
   return taskStore.canToggleTaskStatus
 })

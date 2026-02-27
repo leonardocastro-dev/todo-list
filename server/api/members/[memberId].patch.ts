@@ -1,7 +1,7 @@
 import { db } from '@/server/utils/firebase-admin'
 import {
   verifyAuth,
-  getMemberPermissions,
+  getMemberData,
   isOwner,
   isAdmin,
   isOwnerOrAdmin
@@ -24,59 +24,73 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Permissions are required' })
   }
 
-  const currentUserPermissions = await getMemberPermissions(workspaceId, uid)
+  if (
+    typeof permissions !== 'object' ||
+    permissions === null ||
+    Array.isArray(permissions)
+  ) {
+    throw createError({
+      statusCode: 400,
+      message: 'Permissions must be an object'
+    })
+  }
 
-  if (!currentUserPermissions) {
+  if ('owner' in permissions || 'admin' in permissions) {
+    throw createError({
+      statusCode: 400,
+      message: 'Use dedicated endpoints to manage owner/admin roles'
+    })
+  }
+
+  const currentUser = await getMemberData(workspaceId, uid)
+
+  if (!currentUser) {
     throw createError({
       statusCode: 403,
       message: 'You are not a member of this workspace'
     })
   }
 
-  if (!isOwnerOrAdmin(currentUserPermissions)) {
+  if (!isOwnerOrAdmin(currentUser.role)) {
     throw createError({
       statusCode: 403,
       message: 'Only owners and admins can update permissions'
     })
   }
 
-  const targetMemberPermissions = await getMemberPermissions(
-    workspaceId,
-    memberId
-  )
+  const targetMember = await getMemberData(workspaceId, memberId)
 
-  if (!targetMemberPermissions) {
+  if (!targetMember) {
     throw createError({ statusCode: 404, message: 'Member not found' })
   }
 
-  if (isOwner(targetMemberPermissions)) {
+  if (isOwner(targetMember.role)) {
     throw createError({
       statusCode: 403,
       message: 'Cannot modify owner permissions'
     })
   }
 
-  if (permissions?.owner === true) {
-    throw createError({
-      statusCode: 403,
-      message: 'Cannot assign owner permission'
-    })
-  }
-
-  if (
-    isAdmin(currentUserPermissions) &&
-    !isOwner(currentUserPermissions) &&
-    memberId === uid
-  ) {
-    throw createError({
-      statusCode: 403,
-      message: 'Admins cannot modify their own permissions'
-    })
+  if (isAdmin(currentUser.role) && !isOwner(currentUser.role)) {
+    if (memberId === uid) {
+      throw createError({
+        statusCode: 403,
+        message: 'Admins cannot modify their own permissions'
+      })
+    }
+    if (isAdmin(targetMember.role)) {
+      throw createError({
+        statusCode: 403,
+        message: 'Only the workspace owner can modify admin permissions'
+      })
+    }
   }
 
   const memberRef = db.doc(`workspaces/${workspaceId}/members/${memberId}`)
 
-  await memberRef.update({ permissions })
+  await memberRef.update({
+    permissions: permissions as Record<string, boolean>
+  })
 
   return { success: true }
 })

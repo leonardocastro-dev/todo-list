@@ -34,10 +34,11 @@ const filteredWorkspaceTasks = computed(() => taskStore.filteredWorkspaceTasks)
 
 const canCreateWorkspaceTasks = computed(() => {
   if (projectStore.isGuestMode) return true
-  return hasAnyPermission(projectStore.memberPermissions, [
-    PERMISSIONS.MANAGE_TASKS,
-    PERMISSIONS.CREATE_TASKS
-  ])
+  return hasAnyPermission(
+    projectStore.memberRole,
+    projectStore.memberPermissions,
+    [PERMISSIONS.MANAGE_TASKS, PERMISSIONS.CREATE_TASKS]
+  )
 })
 
 // Get project name for a task
@@ -237,6 +238,7 @@ const emptyStateMessage = computed(() => {
         :workspace-members="members"
         :project-name="getProjectName(task.projectId)"
         :project-permissions="projectPermissionsMap[task.projectId]"
+        :workspace-role="projectStore.memberRole"
         :workspace-permissions="projectStore.memberPermissions"
       />
     </div>

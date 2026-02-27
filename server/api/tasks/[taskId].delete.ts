@@ -39,18 +39,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Task not found' })
   }
 
-  const taskProjectId =
-    typeof taskDoc.data()?.projectId === 'string' &&
-    taskDoc.data()?.projectId.trim().length > 0
-      ? taskDoc.data()?.projectId
-      : null
-
-  if (!taskProjectId) {
-    throw createError({
-      statusCode: 400,
-      message: 'Task must belong to a project'
-    })
-  }
+  const taskProjectId = taskDoc.data()?.projectId as string
 
   const hasAccess = await canAccessProject(workspaceId, taskProjectId, uid)
   if (!hasAccess) {

@@ -1,7 +1,11 @@
 import { Resend } from 'resend'
 import { Timestamp } from 'firebase-admin/firestore'
 import { db } from '@/server/utils/firebase-admin'
-import { verifyAuth, requirePermission } from '@/server/utils/permissions'
+import {
+  verifyAuth,
+  requirePermission,
+  PERMISSIONS
+} from '@/server/utils/permissions'
 import crypto from 'node:crypto'
 
 const resend = new Resend(process.env.NUXT_RESEND_API_KEY)
@@ -18,7 +22,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  await requirePermission(workspaceId, uid, ['manage-members', 'add-members'])
+  await requirePermission(workspaceId, uid, [
+    PERMISSIONS.MANAGE_MEMBERS,
+    PERMISSIONS.ADD_MEMBERS
+  ])
 
   const email = to.toLowerCase().trim()
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

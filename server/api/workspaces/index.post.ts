@@ -50,9 +50,8 @@ export default defineEventHandler(async (event) => {
     username:
       userData?.username || userData?.name || email?.split('@')[0] || '',
     avatarUrl: userData?.avatarUrl || null,
-    permissions: {
-      owner: true
-    },
+    role: 'owner',
+    permissions: {},
     joinedAt: Timestamp.now()
   })
 

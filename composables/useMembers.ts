@@ -1,35 +1,33 @@
 import { ref, computed } from 'vue'
 import { collection, getDocs } from 'firebase/firestore'
-import { PERMISSIONS } from '@/constants/permissions'
+import { ROLES, PERMISSIONS } from '@/constants/permissions'
 
 export interface WorkspaceMember {
   uid: string
   email: string
   username: string
   avatarUrl: string | null
+  role?: string
   permissions?: Record<string, boolean>
   joinedAt?: any
 }
 
-const isOwnerOrAdmin = (
-  permissions: Record<string, boolean> | undefined
-): boolean => {
-  if (!permissions) return false
-  return !!(permissions[PERMISSIONS.OWNER] || permissions[PERMISSIONS.ADMIN])
+const isOwnerOrAdmin = (role: string | undefined): boolean => {
+  return role === ROLES.OWNER || role === ROLES.ADMIN
 }
 
 // Singleton state - shared across all component instances
 const allMembers = ref<WorkspaceMember[]>([])
 const selectedMemberIds = ref<string[]>([])
 
-// Filtered members for project access (excludes owners/admins/access-projects)
+// Filtered members for project access (excludes owners/admins)
 const membersForProjects = computed(() =>
-  allMembers.value.filter(
-    (member) =>
-      !isOwnerOrAdmin(member.permissions) &&
-      !member.permissions?.[PERMISSIONS.ACCESS_PROJECTS]
-  )
+  allMembers.value.filter((member) => !isOwnerOrAdmin(member.role))
 )
+
+const hasAccessProjectsPermission = (member: WorkspaceMember): boolean => {
+  return member.permissions?.[PERMISSIONS.ACCESS_PROJECTS] === true
+}
 const projectAssignmentsMap = ref<Record<string, string[]>>({})
 const projectAssignmentsDataMap = ref<
   Record<string, Record<string, ProjectAssignment>>
@@ -86,6 +84,7 @@ export const useMembers = () => {
         email: doc.data().email,
         username: doc.data().username,
         avatarUrl: doc.data().avatarUrl || null,
+        role: doc.data().role || 'member',
         permissions: doc.data().permissions || {},
         joinedAt: doc.data().joinedAt
       }))
@@ -290,6 +289,7 @@ export const useMembers = () => {
     loadTaskAssignees,
     loadAllTaskAssignments,
     invalidateAssignmentsCache,
-    removeMemberLocally
+    removeMemberLocally,
+    hasAccessProjectsPermission
   }
 }

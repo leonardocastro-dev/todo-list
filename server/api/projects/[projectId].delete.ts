@@ -1,7 +1,7 @@
 import { db } from '@/server/utils/firebase-admin'
 import {
   verifyAuth,
-  getMemberPermissions,
+  getMemberData,
   hasAnyPermission,
   canAccessProject,
   deleteProjectAssignments,
@@ -33,10 +33,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify user has permission to delete projects
-  const permissions = await getMemberPermissions(workspaceId, uid)
+  const member = await getMemberData(workspaceId, uid)
 
   if (
-    !hasAnyPermission(permissions, [
+    !hasAnyPermission(member?.role, member?.permissions ?? null, [
       PERMISSIONS.MANAGE_PROJECTS,
       PERMISSIONS.DELETE_PROJECTS
     ])

@@ -2,11 +2,12 @@ import { FieldValue } from 'firebase-admin/firestore'
 import { db } from '@/server/utils/firebase-admin'
 import {
   verifyAuth,
-  getMemberPermissions,
+  getMemberData,
   isOwner,
   isAdmin,
   hasAnyPermission,
-  cleanupMemberAssignments
+  cleanupMemberAssignments,
+  PERMISSIONS
 } from '@/server/utils/permissions'
 
 export default defineEventHandler(async (event) => {
@@ -22,28 +23,32 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const currentUserPermissions = await getMemberPermissions(workspaceId, uid)
+  const currentUser = await getMemberData(workspaceId, uid)
 
-  if (!currentUserPermissions) {
+  if (!currentUser) {
     throw createError({
       statusCode: 403,
       message: 'You are not a member of this workspace'
     })
   }
 
-  const targetMemberPermissions = await getMemberPermissions(
-    workspaceId,
-    memberId
-  )
+  const targetMember = await getMemberData(workspaceId, memberId)
 
-  if (!targetMemberPermissions) {
+  if (!targetMember) {
     throw createError({ statusCode: 404, message: 'Member not found' })
   }
 
-  if (isOwner(targetMemberPermissions)) {
+  if (isOwner(targetMember.role)) {
     throw createError({
       statusCode: 403,
       message: 'Cannot remove the workspace owner'
+    })
+  }
+
+  if (isAdmin(targetMember.role) && !isOwner(currentUser.role)) {
+    throw createError({
+      statusCode: 403,
+      message: 'Only the workspace owner can remove admins'
     })
   }
 
@@ -55,11 +60,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const canRemove =
-    isOwner(currentUserPermissions) ||
-    (isAdmin(currentUserPermissions) && memberId !== uid) ||
-    hasAnyPermission(currentUserPermissions, [
-      'manage-members',
-      'remove-members'
+    isOwner(currentUser.role) ||
+    (isAdmin(currentUser.role) && memberId !== uid) ||
+    hasAnyPermission(currentUser.role, currentUser.permissions, [
+      PERMISSIONS.MANAGE_MEMBERS,
+      PERMISSIONS.REMOVE_MEMBERS
     ])
 
   if (!canRemove) {

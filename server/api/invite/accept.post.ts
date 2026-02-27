@@ -91,6 +91,7 @@ export default defineEventHandler(async (event) => {
         decoded.email?.split('@')[0] ||
         '',
       avatarUrl: userData?.avatarUrl || null,
+      role: 'member',
       permissions: null,
       joinedAt: Timestamp.now()
     })

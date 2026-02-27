@@ -2,24 +2,32 @@ import type { H3Event } from 'h3'
 import { createError, getHeader } from 'h3'
 import { FieldValue } from 'firebase-admin/firestore'
 import { auth, db } from './firebase-admin'
+import type { Role } from '@/constants/permissions'
+import {
+  ROLES,
+  PERMISSIONS,
+  implies,
+  isOwner,
+  isAdmin,
+  isOwnerOrAdmin,
+  hasPermission,
+  hasAnyPermission
+} from '@/constants/permissions'
 
-export interface MemberPermissions {
-  owner?: boolean
-  admin?: boolean
-  'access-projects'?: boolean
-  'manage-projects'?: boolean
-  'create-projects'?: boolean
-  'edit-projects'?: boolean
-  'delete-projects'?: boolean
-  'manage-tasks'?: boolean
-  'create-tasks'?: boolean
-  'edit-tasks'?: boolean
-  'delete-tasks'?: boolean
-  'manage-members'?: boolean
-  'add-members'?: boolean
-  'remove-members'?: boolean
-  'assign-project'?: boolean
-  [key: string]: boolean | undefined
+export {
+  isOwner,
+  isAdmin,
+  isOwnerOrAdmin,
+  hasPermission,
+  hasAnyPermission,
+  ROLES,
+  PERMISSIONS,
+  implies
+}
+
+export interface MemberData {
+  role: Role | string
+  permissions: Record<string, boolean> | null
 }
 
 export interface AuthResult {
@@ -43,10 +51,10 @@ export async function verifyAuth(event: H3Event): Promise<AuthResult> {
   }
 }
 
-export async function getMemberPermissions(
+export async function getMemberData(
   workspaceId: string,
   userId: string
-): Promise<MemberPermissions | null> {
+): Promise<MemberData | null> {
   const memberRef = db.doc(`workspaces/${workspaceId}/members/${userId}`)
   const memberSnap = await memberRef.get()
 
@@ -54,40 +62,11 @@ export async function getMemberPermissions(
     return null
   }
 
-  return memberSnap.data()?.permissions || {}
-}
-
-export function isOwner(permissions: MemberPermissions | null): boolean {
-  return permissions?.owner === true
-}
-
-export function isAdmin(permissions: MemberPermissions | null): boolean {
-  return permissions?.admin === true
-}
-
-export function isOwnerOrAdmin(permissions: MemberPermissions | null): boolean {
-  return isOwner(permissions) || isAdmin(permissions)
-}
-
-export function hasPermission(
-  permissions: MemberPermissions | null,
-  permission: string
-): boolean {
-  if (!permissions) return false
-  return (
-    isOwner(permissions) ||
-    isAdmin(permissions) ||
-    permissions[permission] === true
-  )
-}
-
-export function hasAnyPermission(
-  permissions: MemberPermissions | null,
-  permissionList: string[]
-): boolean {
-  if (!permissions) return false
-  if (isOwnerOrAdmin(permissions)) return true
-  return permissionList.some((p) => permissions[p] === true)
+  const data = memberSnap.data()
+  return {
+    role: data?.role || ROLES.MEMBER,
+    permissions: data?.permissions || {}
+  }
 }
 
 export async function canAccessProject(
@@ -95,11 +74,15 @@ export async function canAccessProject(
   projectId: string,
   userId: string
 ): Promise<boolean> {
-  const permissions = await getMemberPermissions(workspaceId, userId)
-  if (isOwnerOrAdmin(permissions)) return true
+  const member = await getMemberData(workspaceId, userId)
+  if (!member) return false
+  if (isOwnerOrAdmin(member.role)) return true
 
   // Check if user has access-projects permission (grants access to ALL projects)
-  if (hasPermission(permissions, 'access-projects')) return true
+  if (
+    hasPermission(member.role, member.permissions, PERMISSIONS.ACCESS_PROJECTS)
+  )
+    return true
 
   // Check for specific project assignment
   const assignmentRef = db.doc(
@@ -133,55 +116,58 @@ export async function requirePermission(
   workspaceId: string,
   userId: string,
   requiredPermissions: string[]
-): Promise<MemberPermissions> {
+): Promise<MemberData> {
   await requireWorkspaceMember(workspaceId, userId)
 
-  const permissions = await getMemberPermissions(workspaceId, userId)
+  const member = await getMemberData(workspaceId, userId)
 
-  if (!hasAnyPermission(permissions, requiredPermissions)) {
+  if (
+    !member ||
+    !hasAnyPermission(member.role, member.permissions, requiredPermissions)
+  ) {
     throw createError({
       statusCode: 403,
       message: 'You do not have permission to perform this action'
     })
   }
 
-  return permissions!
+  return member
 }
 
 export async function requireOwner(
   workspaceId: string,
   userId: string
-): Promise<MemberPermissions> {
+): Promise<MemberData> {
   await requireWorkspaceMember(workspaceId, userId)
 
-  const permissions = await getMemberPermissions(workspaceId, userId)
+  const member = await getMemberData(workspaceId, userId)
 
-  if (!isOwner(permissions)) {
+  if (!member || !isOwner(member.role)) {
     throw createError({
       statusCode: 403,
       message: 'Only the workspace owner can perform this action'
     })
   }
 
-  return permissions!
+  return member
 }
 
 export async function requireOwnerOrAdmin(
   workspaceId: string,
   userId: string
-): Promise<MemberPermissions> {
+): Promise<MemberData> {
   await requireWorkspaceMember(workspaceId, userId)
 
-  const permissions = await getMemberPermissions(workspaceId, userId)
+  const member = await getMemberData(workspaceId, userId)
 
-  if (!isOwnerOrAdmin(permissions)) {
+  if (!member || !isOwnerOrAdmin(member.role)) {
     throw createError({
       statusCode: 403,
       message: 'Only owners and admins can perform this action'
     })
   }
 
-  return permissions!
+  return member
 }
 
 // Project Assignment Functions
@@ -315,7 +301,6 @@ export async function assignUserToTask(
 
 export async function removeUserFromTask(
   workspaceId: string,
-  projectId: string,
   taskId: string,
   userId: string
 ): Promise<void> {
@@ -327,7 +312,6 @@ export async function removeUserFromTask(
 
 export async function getTaskAssignees(
   workspaceId: string,
-  projectId: string,
   taskId: string
 ): Promise<string[]> {
   const assignmentsRef = db.collection(
@@ -339,7 +323,6 @@ export async function getTaskAssignees(
 
 export async function isUserAssignedToTask(
   workspaceId: string,
-  projectId: string,
   taskId: string,
   userId: string
 ): Promise<boolean> {
@@ -355,10 +338,11 @@ export async function canToggleTaskStatus(
   projectId: string,
   userId: string
 ): Promise<boolean> {
-  const permissions = await getMemberPermissions(workspaceId, userId)
+  const member = await getMemberData(workspaceId, userId)
+  if (!member) return false
 
   // Owner/Admin can always toggle
-  if (isOwnerOrAdmin(permissions)) return true
+  if (isOwnerOrAdmin(member.role)) return true
 
   const assignmentRef = db.doc(
     `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${userId}`
@@ -368,12 +352,11 @@ export async function canToggleTaskStatus(
   if (!assignmentSnap.exists) return false
 
   const assignmentPermissions = assignmentSnap.data()?.permissions || {}
-  return assignmentPermissions['toggle-status'] === true
+  return assignmentPermissions[PERMISSIONS.TOGGLE_STATUS] === true
 }
 
 export async function deleteTaskAssignments(
   workspaceId: string,
-  projectId: string,
   taskId: string
 ): Promise<void> {
   const assignmentsRef = db.collection(

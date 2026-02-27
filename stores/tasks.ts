@@ -166,8 +166,8 @@ export const useTaskStore = defineStore('tasks', {
     canCreateTasks(state): boolean {
       // Guest mode: can always create local tasks
       if (state.isGuestMode) return true
-      if (!this.memberPermissions) return false
-      return hasAnyPermission(this.memberPermissions, [
+      const projectStore = useProjectStore()
+      return hasAnyPermission(projectStore.memberRole, this.memberPermissions, [
         PERMISSIONS.MANAGE_TASKS,
         PERMISSIONS.CREATE_TASKS
       ])
@@ -176,8 +176,8 @@ export const useTaskStore = defineStore('tasks', {
     canDeleteTasks(state): boolean {
       // Guest mode: can always delete local tasks
       if (state.isGuestMode) return true
-      if (!this.memberPermissions) return false
-      return hasAnyPermission(this.memberPermissions, [
+      const projectStore = useProjectStore()
+      return hasAnyPermission(projectStore.memberRole, this.memberPermissions, [
         PERMISSIONS.MANAGE_TASKS,
         PERMISSIONS.DELETE_TASKS
       ])
@@ -186,8 +186,8 @@ export const useTaskStore = defineStore('tasks', {
     canEditTasks(state): boolean {
       // Guest mode: can always edit local tasks
       if (state.isGuestMode) return true
-      if (!this.memberPermissions) return false
-      return hasAnyPermission(this.memberPermissions, [
+      const projectStore = useProjectStore()
+      return hasAnyPermission(projectStore.memberRole, this.memberPermissions, [
         PERMISSIONS.MANAGE_TASKS,
         PERMISSIONS.EDIT_TASKS
       ])
@@ -196,8 +196,8 @@ export const useTaskStore = defineStore('tasks', {
     canManageTasks(state): boolean {
       // Guest mode: can always manage local tasks
       if (state.isGuestMode) return true
-      if (!this.memberPermissions) return false
-      return hasAnyPermission(this.memberPermissions, [
+      const projectStore = useProjectStore()
+      return hasAnyPermission(projectStore.memberRole, this.memberPermissions, [
         PERMISSIONS.MANAGE_TASKS
       ])
     },
@@ -205,8 +205,8 @@ export const useTaskStore = defineStore('tasks', {
     canToggleTaskStatus(state): boolean {
       // Guest mode: can always toggle local tasks
       if (state.isGuestMode) return true
-      if (!this.memberPermissions) return false
-      return hasAnyPermission(this.memberPermissions, [
+      const projectStore = useProjectStore()
+      return hasAnyPermission(projectStore.memberRole, this.memberPermissions, [
         PERMISSIONS.TOGGLE_STATUS
       ])
     },
@@ -594,12 +594,7 @@ export const useTaskStore = defineStore('tasks', {
         const grouped: Record<string, Task[]> = {}
         snapshot.docs.forEach((docSnap) => {
           const data = docSnap.data()
-          const projectId =
-            typeof data.projectId === 'string' &&
-            data.projectId.trim().length > 0
-              ? data.projectId
-              : null
-          if (!projectId) return
+          const projectId = data.projectId as string
           if (!accessibleProjectIds.includes(projectId)) return
           const task: Task = {
             id: docSnap.id,
@@ -653,10 +648,6 @@ export const useTaskStore = defineStore('tasks', {
       memberIds?: string[]
     ) {
       const projectId = task.projectId
-      if (!projectId || projectId.trim().length === 0) {
-        showErrorToast('Project is required to create tasks')
-        return
-      }
       const bucketKey = getTaskBucketKey(projectId)
 
       // Garante que o array existe

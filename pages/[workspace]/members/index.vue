@@ -43,6 +43,15 @@ const handleMemberRemoved = (memberId: string) => {
 const handlePermissionsUpdated = async () => {
   await loadWorkspaceMembers(workspaceId.value, true)
 }
+
+const handleMemberRoleUpdated = async () => {
+  await loadWorkspaceMembers(workspaceId.value, true)
+}
+
+const handleOwnershipTransferred = async () => {
+  await workspaceStore.loadWorkspaces(user.value?.uid)
+  await loadWorkspaceMembers(workspaceId.value, true)
+}
 </script>
 
 <template>
@@ -61,6 +70,8 @@ const handlePermissionsUpdated = async () => {
       :is-loading-members="isLoadingMembers"
       @member-removed="handleMemberRemoved"
       @permissions-updated="handlePermissionsUpdated"
+      @member-role-updated="handleMemberRoleUpdated"
+      @ownership-transferred="handleOwnershipTransferred"
     />
   </div>
 </template>
