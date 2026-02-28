@@ -54,9 +54,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Project not found' })
   }
 
-  // Query nested tasks collection
+  // Query tasks that belong to this project
   const tasksSnap = await db
-    .collection(`workspaces/${workspaceId}/projects/${projectId}/tasks`)
+    .collection(`workspaces/${workspaceId}/tasks`)
+    .where('projectId', '==', projectId)
     .get()
 
   const batch = db.batch()
