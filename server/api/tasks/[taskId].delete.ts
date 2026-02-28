@@ -2,7 +2,6 @@ import { db } from '@/server/utils/firebase-admin'
 import {
   verifyAuth,
   canAccessProject,
-  deleteTaskAssignments,
   requireProjectPermission,
   updateProjectTaskCounters
 } from '@/server/utils/permissions'
@@ -48,9 +47,6 @@ export default defineEventHandler(async (event) => {
       message: 'You do not have access to this project'
     })
   }
-
-  // Delete task assignments
-  await deleteTaskAssignments(workspaceId, taskProjectId, taskId)
 
   // Delete the task
   await taskRef.delete()

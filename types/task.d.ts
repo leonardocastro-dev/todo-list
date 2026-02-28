@@ -12,4 +12,5 @@ declare interface Task {
   createdAt: string
   updatedAt: string
   assigneeIds?: string[]
+  assignments?: Record<string, TaskAssignment>
 }

@@ -4,8 +4,7 @@ import {
   getMemberData,
   hasAnyPermission,
   canAccessProject,
-  deleteProjectAssignments,
-  deleteTaskAssignments
+  deleteProjectAssignments
 } from '@/server/utils/permissions'
 import { PERMISSIONS } from '@/constants/permissions'
 
@@ -62,9 +61,8 @@ export default defineEventHandler(async (event) => {
 
   const batch = db.batch()
 
-  // Delete tasks and their assignments
+  // Delete tasks
   for (const taskDoc of tasksSnap.docs) {
-    await deleteTaskAssignments(workspaceId, taskDoc.id)
     batch.delete(taskDoc.ref)
   }
 

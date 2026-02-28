@@ -97,7 +97,8 @@ export default defineEventHandler(async (event) => {
     projectId: normalizedProjectId,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    assigneeIds: memberIds || []
+    assigneeIds: memberIds || [],
+    assignments: {}
   }
 
   const taskRef = db.doc(`workspaces/${workspaceId}/tasks/${taskId}`)

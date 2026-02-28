@@ -77,12 +77,6 @@ service cloud.firestore {
         allow write: if false;
       }
 
-      // Task assignments at workspace level
-      match /taskAssignments/{taskId}/users/{userId} {
-        allow read: if isWorkspaceMember(workspaceId);
-        allow write: if false;
-      }
-
 
     }
   }

@@ -694,13 +694,24 @@ export const useTaskStore = defineStore('tasks', {
       // Optimistic: create task with temporary ID and push immediately
       const tempId = crypto.randomUUID()
       const now = new Date().toISOString()
+      const assignments: Record<string, TaskAssignment> = {}
+      if (memberIds) {
+        for (const id of memberIds) {
+          assignments[id] = {
+            role: 'assignee',
+            assignedAt: now,
+            assignedBy: userId ?? undefined
+          }
+        }
+      }
       const optimisticTask: Task = {
         ...task,
         id: tempId,
         projectId,
         createdAt: now,
         updatedAt: now,
-        assigneeIds: memberIds || []
+        assigneeIds: memberIds || [],
+        assignments
       }
       this.tasksByProject[bucketKey].push(optimisticTask)
       this.updateProjectCounters(
@@ -808,9 +819,23 @@ export const useTaskStore = defineStore('tasks', {
 
       // Optimistic: snapshot + apply immediately
       const snapshot = { ...projectTasks[taskIndex] }
-      const optimisticUpdate = memberIds
-        ? { ...updatedTask, assigneeIds: memberIds }
-        : updatedTask
+      let optimisticUpdate: Partial<Task> = updatedTask
+      if (memberIds) {
+        const now = new Date().toISOString()
+        const newAssignments: Record<string, TaskAssignment> = {}
+        for (const id of memberIds) {
+          newAssignments[id] = snapshot.assignments?.[id] || {
+            role: 'assignee',
+            assignedAt: now,
+            assignedBy: userId ?? undefined
+          }
+        }
+        optimisticUpdate = {
+          ...updatedTask,
+          assigneeIds: memberIds,
+          assignments: newAssignments
+        }
+      }
       projectTasks[taskIndex] = {
         ...projectTasks[taskIndex],
         ...optimisticUpdate
