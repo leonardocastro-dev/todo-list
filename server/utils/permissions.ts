@@ -423,7 +423,7 @@ async function syncProjectAssignees(
   // Update project document
   const projectRef = db.doc(`workspaces/${workspaceId}/projects/${projectId}`)
   await projectRef.update({
-    assignedUserIds: Array.from(assigneeSet),
+    assigneeIds: Array.from(assigneeSet),
     updatedAt: new Date().toISOString()
   })
 }
