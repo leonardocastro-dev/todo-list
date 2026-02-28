@@ -52,8 +52,8 @@ Full-stack **Nuxt 3** workspace-based task management app with **Firebase** back
 workspaces/{id}
   ├── members/{userId}          # permissions, role
   ├── projects/{id}             # title, emoji, assignedUserIds[]
+  │     └── members/{userId}    # project-level assignments
   ├── tasks/{id}                # status, priority, dueDate, projectId, assigneeIds[]
-  ├── projectAssignments/{projectId}/users/{userId}
   └── taskAssignments/{taskId}/users/{userId}
 
 users/{uid}                     # public profile (username, avatar)

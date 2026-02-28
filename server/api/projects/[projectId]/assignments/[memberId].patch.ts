@@ -79,7 +79,7 @@ export default defineEventHandler(async (event) => {
 
   // Get or create the assignment
   const assignmentRef = db.doc(
-    `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${memberId}`
+    `workspaces/${workspaceId}/projects/${projectId}/members/${memberId}`
   )
   const assignmentSnap = await assignmentRef.get()
 

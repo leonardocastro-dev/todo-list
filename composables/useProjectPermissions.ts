@@ -30,7 +30,7 @@ export const useProjectPermissions = () => {
       const permPromises = projectIds.map(async (projectId) => {
         const assignmentRef = doc(
           $firestore,
-          `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${userId}`
+          `workspaces/${workspaceId}/projects/${projectId}/members/${userId}`
         )
         const snap = await getDoc(assignmentRef)
 

@@ -108,14 +108,14 @@ export const useMembers = () => {
 
     try {
       const { $firestore } = useNuxtApp()
-      // Query projectAssignments collection for assigned members
+      // Query project members collection for assigned members
       const assignmentsRef = collection(
         $firestore,
         'workspaces',
         workspaceId,
-        'projectAssignments',
+        'projects',
         projectId,
-        'users'
+        'members'
       )
       const snapshot = await getDocs(assignmentsRef)
 
@@ -163,9 +163,9 @@ export const useMembers = () => {
             $firestore,
             'workspaces',
             workspaceId,
-            'projectAssignments',
+            'projects',
             projectId,
-            'users'
+            'members'
           )
           const snapshot = await getDocs(assignmentsRef)
           assignments[projectId] = snapshot.docs.map((doc) => doc.id)

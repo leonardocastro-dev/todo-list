@@ -385,9 +385,9 @@ export const useTaskStore = defineStore('tasks', {
         $firestore,
         'workspaces',
         workspaceId,
-        'projectAssignments',
+        'projects',
         projectId,
-        'users',
+        'members',
         userId
       )
       const userAssignmentSnap = await getDoc(userAssignmentRef)

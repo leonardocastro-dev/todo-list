@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
 
   // Delete tasks and their assignments
   for (const taskDoc of tasksSnap.docs) {
-    await deleteTaskAssignments(workspaceId, projectId, taskDoc.id)
+    await deleteTaskAssignments(workspaceId, taskDoc.id)
     batch.delete(taskDoc.ref)
   }
 

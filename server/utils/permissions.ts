@@ -100,7 +100,7 @@ export async function canAccessProject(
 
   // Check for specific project assignment
   const assignmentRef = db.doc(
-    `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${userId}`
+    `workspaces/${workspaceId}/projects/${projectId}/members/${userId}`
   )
   const snap = await assignmentRef.get()
   return snap.exists
@@ -169,7 +169,7 @@ export async function requireProjectPermission(
 
   // Check project-level permissions (assignment)
   const assignmentRef = db.doc(
-    `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${userId}`
+    `workspaces/${workspaceId}/projects/${projectId}/members/${userId}`
   )
   const snap = await assignmentRef.get()
   const projectPerms = snap.exists ? snap.data()?.permissions || {} : {}
@@ -230,7 +230,7 @@ export async function assignUserToProject(
   assignedBy?: string
 ): Promise<void> {
   const assignmentRef = db.doc(
-    `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${userId}`
+    `workspaces/${workspaceId}/projects/${projectId}/members/${userId}`
   )
   const assignment: ProjectAssignment = {
     role,
@@ -246,7 +246,7 @@ export async function removeUserFromProject(
   userId: string
 ): Promise<void> {
   const assignmentRef = db.doc(
-    `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${userId}`
+    `workspaces/${workspaceId}/projects/${projectId}/members/${userId}`
   )
   await assignmentRef.delete()
 }
@@ -256,7 +256,7 @@ export async function getProjectMembers(
   projectId: string
 ): Promise<string[]> {
   const assignmentsRef = db.collection(
-    `workspaces/${workspaceId}/projectAssignments/${projectId}/users`
+    `workspaces/${workspaceId}/projects/${projectId}/members`
   )
   const snapshot = await assignmentsRef.get()
   return snapshot.docs.map((doc) => doc.id)
@@ -269,7 +269,7 @@ export async function updateProjectMembers(
   assignedBy?: string
 ): Promise<void> {
   const assignmentsRef = db.collection(
-    `workspaces/${workspaceId}/projectAssignments/${projectId}/users`
+    `workspaces/${workspaceId}/projects/${projectId}/members`
   )
   const currentSnapshot = await assignmentsRef.get()
   const currentMemberIds = currentSnapshot.docs.map((doc) => doc.id)
@@ -280,7 +280,7 @@ export async function updateProjectMembers(
   for (const memberId of memberIds) {
     if (!currentMemberIds.includes(memberId)) {
       const assignmentRef = db.doc(
-        `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${memberId}`
+        `workspaces/${workspaceId}/projects/${projectId}/members/${memberId}`
       )
       const assignment: ProjectAssignment = {
         role: 'editor',
@@ -309,7 +309,7 @@ export async function updateMemberProjectAssignment(
   assignedBy?: string
 ): Promise<void> {
   const assignmentRef = db.doc(
-    `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${memberId}`
+    `workspaces/${workspaceId}/projects/${projectId}/members/${memberId}`
   )
   const assignmentSnap = await assignmentRef.get()
 
@@ -395,7 +395,7 @@ export async function canToggleTaskStatus(
   if (isOwnerOrAdmin(member.role)) return true
 
   const assignmentRef = db.doc(
-    `workspaces/${workspaceId}/projectAssignments/${projectId}/users/${userId}`
+    `workspaces/${workspaceId}/projects/${projectId}/members/${userId}`
   )
   const assignmentSnap = await assignmentRef.get()
 
@@ -424,7 +424,7 @@ export async function deleteProjectAssignments(
   projectId: string
 ): Promise<void> {
   const assignmentsRef = db.collection(
-    `workspaces/${workspaceId}/projectAssignments/${projectId}/users`
+    `workspaces/${workspaceId}/projects/${projectId}/members`
   )
   const snapshot = await assignmentsRef.get()
 
@@ -514,16 +514,13 @@ export async function cleanupWorkspaceAssignments(
 ): Promise<void> {
   const batch = db.batch()
 
-  // Delete all projectAssignments
-  const projectAssignmentsRef = db.collection(
-    `workspaces/${workspaceId}/projectAssignments`
-  )
-  const projectAssignmentsSnap = await projectAssignmentsRef.get()
+  // Delete all project member assignments
+  const projectsRef = db.collection(`workspaces/${workspaceId}/projects`)
+  const projectsSnap = await projectsRef.get()
 
-  for (const projectDoc of projectAssignmentsSnap.docs) {
-    const usersSnap = await projectDoc.ref.collection('users').get()
-    usersSnap.docs.forEach((userDoc) => batch.delete(userDoc.ref))
-    batch.delete(projectDoc.ref)
+  for (const projectDoc of projectsSnap.docs) {
+    const membersSnap = await projectDoc.ref.collection('members').get()
+    membersSnap.docs.forEach((memberDoc) => batch.delete(memberDoc.ref))
   }
 
   // Delete all taskAssignments (at workspace level)
@@ -547,17 +544,15 @@ export async function cleanupMemberAssignments(
 ): Promise<void> {
   const batch = db.batch()
 
-  // Remove from all projectAssignments
-  const projectAssignmentsRef = db.collection(
-    `workspaces/${workspaceId}/projectAssignments`
-  )
-  const projectAssignmentsSnap = await projectAssignmentsRef.get()
+  // Remove from all project member assignments
+  const projectsRef = db.collection(`workspaces/${workspaceId}/projects`)
+  const projectsSnap = await projectsRef.get()
 
-  for (const projectDoc of projectAssignmentsSnap.docs) {
-    const userRef = projectDoc.ref.collection('users').doc(memberId)
-    const userSnap = await userRef.get()
-    if (userSnap.exists) {
-      batch.delete(userRef)
+  for (const projectDoc of projectsSnap.docs) {
+    const memberRef = projectDoc.ref.collection('members').doc(memberId)
+    const memberSnap = await memberRef.get()
+    if (memberSnap.exists) {
+      batch.delete(memberRef)
     }
   }
 
