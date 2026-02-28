@@ -15,7 +15,7 @@ service cloud.firestore {
     // Helper function to check if user is a workspace member (for subcollections)
     function isWorkspaceMember(workspaceId) {
       return isAuthenticated() &&
-             request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.members;
+        request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.members;
     }
 
     // ==========================================
